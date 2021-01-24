@@ -1,7 +1,6 @@
 package services
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/phayes/freeport"
 	"github.com/wufe/polo/models"
+	"github.com/wufe/polo/utils"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -142,40 +142,15 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 				)
 				cmd.Dir = workingDir
 
-				errPipe, err := cmd.StderrPipe()
+				utils.ThroughCallback(utils.ExecuteCommand(cmd))(func(line string) {
+					log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line)
+					session.Logs = append(session.Logs, line)
+				})
+
 				if err != nil {
 					log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
 					return
 				}
-				outPipe, err := cmd.StdoutPipe()
-				if err != nil {
-					log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
-					return
-				}
-				if err := cmd.Start(); err != nil {
-					log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
-					return
-				}
-				go func() {
-					scanner := bufio.NewScanner(errPipe)
-					scanner.Split(bufio.ScanLines)
-					for scanner.Scan() {
-						line := scanner.Text()
-						// TODO: Race condition here
-						session.Logs = append(session.Logs, line)
-						log.Infof("[SESSION:%s (stderr)> ] %s", session.UUID, line)
-					}
-				}()
-				go func() {
-					scanner := bufio.NewScanner(outPipe)
-					for scanner.Scan() {
-						line := scanner.Text()
-						// TODO: Race condition here
-						session.Logs = append(session.Logs, line)
-						log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line)
-					}
-				}()
-				cmd.Wait()
 			}
 
 		}

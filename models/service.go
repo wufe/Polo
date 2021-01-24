@@ -1,7 +1,6 @@
 package models
 
 import (
-	"bufio"
 	"errors"
 	"os"
 	"os/exec"
@@ -9,8 +8,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/kennygrant/sanitize"
 	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/utils"
 )
 
 type Service struct {
@@ -37,7 +41,7 @@ type ServiceCommand struct {
 }
 
 type ServiceCommandOutput struct {
-	Output   string
+	Output   []string
 	ExitCode int
 }
 
@@ -67,7 +71,7 @@ func NewService(service *Service, configuration *RootConfiguration) (*Service, e
 		service.Healthcheck.Status = 200
 	}
 	if service.Healthcheck.RetryTimeout == 0 {
-		service.Healthcheck.RetryTimeout = 600 // 10 minutes
+		service.Healthcheck.RetryTimeout = 300 // 10 minutes
 	}
 	if service.Recycle.InactivityTimeout == 0 {
 		service.Recycle.InactivityTimeout = 3600 // 1 hour
@@ -125,36 +129,15 @@ func (service *Service) Initialize(configuration *RootConfiguration) error {
 	if _, err := os.Stat(serviceBaseFolder); os.IsNotExist(err) { // Service folder does not exist
 		cmd := exec.Command("git", "clone", service.Remote, "_base")
 		cmd.Dir = serviceFolder
-		errPipe, err := cmd.StderrPipe()
+
+		err := utils.ThroughCallback(utils.ExecuteCommand(cmd))(func(line string) {
+			log.Infof("[SERVICE:%s (stdout)> ] %s", service.Name, line)
+		})
+
 		if err != nil {
 			return err
 		}
-		outPipe, err := cmd.StdoutPipe()
-		if err != nil {
-			return err
-		}
-		if err := cmd.Start(); err != nil {
-			return err
-		}
 
-		go func() {
-			scanner := bufio.NewScanner(errPipe)
-			scanner.Split(bufio.ScanLines)
-			for scanner.Scan() {
-				line := scanner.Text()
-				log.Infof("[SERVICE:%s (stderr)> ] %s", service.Name, line)
-			}
-		}()
-		go func() {
-			scanner := bufio.NewScanner(outPipe)
-			scanner.Split(bufio.ScanLines)
-			for scanner.Scan() {
-				line := scanner.Text()
-				log.Infof("[SERVICE:%s (stdout)> ] %s", service.Name, line)
-			}
-		}()
-
-		cmd.Wait()
 	}
 	service.ServiceBaseFolder = serviceBaseFolder
 
@@ -168,42 +151,19 @@ func (service *Service) startCommandWatch() {
 	go func() {
 		for {
 			cmd := <-service.commandChan
-			errPipe, err := cmd.StderrPipe()
+
+			output := []string{}
+
+			err := utils.ThroughCallback(utils.ExecuteCommand(&cmd.Cmd))(func(line string) {
+				output = append(output, line)
+				log.Infof("[SERVICE:%s (stdout)> ] %s", service.Name, line)
+			})
+
 			if err != nil {
-				log.Errorf("[SERVICE:%s] %s", service.Name, err.Error())
-				return
-			}
-			outPipe, err := cmd.StdoutPipe()
-			if err != nil {
-				log.Errorf("[SERVICE:%s] %s", service.Name, err.Error())
-				return
-			}
-			if err := cmd.Start(); err != nil {
 				log.Errorf("[SERVICE:%s] %s", service.Name, err.Error())
 				return
 			}
 
-			// TODO: Check race condition between these two
-			output := ""
-			go func() {
-				scanner := bufio.NewScanner(errPipe)
-				scanner.Split(bufio.ScanLines)
-				for scanner.Scan() {
-					line := scanner.Text()
-					output += "\n" + line
-					log.Infof("[SERVICE:%s (stderr)> ] %s", service.Name, line)
-				}
-			}()
-			go func() {
-				scanner := bufio.NewScanner(outPipe)
-				scanner.Split(bufio.ScanLines)
-				for scanner.Scan() {
-					line := scanner.Text()
-					output += "\n" + line
-					log.Infof("[SERVICE:%s (stdout)> ] %s", service.Name, line)
-				}
-			}()
-			cmd.Wait()
 			service.commandResponseChan <- &ServiceCommandOutput{
 				Output:   output,
 				ExitCode: cmd.ProcessState.ExitCode(),
@@ -212,12 +172,72 @@ func (service *Service) startCommandWatch() {
 	}()
 }
 
+func (service *Service) defaultCheckError(err error) {
+	if err != nil {
+		log.Errorf("[SERVICE:%s] %s", service.Name, err.Error())
+	}
+}
+
 func (service *Service) startFetchRoutine() {
 	go func() {
 		for {
-			service.ExecCommandInServiceBaseFolder(&ServiceCommand{
-				Cmd: *exec.Command("git", "fetch", "--all"),
+			repo, err := git.PlainOpen(service.ServiceBaseFolder)
+			service.defaultCheckError(err)
+
+			// fetch
+			err = repo.Fetch(&git.FetchOptions{
+				RefSpecs: []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
 			})
+			service.defaultCheckError(err)
+
+			// log
+			since := time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
+			until := time.Now().UTC()
+			cIter, err := repo.Log(&git.LogOptions{All: true, Since: &since, Until: &until, Order: git.LogOrderCommitterTime})
+			service.defaultCheckError(err)
+
+			// log
+			err = cIter.ForEach(func(c *object.Commit) error {
+				// log.Infoln(c.Hash)
+				// log.Infoln(c.Committer.When.Date())
+				// log.Warnln(c.Message)
+
+				if c.Hash == plumbing.NewHash("2b0a80a4e05229d06771c938b65b418ffeb50b8e") {
+
+					log.Infoln(c)
+				}
+
+				return nil
+			})
+
+			// tags
+			tags, err := repo.Tags()
+			service.defaultCheckError(err)
+			err = tags.ForEach(func(t *plumbing.Reference) error {
+				log.Infoln(t)
+				return nil
+			})
+
+			// remote
+			remote, err := repo.Remote("origin")
+			service.defaultCheckError(err)
+
+			// references
+			refs, err := remote.List(&git.ListOptions{})
+			service.defaultCheckError(err)
+
+			refPrefix := "refs/heads/"
+			for _, ref := range refs {
+				refName := ref.Name().String()
+				if !strings.HasPrefix(refName, refPrefix) {
+					continue
+				}
+				branchName := refName[len(refPrefix):]
+				if branchName == "master" {
+					log.Warnln(service.Name, ref)
+				}
+			}
+
 			// TODO: Maybe use https://github.com/go-git/go-git
 			// service.ExecCommandInServiceFolder(&ServiceCommand{
 			// 	Cmd: *exec.Command("git", "log", `--pretty=format:'{%n  "commit": "%H",%n  "abbreviated_commit": "%h",%n  "tree": "%T",%n  "abbreviated_tree": "%t",%n  "parent": "%P",%n  "abbreviated_parent": "%p",%n  "refs": "%D",%n  "encoding": "%e",%n  "subject": "%s",%n  "sanitized_subject_line": "%f",%n  "body": "%b",%n  "commit_notes": "%N",%n  "verification_flag": "%G?",%n  "signer": "%GS",%n  "signer_key": "%GK",%n  "author": {%n    "name": "%aN",%n    "email": "%aE",%n    "date": "%aD"%n  },%n  "commiter": {%n    "name": "%cN",%n    "email": "%cE",%n    "date": "%cD"%n  }%n},'`),

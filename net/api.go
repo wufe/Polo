@@ -6,8 +6,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/wufe/polo/models"
 	"github.com/wufe/polo/services"
 
 	log "github.com/sirupsen/logrus"
@@ -78,9 +80,50 @@ func (server *HTTPServer) postSessionAPI(
 	req *http.Request,
 	ps httprouter.Params,
 ) {
+
+	// Decoding body
+	sessionCreationInput := &struct {
+		Checkout    string `json:"checkout"`
+		ServiceName string `json:"serviceName"`
+	}{}
+	err := json.NewDecoder(req.Body).Decode(sessionCreationInput)
+	if err != nil {
+		resString, resStatus := buildResponse(ResponseObjectWithFailingReason{
+			ResponseObject: ResponseObject{
+				Message: "Bad request",
+			},
+			Reason: err.Error(),
+		}, 400)
+		res.Header().Add("Content-Type", "application/json")
+		res.WriteHeader(resStatus)
+		res.Write(resString)
+		return
+	}
+
+	// Looking for the required service
+	var foundService *models.Service
+	for _, service := range server.Configuration.Services {
+		if strings.ToLower(service.Name) == strings.ToLower(sessionCreationInput.ServiceName) {
+			foundService = service
+		}
+	}
+	if foundService == nil {
+		resString, resStatus := buildResponse(ResponseObjectWithFailingReason{
+			ResponseObject: ResponseObject{
+				Message: "Bad request",
+			},
+			Reason: fmt.Sprintf("Service named %s not found", sessionCreationInput.ServiceName),
+		}, 404)
+		res.Header().Add("Content-Type", "application/json")
+		res.WriteHeader(resStatus)
+		res.Write(resString)
+		return
+	}
+
+	// Building the new session
 	response := server.SessionHandler.RequestNewSession(&services.SessionBuildInput{
-		Checkout: "1fe7f9e52f384bd808ca56e716db0b26603322b3",
-		Service:  server.Configuration.Services[0],
+		Checkout: sessionCreationInput.Checkout,
+		Service:  foundService,
 	})
 	if response.Result == services.SessionBuildResultFailed {
 
@@ -97,22 +140,21 @@ func (server *HTTPServer) postSessionAPI(
 		res.Header().Add("Content-Type", "application/json")
 		res.WriteHeader(status)
 		res.Write(resString)
+		return
 
-	} else {
-
-		responseObject := ResponseObjectWithResult{
-			ResponseObject: ResponseObject{
-				Message: "Ok",
-			},
-			Result: response.Session.UUID,
-		}
-
-		resString, status := buildResponse(responseObject, 200)
-		res.Header().Add("Content-Type", "application/json")
-		res.WriteHeader(status)
-		res.Write(resString)
 	}
 
+	responseObject := ResponseObjectWithResult{
+		ResponseObject: ResponseObject{
+			Message: "Ok",
+		},
+		Result: response.Session.UUID,
+	}
+
+	resString, status := buildResponse(responseObject, 200)
+	res.Header().Add("Content-Type", "application/json")
+	res.WriteHeader(status)
+	res.Write(resString)
 }
 
 func buildResponse(response interface{}, status int) ([]byte, int) {
