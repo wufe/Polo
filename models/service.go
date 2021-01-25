@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -33,6 +34,12 @@ type Service struct {
 	commandChan           chan *ServiceCommand
 	commandResponseChan   chan *ServiceCommandOutput
 	rootConfiguration     *RootConfiguration
+	objectsToHashMap      map[string]string
+	hashToObjectsMap      map[string]*RemoteObject
+	branches              []string
+	tags                  []string
+	commits               []string
+	commitMap             map[string]*object.Commit
 }
 
 type ServiceCommand struct {
@@ -43,6 +50,11 @@ type ServiceCommand struct {
 type ServiceCommandOutput struct {
 	Output   []string
 	ExitCode int
+}
+
+type RemoteObject struct {
+	branches []string
+	tags     []string
 }
 
 func NewService(service *Service, configuration *RootConfiguration) (*Service, error) {
@@ -98,9 +110,15 @@ func NewService(service *Service, configuration *RootConfiguration) (*Service, e
 	if service.Port.Except == nil {
 		service.Port.Except = []int{}
 	}
+	service.rootConfiguration = configuration
 	service.commandChan = make(chan *ServiceCommand)
 	service.commandResponseChan = make(chan *ServiceCommandOutput)
-	service.rootConfiguration = configuration
+	service.objectsToHashMap = make(map[string]string)
+	service.hashToObjectsMap = make(map[string]*RemoteObject)
+	service.branches = []string{}
+	service.tags = []string{}
+	service.commits = []string{}
+	service.commitMap = make(map[string]*object.Commit)
 	return service, nil
 }
 
@@ -172,76 +190,143 @@ func (service *Service) startCommandWatch() {
 	}()
 }
 
-func (service *Service) defaultCheckError(err error) {
+func (service *Service) defaultErrorLog(err error, except ...error) {
 	if err != nil {
-		log.Errorf("[SERVICE:%s] %s", service.Name, err.Error())
+		var foundError error
+		for _, exceptErr := range except {
+			if exceptErr == err {
+				foundError = exceptErr
+			}
+		}
+		if foundError == nil {
+			log.Errorf("[SERVICE:%s] %s", service.Name, err.Error())
+		}
 	}
+}
+
+func appendWithoutDup(slice []string, elem ...string) {
+	for _, currentElem := range elem {
+		foundIndex := -1
+		for i, sliceElem := range slice {
+			if sliceElem == currentElem {
+				foundIndex = i
+			}
+		}
+		if foundIndex == -1 {
+			slice = append(slice, currentElem)
+		}
+	}
+}
+
+func (service *Service) fetchRemote() {
+
+	// Open repository
+	repo, err := git.PlainOpen(service.ServiceBaseFolder)
+	service.defaultErrorLog(err)
+	if err != nil {
+		return
+	}
+
+	// Fetch
+	err = repo.Fetch(&git.FetchOptions{
+		RefSpecs: []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
+	})
+	service.defaultErrorLog(err, git.NoErrAlreadyUpToDate)
+	if err != nil && err != git.NoErrAlreadyUpToDate {
+		return
+	}
+
+	// Get remote
+	remote, err := repo.Remote("origin")
+	service.defaultErrorLog(err)
+	if err != nil {
+		return
+	}
+
+	// Branches
+	refs, err := remote.List(&git.ListOptions{})
+	service.defaultErrorLog(err)
+
+	refPrefix := "refs/heads/"
+	for _, ref := range refs {
+		refName := ref.Name().String()
+		if !strings.HasPrefix(refName, refPrefix) {
+			continue
+		}
+		branchName := refName[len(refPrefix):]
+
+		appendWithoutDup(service.branches, branchName)
+
+		service.objectsToHashMap[branchName] = ref.Hash().String()
+		service.objectsToHashMap[fmt.Sprintf("origin/%s", branchName)] = ref.Hash().String()
+		service.objectsToHashMap[ref.Name().String()] = ref.Hash().String()
+
+		if service.hashToObjectsMap[ref.Hash().String()] == nil {
+			service.hashToObjectsMap[ref.Hash().String()] = &RemoteObject{
+				branches: []string{},
+				tags:     []string{},
+			}
+		}
+
+		appendWithoutDup(service.hashToObjectsMap[ref.Hash().String()].branches, branchName)
+	}
+
+	// Tags
+	tags, err := repo.Tags()
+	service.defaultErrorLog(err)
+
+	tagPrefix := "refs/tags/"
+	err = tags.ForEach(func(ref *plumbing.Reference) error {
+		refName := ref.Name().String()
+		if !strings.HasPrefix(refName, tagPrefix) {
+			return nil
+		}
+		tagName := refName[len(tagPrefix):]
+		service.objectsToHashMap[tagName] = ref.Hash().String()
+
+		appendWithoutDup(service.tags, tagName)
+		service.objectsToHashMap[refName] = ref.Hash().String()
+
+		if service.hashToObjectsMap[ref.Hash().String()] == nil {
+			service.hashToObjectsMap[ref.Hash().String()] = &RemoteObject{
+				branches: []string{},
+				tags:     []string{},
+			}
+		}
+
+		appendWithoutDup(service.hashToObjectsMap[ref.Hash().String()].tags, tagName)
+
+		return nil
+	})
+
+	// Log
+	// TODO: Configure "since"
+	since := time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
+	until := time.Now().UTC()
+	logs, err := repo.Log(&git.LogOptions{All: true, Since: &since, Until: &until, Order: git.LogOrderCommitterTime})
+	service.defaultErrorLog(err)
+	if err != nil {
+		return
+	}
+
+	service.commits = []string{}
+
+	err = logs.ForEach(func(commit *object.Commit) error {
+		service.objectsToHashMap[commit.Hash.String()] = commit.Hash.String()
+		service.commits = append(service.commits, commit.Hash.String())
+		service.commitMap[commit.Hash.String()] = commit
+		return nil
+	})
+
+	log.Infof("[SERVICE:%s] Found %d commits", service.Name, len(service.commits))
 }
 
 func (service *Service) startFetchRoutine() {
 	go func() {
 		for {
-			repo, err := git.PlainOpen(service.ServiceBaseFolder)
-			service.defaultCheckError(err)
 
-			// fetch
-			err = repo.Fetch(&git.FetchOptions{
-				RefSpecs: []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
-			})
-			service.defaultCheckError(err)
+			service.fetchRemote()
 
-			// log
-			since := time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
-			until := time.Now().UTC()
-			cIter, err := repo.Log(&git.LogOptions{All: true, Since: &since, Until: &until, Order: git.LogOrderCommitterTime})
-			service.defaultCheckError(err)
-
-			// log
-			err = cIter.ForEach(func(c *object.Commit) error {
-				// log.Infoln(c.Hash)
-				// log.Infoln(c.Committer.When.Date())
-				// log.Warnln(c.Message)
-
-				if c.Hash == plumbing.NewHash("2b0a80a4e05229d06771c938b65b418ffeb50b8e") {
-
-					log.Infoln(c)
-				}
-
-				return nil
-			})
-
-			// tags
-			tags, err := repo.Tags()
-			service.defaultCheckError(err)
-			err = tags.ForEach(func(t *plumbing.Reference) error {
-				log.Infoln(t)
-				return nil
-			})
-
-			// remote
-			remote, err := repo.Remote("origin")
-			service.defaultCheckError(err)
-
-			// references
-			refs, err := remote.List(&git.ListOptions{})
-			service.defaultCheckError(err)
-
-			refPrefix := "refs/heads/"
-			for _, ref := range refs {
-				refName := ref.Name().String()
-				if !strings.HasPrefix(refName, refPrefix) {
-					continue
-				}
-				branchName := refName[len(refPrefix):]
-				if branchName == "master" {
-					log.Warnln(service.Name, ref)
-				}
-			}
-
-			// TODO: Maybe use https://github.com/go-git/go-git
-			// service.ExecCommandInServiceFolder(&ServiceCommand{
-			// 	Cmd: *exec.Command("git", "log", `--pretty=format:'{%n  "commit": "%H",%n  "abbreviated_commit": "%h",%n  "tree": "%T",%n  "abbreviated_tree": "%t",%n  "parent": "%P",%n  "abbreviated_parent": "%p",%n  "refs": "%D",%n  "encoding": "%e",%n  "subject": "%s",%n  "sanitized_subject_line": "%f",%n  "body": "%b",%n  "commit_notes": "%N",%n  "verification_flag": "%G?",%n  "signer": "%GS",%n  "signer_key": "%GK",%n  "author": {%n    "name": "%aN",%n    "email": "%aE",%n    "date": "%aD"%n  },%n  "commiter": {%n    "name": "%cN",%n    "email": "%cE",%n    "date": "%cD"%n  }%n},'`),
-			// })
 			time.Sleep(1 * time.Minute)
 		}
 	}()
