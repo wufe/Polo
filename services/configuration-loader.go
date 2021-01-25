@@ -12,14 +12,14 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func LoadConfigurations() *models.RootConfiguration {
+func LoadConfigurations() (*models.RootConfiguration, *ServiceHandler) {
 	dir := getExecutableFolder()
 
 	files := getYamlFiles(dir)
 
-	configurations := unmarshalConfigurations(files)
+	configurations, serviceHandler := unmarshalConfigurations(files)
 
-	return configurations
+	return configurations, serviceHandler
 
 }
 
@@ -52,7 +52,7 @@ func getYamlFiles(root string) []string {
 	return files
 }
 
-func unmarshalConfigurations(files []string) *models.RootConfiguration {
+func unmarshalConfigurations(files []string) (*models.RootConfiguration, *ServiceHandler) {
 	rootConfiguration := &models.RootConfiguration{
 		Services: []*models.Service{},
 	}
@@ -73,7 +73,7 @@ func unmarshalConfigurations(files []string) *models.RootConfiguration {
 		if root.Services != nil {
 			for _, service := range root.Services {
 
-				builtService, err := models.NewService(service, rootConfiguration)
+				builtService, err := models.NewService(service)
 				if err != nil {
 					log.Errorf("Service %s configuration error: %s", service.Name, err.Error())
 				} else {
@@ -82,6 +82,8 @@ func unmarshalConfigurations(files []string) *models.RootConfiguration {
 			}
 		}
 	}
+
+	serviceHandler := NewServiceHandler(rootConfiguration)
 
 	// Default global configurations
 	if rootConfiguration.Global.Port == 0 {
@@ -93,12 +95,12 @@ func unmarshalConfigurations(files []string) *models.RootConfiguration {
 	}
 
 	for _, service := range rootConfiguration.Services {
-		err := service.Initialize(rootConfiguration)
+		err := serviceHandler.InitializeService(service)
 		if err != nil {
 			log.Fatalln(fmt.Sprintf("Could not provision service %s", service.Name))
 			panic(err)
 		}
 	}
 
-	return rootConfiguration
+	return rootConfiguration, serviceHandler
 }

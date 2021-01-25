@@ -11,9 +11,9 @@ import (
 
 func main() {
 
-	configuration := services.LoadConfigurations()
+	configuration, serviceHandler := services.LoadConfigurations()
 
-	sessionHandler := services.NewSessionHandler(configuration)
+	sessionHandler := services.NewSessionHandler(configuration, serviceHandler)
 
 	port := flag.String("port", fmt.Sprint(configuration.Global.Port), "Port")
 	flag.Parse()

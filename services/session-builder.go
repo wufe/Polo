@@ -48,7 +48,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 		}
 	}
 
-	session := models.NewSession(context.Background(), &models.Session{
+	session := models.NewSession(&models.Session{
 		UUID:     uuid.NewString(),
 		Name:     input.Service.Name,
 		Port:     freePort,
@@ -62,29 +62,42 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 
 	log.Infof("[SESSION:%s] Building session.", session.UUID)
 
+	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(session.Service.Healthcheck.RetryTimeout))
+	done := make(chan struct{})
+
 	go func() {
 
-		workingDir, err := buildSessionCommitStructure(session)
+		workingDir, err := sessionHandler.buildSessionCommitStructure(session)
+		session.Folder = workingDir
 		if err != nil {
 			log.Errorf("Could not build session commit structure: %s", err.Error())
-			session.Cancel()
+			cancelSessionStart()
 			sessionHandler.CleanupSession(session)
 			return
 		}
 
 		// Cleanup on context done
 		go func() {
-			<-session.Context.Done()
-			log.Warnf("[SESSION:%s] Execution aborted", session.UUID)
-			sessionHandler.CleanupSession(session)
+			for {
+				select {
+				case <-sessionStartContext.Done():
+					log.Warnf("[SESSION:%s] Execution aborted", session.UUID)
+					sessionHandler.CleanupSession(session)
+					return
+				case <-done:
+					done <- struct{}{}
+					return
+				}
+			}
 		}()
 
 		// Start healthcheck routing
+		// TODO: Add option to start healthchecking after N seconds (sessionStartContext should be updated accordingly)
 		go func() {
 			for {
 				time.Sleep(5 * time.Second)
 				select {
-				case <-session.Context.Done():
+				case <-sessionStartContext.Done():
 					return
 				default:
 					target, err := url.Parse(session.Target)
@@ -100,7 +113,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 						target.String(),
 						nil,
 					)
-					req.WithContext(session.Context)
+					req.WithContext(sessionStartContext)
 					for _, header := range input.Service.Headers.Add {
 						headerSegments := strings.Split(header, "=")
 						req.Header.Add(headerSegments[0], headerSegments[1])
@@ -117,8 +130,9 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 						log.Errorln("Could not perform HTTP request", err)
 					} else {
 						if response.StatusCode == input.Service.Healthcheck.Status {
-							session.Status = models.SessionStatusStarted
+							sessionHandler.MarkSessionAsStarted(session)
 							log.Infof("[SESSION:%s] Session started", session.UUID)
+							done <- struct{}{}
 							return
 						}
 					}
@@ -130,19 +144,19 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 		// Build the session here
 		for _, command := range input.Service.Commands.Start {
 			select {
-			case <-session.Context.Done():
+			case <-sessionStartContext.Done():
 				return
 			default:
 				commandProg := buildCommand(command.Command, session)
 				progAndArgs := strings.Split(commandProg, " ")
-				cmd := exec.CommandContext(session.Context, progAndArgs[0], progAndArgs[1:]...)
+				cmd := exec.CommandContext(sessionStartContext, progAndArgs[0], progAndArgs[1:]...)
 				cmd.Env = append(
 					os.Environ(),
 					cmd.Env...,
 				)
 				cmd.Dir = workingDir
 
-				utils.ThroughCallback(utils.ExecuteCommand(cmd))(func(line string) {
+				err := utils.ThroughCallback(utils.ExecuteCommand(cmd))(func(line string) {
 					log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line)
 					session.Logs = append(session.Logs, line)
 				})
@@ -152,7 +166,6 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 					return
 				}
 			}
-
 		}
 	}()
 

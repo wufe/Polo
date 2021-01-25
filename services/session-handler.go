@@ -1,21 +1,25 @@
 package services
 
 import (
+	"time"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/models"
 )
 
 type SessionHandler struct {
 	configuration       *models.RootConfiguration
+	serviceHandler      *ServiceHandler
 	sessions            []*models.Session
 	sessionRequestChan  chan *SessionBuildInput
 	sessionResponseChan chan *SessionBuildResult
 	sessionCleanChan    chan *models.Session
 }
 
-func NewSessionHandler(configuration *models.RootConfiguration) *SessionHandler {
+func NewSessionHandler(configuration *models.RootConfiguration, serviceHandler *ServiceHandler) *SessionHandler {
 	sessionHandler := &SessionHandler{
 		configuration:       configuration,
+		serviceHandler:      serviceHandler,
 		sessions:            []*models.Session{},
 		sessionRequestChan:  make(chan *SessionBuildInput),
 		sessionResponseChan: make(chan *SessionBuildResult),
@@ -131,4 +135,29 @@ func (sessionHandler *SessionHandler) startAcceptingSessionCleanRequests() {
 
 func (sessionHandler *SessionHandler) CleanupSession(session *models.Session) {
 	sessionHandler.sessionCleanChan <- session
+}
+
+func (sessionHandler *SessionHandler) MarkSessionAsStarted(session *models.Session) {
+	session.Status = models.SessionStatusStarted
+
+	sessionHandler.StartSessionInactivityTimer(session)
+}
+
+// TODO: Call this on net requests
+func (sessionHandler *SessionHandler) MarkSessionAsBeingRequested(session *models.Session) {
+	// Refreshes the inactiveAt field every time someone makes a request to this session
+	session.InactiveAt = time.Now().Add(time.Second * time.Duration(session.Service.Recycle.InactivityTimeout))
+}
+
+func (sessionHandler *SessionHandler) StartSessionInactivityTimer(session *models.Session) {
+	session.InactiveAt = time.Now().Add(time.Second * time.Duration(session.Service.Recycle.InactivityTimeout))
+	go func() {
+		for {
+			if time.Now().After(session.InactiveAt) {
+				sessionHandler.DestroySession(session)
+				return
+			}
+			time.Sleep(1 * time.Second)
+		}
+	}()
 }
