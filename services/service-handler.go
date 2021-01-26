@@ -231,7 +231,7 @@ func (serviceHandler *ServiceHandler) fetchServiceRemote(service *models.Service
 func (serviceHandler *ServiceHandler) startServiceFetchRoutine(service *models.Service) {
 	go func() {
 		for {
-			time.Sleep(1 * time.Minute)
+			time.Sleep(5 * time.Minute)
 
 			serviceHandler.fetchServiceRemote(service)
 		}

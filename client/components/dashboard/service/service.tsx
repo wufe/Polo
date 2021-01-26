@@ -1,5 +1,5 @@
+import { IService } from '@/state/models/service';
 import React from 'react';
-import { IService } from '@/state/models';
 import './service.scss';
 
 type TProps = {

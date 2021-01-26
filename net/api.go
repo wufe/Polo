@@ -15,11 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (server *HTTPServer) getDashboard(
-	res http.ResponseWriter,
-	req *http.Request,
-	ps httprouter.Params,
-) {
+func (server *HTTPServer) serveDashboard(res http.ResponseWriter, req *http.Request) {
 	isDev := true
 	if isDev {
 		req.URL.Path = "/_polo_/static/dashboard.html"
@@ -35,13 +31,20 @@ func (server *HTTPServer) getDashboard(
 	}
 }
 
+func (server *HTTPServer) getDashboard(
+	res http.ResponseWriter,
+	req *http.Request,
+	ps httprouter.Params,
+) {
+	server.serveDashboard(res, req)
+}
+
 func (server *HTTPServer) getSessionStatus(
 	res http.ResponseWriter,
 	req *http.Request,
 	ps httprouter.Params,
 ) {
-	res.WriteHeader(200)
-	res.Write([]byte(fmt.Sprintf("Session status: %s", ps.ByName("uuid"))))
+	server.serveDashboard(res, req)
 }
 
 func (server *HTTPServer) getServicesAPI(
@@ -49,13 +52,15 @@ func (server *HTTPServer) getServicesAPI(
 	req *http.Request,
 	ps httprouter.Params,
 ) {
-	services, err := json.Marshal(server.Configuration.Services)
-	if err != nil {
-		log.Fatalf("Error serializing services", err)
-	}
+	resString, resStatus := buildResponse(ResponseObjectWithResult{
+		ResponseObject: ResponseObject{
+			Message: "Ok",
+		},
+		Result: server.Configuration.Services,
+	}, 200)
 	res.Header().Add("Content-Type", "application/json")
-	res.WriteHeader(200)
-	res.Write(services)
+	res.WriteHeader(resStatus)
+	res.Write(resString)
 }
 
 func (server *HTTPServer) getAllSessionsAPI(
@@ -69,6 +74,43 @@ func (server *HTTPServer) getAllSessionsAPI(
 			Message: "Ok",
 		},
 		Result: server.SessionHandler.GetAllAliveSessions(),
+	}, 200)
+	res.Header().Add("Content-Type", "application/json")
+	res.WriteHeader(resStatus)
+	res.Write(resString)
+}
+
+func (server *HTTPServer) GetSessionByUUIDAPI(
+	res http.ResponseWriter,
+	req *http.Request,
+	ps httprouter.Params,
+) {
+	uuid := ps.ByName("uuid")
+
+	var foundSession *models.Session
+	for _, session := range server.SessionHandler.GetAllAliveSessions() {
+		if session.UUID == uuid {
+			foundSession = session
+		}
+	}
+
+	if foundSession == nil {
+		resString, resStatus := buildResponse((ResponseObjectWithFailingReason{
+			ResponseObject: ResponseObject{
+				Message: "Not found",
+			},
+		}), 404)
+		res.Header().Add("Content-Type", "application/json")
+		res.WriteHeader(resStatus)
+		res.Write(resString)
+		return
+	}
+
+	resString, resStatus := buildResponse(ResponseObjectWithResult{
+		ResponseObject: ResponseObject{
+			Message: "Ok",
+		},
+		Result: foundSession,
 	}, 200)
 	res.Header().Add("Content-Type", "application/json")
 	res.WriteHeader(resStatus)
