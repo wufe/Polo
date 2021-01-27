@@ -51,6 +51,7 @@ func (serviceHandler *ServiceHandler) InitializeService(service *models.Service)
 
 	serviceBaseFolder := filepath.Join(serviceFolder, "_base")    // Folder used for performing periodic git fetch --all and/or git log
 	if _, err := os.Stat(serviceBaseFolder); os.IsNotExist(err) { // Service folder does not exist
+
 		cmd := exec.Command("git", "clone", service.Remote, "_base")
 		cmd.Dir = serviceFolder
 
@@ -151,7 +152,11 @@ func (serviceHandler *ServiceHandler) fetchServiceRemote(service *models.Service
 	}
 
 	// Branches
-	refs, err := remote.List(&git.ListOptions{})
+	refs, err := remote.List(&git.ListOptions{
+		// Auth: &http.BasicAuth{
+		// 	Username: ,
+		// }
+	})
 	serviceHandler.defaultServiceErrorLog(service, err)
 
 	refPrefix := "refs/heads/"

@@ -560,3 +560,4 @@ MigrationBackup/
 /.sessions
 *.yml
 /polo
+!/hello-world.yml

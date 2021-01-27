@@ -25,7 +25,7 @@ func (sessionHandler *SessionHandler) DestroySession(session *models.Session) {
 				select {
 				case <-sessionStopContext.Done():
 					log.Warnf("[SESSION:%s] Destruction aborted", session.UUID)
-					sessionHandler.CleanupSession(session)
+					sessionHandler.CleanupSession(session, models.SessionStatusStopFailed)
 					return
 				case <-done:
 					done <- struct{}{}
@@ -63,7 +63,7 @@ func (sessionHandler *SessionHandler) DestroySession(session *models.Session) {
 		done <- struct{}{}
 
 		// In the end
-		sessionHandler.CleanupSession(session)
+		sessionHandler.CleanupSession(session, models.SessionStatusStopped)
 	}()
 
 }

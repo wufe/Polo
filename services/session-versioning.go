@@ -1,12 +1,12 @@
 package services
 
 import (
-	"errors"
-	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/kennygrant/sanitize"
 	"github.com/wufe/polo/models"
 )
@@ -14,25 +14,42 @@ import (
 func (sessionHandler *SessionHandler) buildSessionCommitStructure(session *models.Session) (string, error) {
 	checkout := sanitize.Name(session.Checkout)
 	serviceCommitFolder := filepath.Join(session.Service.ServiceFolder, checkout)
+
+	var repo *git.Repository
+
 	if _, err := os.Stat(serviceCommitFolder); os.IsNotExist(err) {
-		output := sessionHandler.serviceHandler.ExecServiceCommandInServiceFolder(session.Service, &models.ServiceCommand{
-			Cmd: *exec.Command("git", "clone", session.Service.Remote, checkout),
+		repo, err = git.PlainClone(serviceCommitFolder, false, &git.CloneOptions{
+			URL: session.Service.Remote,
 		})
-		if output.ExitCode > 0 {
-			return "", errors.New(fmt.Sprintf("Command exit with code %d", output.ExitCode))
+		if err != nil {
+			return "", err
+		}
+	} else {
+		repo, err = git.PlainOpen(serviceCommitFolder)
+		if err != nil {
+			return "", err
 		}
 	}
-	output := sessionHandler.serviceHandler.ExecServiceCommandInServiceCheckoutFolder(session.Service, &models.ServiceCommand{
-		Cmd: *exec.Command("git", "fetch", "--all"),
-	}, checkout)
-	if output.ExitCode > 0 {
-		return "", errors.New(fmt.Sprintf("Command exit with code %d", output.ExitCode))
+
+	err := repo.Fetch(&git.FetchOptions{
+		RefSpecs: []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
+	})
+	if err != nil && err != git.NoErrAlreadyUpToDate {
+		return "", err
 	}
-	output = sessionHandler.serviceHandler.ExecServiceCommandInServiceCheckoutFolder(session.Service, &models.ServiceCommand{
-		Cmd: *exec.Command("git", "reset", "--hard", session.Checkout),
-	}, checkout)
-	if output.ExitCode > 0 {
-		return "", errors.New(fmt.Sprintf("Command exit with code %d", output.ExitCode))
+
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return "", err
 	}
+
+	err = worktree.Reset(&git.ResetOptions{
+		Mode:   git.HardReset,
+		Commit: plumbing.NewHash(session.Checkout),
+	})
+	if err != nil {
+		return "", err
+	}
+
 	return serviceCommitFolder, nil
 }

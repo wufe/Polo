@@ -13,7 +13,12 @@ type SessionHandler struct {
 	sessions            []*models.Session
 	sessionRequestChan  chan *SessionBuildInput
 	sessionResponseChan chan *SessionBuildResult
-	sessionCleanChan    chan *models.Session
+	sessionCleanChan    chan *SessionClean
+}
+
+type SessionClean struct {
+	session *models.Session
+	status  models.SessionStatus
 }
 
 func NewSessionHandler(configuration *models.RootConfiguration, serviceHandler *ServiceHandler) *SessionHandler {
@@ -23,7 +28,7 @@ func NewSessionHandler(configuration *models.RootConfiguration, serviceHandler *
 		sessions:            []*models.Session{},
 		sessionRequestChan:  make(chan *SessionBuildInput),
 		sessionResponseChan: make(chan *SessionBuildResult),
-		sessionCleanChan:    make(chan *models.Session),
+		sessionCleanChan:    make(chan *SessionClean),
 	}
 
 	sessionHandler.startAcceptingNewSessionRequests()
@@ -54,17 +59,17 @@ func (sessionHandler *SessionHandler) GetSessionByUUID(uuid string) *models.Sess
 func (sessionHandler *SessionHandler) GetAllAliveSessions() []*models.Session {
 	filteredSessions := []*models.Session{}
 	for _, session := range sessionHandler.sessions {
-		if session.Status != models.SessionStatusStartFailed {
+		if session.Status.IsAlive() {
 			filteredSessions = append(filteredSessions, session)
 		}
 	}
 	return filteredSessions
 }
 
-func (sessionHandler *SessionHandler) GetServiceSessionByCheckout(checkout string, service *models.Service) *models.Session {
+func (sessionHandler *SessionHandler) GetAliveServiceSessionByCheckout(checkout string, service *models.Service) *models.Session {
 	var foundSession *models.Session
 	for _, session := range sessionHandler.sessions {
-		if session.Service == service && session.Checkout == checkout {
+		if session.Service == service && session.Checkout == checkout && session.Status.IsAlive() {
 			foundSession = session
 		}
 	}
@@ -80,7 +85,7 @@ func (sessionHandler *SessionHandler) startAcceptingNewSessionRequests() {
 
 			// Check if someone else just requested the same type of session
 			// looking through all open session and comparing services and checkouts
-			sessionAlreadyBeingBuilt := sessionHandler.GetServiceSessionByCheckout(
+			sessionAlreadyBeingBuilt := sessionHandler.GetAliveServiceSessionByCheckout(
 				sessionBuildRequest.Checkout,
 				sessionBuildRequest.Service,
 			)
@@ -115,26 +120,29 @@ func (sessionHandler *SessionHandler) startAcceptingSessionCleanRequests() {
 			sessionToClean := <-sessionHandler.sessionCleanChan
 			sessionToCleanIndex := -1
 			for i, session := range sessionHandler.sessions {
-				if session == sessionToClean {
+				if session == sessionToClean.session {
 					sessionToCleanIndex = i
 				}
 			}
 			if sessionToCleanIndex == -1 { // No session found
-				log.Fatalf("[SESSION:%s] Requested session cleanup, but not found", sessionToClean.UUID)
+				log.Fatalf("[SESSION:%s] Requested session cleanup, but not found", sessionToClean.session.UUID)
 			} else {
 				// sessionHandler.sessions = append(
 				// 	sessionHandler.sessions[:sessionToCleanIndex],
 				// 	sessionHandler.sessions[sessionToCleanIndex+1:]...,
 				// )
-				sessionHandler.sessions[sessionToCleanIndex].Status = models.SessionStatusStartFailed
-				log.Warnf("[SESSION:%s] Session cleaned up.", sessionToClean.UUID)
+				sessionHandler.sessions[sessionToCleanIndex].Status = sessionToClean.status
+				log.Warnf("[SESSION:%s] Session cleaned up.", sessionToClean.session.UUID)
 			}
 		}
 	}()
 }
 
-func (sessionHandler *SessionHandler) CleanupSession(session *models.Session) {
-	sessionHandler.sessionCleanChan <- session
+func (sessionHandler *SessionHandler) CleanupSession(session *models.Session, status models.SessionStatus) {
+	sessionHandler.sessionCleanChan <- &SessionClean{
+		session: session,
+		status:  status,
+	}
 }
 
 func (sessionHandler *SessionHandler) MarkSessionAsStarted(session *models.Session) {

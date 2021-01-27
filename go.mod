@@ -3,6 +3,7 @@ module github.com/wufe/polo
 go 1.15
 
 require (
+	github.com/ebuchman/go-shell-pipes v0.0.0-20150412091402-83e132480862
 	github.com/go-git/go-git v4.7.0+incompatible
 	github.com/go-git/go-git/v5 v5.2.0
 	github.com/google/uuid v1.2.0

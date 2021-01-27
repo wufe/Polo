@@ -190,7 +190,7 @@ func (server *HTTPServer) postSessionAPI(
 		ResponseObject: ResponseObject{
 			Message: "Ok",
 		},
-		Result: response.Session.UUID,
+		Result: response.Session,
 	}
 
 	resString, status := buildResponse(responseObject, 200)

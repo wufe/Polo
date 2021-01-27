@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 
@@ -48,6 +49,16 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 		}
 	}
 
+	checkout, ok := input.Service.ObjectsToHashMap[input.Checkout]
+
+	if !ok {
+		log.Errorf("Could not find the hash of the selected checkout %s", input.Checkout)
+		return &SessionBuildResult{
+			Result:        SessionBuildResultFailed,
+			FailingReason: fmt.Sprintf("Could not find the hash of the selected checkout %s", input.Checkout),
+		}
+	}
+
 	session := models.NewSession(&models.Session{
 		UUID:     uuid.NewString(),
 		Name:     input.Service.Name,
@@ -57,8 +68,14 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 		Done:     make(chan struct{}),
 		Service:  input.Service,
 		Logs:     []string{},
-		Checkout: input.Checkout,
+		Checkout: checkout,
 	})
+
+	session.Variables["uuid"] = session.UUID
+	session.Variables["name"] = session.Name
+	session.Variables["port"] = fmt.Sprint(session.Port)
+	session.Variables["target"] = session.Target
+	session.Variables["checkout"] = session.Checkout
 
 	log.Infof("[SESSION:%s] Building session.", session.UUID)
 
@@ -72,7 +89,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 		if err != nil {
 			log.Errorf("Could not build session commit structure: %s", err.Error())
 			cancelSessionStart()
-			sessionHandler.CleanupSession(session)
+			sessionHandler.CleanupSession(session, models.SessionStatusStartFailed)
 			return
 		}
 
@@ -82,7 +99,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 				select {
 				case <-sessionStartContext.Done():
 					log.Warnf("[SESSION:%s] Execution aborted", session.UUID)
-					sessionHandler.CleanupSession(session)
+					sessionHandler.CleanupSession(session, models.SessionStatusStartFailed)
 					return
 				case <-done:
 					done <- struct{}{}
@@ -91,7 +108,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 			}
 		}()
 
-		// Start healthcheck routing
+		// Start healthcheck routine
 		// TODO: Add option to start healthchecking after N seconds (sessionStartContext should be updated accordingly)
 		go func() {
 			for {
@@ -106,7 +123,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 					}
 					target.Path = path.Join(target.Path, input.Service.Healthcheck.URL)
 					client := &http.Client{
-						Timeout: 120,
+						Timeout: 120 * time.Second,
 					}
 					req, err := http.NewRequest(
 						input.Service.Healthcheck.Method,
@@ -127,7 +144,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 					log.Infof("[SESSION:%s] Requesting URL %s", session.UUID, req.URL.String())
 					response, err := client.Do(req)
 					if err != nil {
-						log.Errorln("Could not perform HTTP request", err)
+						log.Errorf("[SESSION:%s] Could not perform HTTP request", session.UUID, err.Error())
 					} else {
 						if response.StatusCode == input.Service.Healthcheck.Status {
 							sessionHandler.MarkSessionAsStarted(session)
@@ -147,18 +164,27 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 			case <-sessionStartContext.Done():
 				return
 			default:
-				commandProg := buildCommand(command.Command, session)
-				progAndArgs := strings.Split(commandProg, " ")
-				cmd := exec.CommandContext(sessionStartContext, progAndArgs[0], progAndArgs[1:]...)
-				cmd.Env = append(
-					os.Environ(),
-					cmd.Env...,
-				)
-				cmd.Dir = workingDir
+				cmds := []*exec.Cmd{}
 
-				err := utils.ThroughCallback(utils.ExecuteCommand(cmd))(func(line string) {
+				for _, command := range strings.Split(command.Command, "|") {
+
+					command = strings.TrimSpace(command)
+
+					commandProg := buildCommand(command, session)
+					progAndArgs := strings.Split(commandProg, " ")
+
+					cmd := exec.CommandContext(sessionStartContext, progAndArgs[0], progAndArgs[1:]...)
+					cmd.Env = append(
+						os.Environ(),
+						cmd.Env...,
+					)
+					cmd.Dir = workingDir
+					cmds = append(cmds, cmd)
+				}
+
+				err := utils.ThroughCallback(utils.ExecuteCommand(cmds...))(func(line string) {
 					log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line)
-					session.Logs = append(session.Logs, line)
+					sessionHandler.parseSessionCommandOuput(session, line)
 				})
 
 				if err != nil {
@@ -175,15 +201,26 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 	}
 }
 
-func buildCommand(command string, session *models.Session) string {
-	replacements := make(map[string]interface{})
-	replacements["uuid"] = session.UUID
-	replacements["port"] = session.Port
-	replacements["name"] = session.Service.Name
-
-	for placeholder, replacement := range replacements {
-		command = strings.ReplaceAll(command, fmt.Sprintf("{{%s}}", placeholder), fmt.Sprintf("%v", replacement))
+func (sessionHandler *SessionHandler) parseSessionCommandOuput(session *models.Session, output string) {
+	session.Logs = append(session.Logs, output)
+	session.CommandsLogs = append(session.CommandsLogs, output)
+	session.Variables["last_output"] = output
+	re := regexp.MustCompile(`polo\[([^\]]+?)=([^\]]+?)\]`)
+	matches := re.FindAllStringSubmatch(output, -1)
+	for _, variable := range matches {
+		key := variable[1]
+		value := variable[2]
+		session.Variables[key] = value
+		log.Warnf("[SESSION:%s] Setting variable %s=%s", session.UUID, key, value)
 	}
+}
+
+func buildCommand(command string, session *models.Session) string {
+	for key, value := range session.Variables {
+		command = strings.ReplaceAll(command, fmt.Sprintf("{{%s}}", key), fmt.Sprintf("%v", value))
+	}
+
+	fmt.Println(command)
 
 	return command
 }

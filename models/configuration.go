@@ -42,5 +42,5 @@ type Command struct {
 }
 
 type PortConfiguration struct {
-	Except []int
+	Except []int `json:"except"`
 }

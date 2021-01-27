@@ -5,18 +5,30 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+
+	pipes "github.com/ebuchman/go-shell-pipes"
+	log "github.com/sirupsen/logrus"
 )
 
-func ExecuteCommand(cmd *exec.Cmd) (outputChan chan string, doneChan chan struct{}, err error) {
-	errPipe, err := cmd.StderrPipe()
+func ExecuteCommand(cmds ...*exec.Cmd) (outputChan chan string, doneChan chan struct{}, err error) {
+	if len(cmds) > 1 {
+		for i, c := range cmds {
+			if i < len(cmds)-1 {
+				cmds[i+1].Stdin, _ = c.StdoutPipe()
+			}
+		}
+	}
+
+	lastCmd := cmds[len(cmds)-1]
+
+	errPipe, err := lastCmd.StderrPipe()
 	if err != nil {
+		log.Errorf("[CMD:%s] %s", lastCmd.Path, err.Error())
 		return nil, nil, err
 	}
-	outPipe, err := cmd.StdoutPipe()
+	outPipe, err := lastCmd.StdoutPipe()
 	if err != nil {
-		return nil, nil, err
-	}
-	if err := cmd.Start(); err != nil {
+		log.Errorf("[CMD:%s] %s", lastCmd.Path, err.Error())
 		return nil, nil, err
 	}
 
@@ -50,9 +62,11 @@ func ExecuteCommand(cmd *exec.Cmd) (outputChan chan string, doneChan chan struct
 		wg.Done()
 	}()
 
+	pipes.RunCmds(cmds)
+
 	go func() {
 		wg.Wait()
-		cmd.Wait()
+		lastCmd.Wait()
 		close(returnOutputChan)
 		returnDoneChan <- struct{}{}
 	}()
