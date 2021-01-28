@@ -12,13 +12,14 @@ import (
 )
 
 const (
-	ServerRouteRoot             ServerRoute = "/_polo_"
-	ServerRouteDashboard        ServerRoute = "/_polo_/"
-	ServerRouteSessionStatus    ServerRoute = "/_polo_/session/%s/" // uuid
-	ServerRouteStatic           ServerRoute = "/_polo_/static/*filepath"
-	ServerRouteAPIServices      ServerRoute = "/_polo_/api/service/"
-	ServerRouteAPISession       ServerRoute = "/_polo_/api/session/"
-	ServerRouteAPISessionByUUID ServerRoute = "/_polo_/api/session/:uuid"
+	ServerRouteRoot                  ServerRoute = "/_polo_"
+	ServerRouteDashboard             ServerRoute = "/_polo_/"
+	ServerRouteSessionStatus         ServerRoute = "/_polo_/session/%s/" // uuid
+	ServerRouteStatic                ServerRoute = "/_polo_/static/*filepath"
+	ServerRouteAPIServices           ServerRoute = "/_polo_/api/service/"
+	ServerRouteAPISession            ServerRoute = "/_polo_/api/session/"
+	ServerRouteAPISessionByUUID      ServerRoute = "/_polo_/api/session/:uuid"
+	ServerRouteAPITrackSessionByUUID ServerRoute = "/_polo_/api/session/:uuid/track"
 
 	StaticFolder string = "./static"
 )
@@ -44,7 +45,8 @@ func NewHTTPServer(port string, sessionHandler *services.SessionHandler, configu
 		router.GET(string(ServerRouteAPIServices), server.getServicesAPI)
 		router.POST(string(ServerRouteAPISession), server.postSessionAPI)
 		router.GET(string(ServerRouteAPISession), server.getAllSessionsAPI)
-		router.GET(string(ServerRouteAPISessionByUUID), server.GetSessionByUUIDAPI)
+		router.GET(string(ServerRouteAPISessionByUUID), server.getSessionByUUIDAPI)
+		router.POST(string(ServerRouteAPITrackSessionByUUID), server.postTrackSessionByUUIDAPI)
 
 		// router.ServeFiles(string(ServerRouteStatic), http.Dir(StaticFolder))
 

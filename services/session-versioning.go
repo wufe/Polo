@@ -33,6 +33,7 @@ func (sessionHandler *SessionHandler) buildSessionCommitStructure(session *model
 
 	err := repo.Fetch(&git.FetchOptions{
 		RefSpecs: []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
+		Force:    true,
 	})
 	if err != nil && err != git.NoErrAlreadyUpToDate {
 		return "", err

@@ -184,7 +184,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 
 				err := utils.ThroughCallback(utils.ExecuteCommand(cmds...))(func(line string) {
 					log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line)
-					sessionHandler.parseSessionCommandOuput(session, line)
+					sessionHandler.parseSessionCommandOuput(session, &command, line)
 				})
 
 				if err != nil {
@@ -201,7 +201,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 	}
 }
 
-func (sessionHandler *SessionHandler) parseSessionCommandOuput(session *models.Session, output string) {
+func (sessionHandler *SessionHandler) parseSessionCommandOuput(session *models.Session, command *models.Command, output string) {
 	session.Logs = append(session.Logs, output)
 	session.CommandsLogs = append(session.CommandsLogs, output)
 	session.Variables["last_output"] = output
@@ -212,6 +212,10 @@ func (sessionHandler *SessionHandler) parseSessionCommandOuput(session *models.S
 		value := variable[2]
 		session.Variables[key] = value
 		log.Warnf("[SESSION:%s] Setting variable %s=%s", session.UUID, key, value)
+	}
+
+	if command.OutputVariable != "" {
+		session.Variables[command.OutputVariable] = output
 	}
 }
 

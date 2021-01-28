@@ -80,7 +80,7 @@ func (server *HTTPServer) getAllSessionsAPI(
 	res.Write(resString)
 }
 
-func (server *HTTPServer) GetSessionByUUIDAPI(
+func (server *HTTPServer) getSessionByUUIDAPI(
 	res http.ResponseWriter,
 	req *http.Request,
 	ps httprouter.Params,
@@ -112,6 +112,43 @@ func (server *HTTPServer) GetSessionByUUIDAPI(
 		},
 		Result: foundSession,
 	}, 200)
+	res.Header().Add("Content-Type", "application/json")
+	res.WriteHeader(resStatus)
+	res.Write(resString)
+}
+
+func (server *HTTPServer) postTrackSessionByUUIDAPI(
+	res http.ResponseWriter,
+	req *http.Request,
+	ps httprouter.Params,
+) {
+	uuid := ps.ByName("uuid")
+
+	var foundSession *models.Session
+	for _, session := range server.SessionHandler.GetAllAliveSessions() {
+		if session.UUID == uuid {
+			foundSession = session
+		}
+	}
+
+	if foundSession == nil {
+		resString, resStatus := buildResponse((ResponseObjectWithFailingReason{
+			ResponseObject: ResponseObject{
+				Message: "Not found",
+			},
+		}), 404)
+		res.Header().Add("Content-Type", "application/json")
+		res.WriteHeader(resStatus)
+		res.Write(resString)
+		return
+	}
+
+	resString, resStatus := buildResponse(ResponseObjectWithResult{
+		ResponseObject: ResponseObject{
+			Message: "Ok",
+		},
+	}, 200)
+	server.trackSession(res, foundSession)
 	res.Header().Add("Content-Type", "application/json")
 	res.WriteHeader(resStatus)
 	res.Write(resString)

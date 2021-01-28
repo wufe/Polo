@@ -4,7 +4,9 @@ services:
     target: "http://127.0.0.1:{{port}}"
     commands:
       start:
-        - command: 'docker run -p {{port}}:80 -d nginxdemos/hello | xargs -I % echo "polo[container_id=%]"'
+        # - command: 'docker run -p {{port}}:80 -d nginxdemos/hello | xargs -I % echo "polo[container_id=%]"'
+        - command: 'docker run -p {{port}}:80 -d nginxdemos/hello'
+          output_variable: 'container_id'
       stop:
         - command: "docker kill {{container_id}}"
     recycle:

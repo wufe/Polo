@@ -37,8 +37,9 @@ type Commands struct {
 }
 
 type Command struct {
-	Command     string   `json:"command"`
-	Environment []string `yaml:"environment,omitempty" json:"environment"`
+	Command        string   `json:"command"`
+	Environment    []string `yaml:"environment,omitempty" json:"environment"`
+	OutputVariable string   `yaml:"output_variable,omitempty" json:"outputVariable"`
 }
 
 type PortConfiguration struct {
