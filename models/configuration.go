@@ -21,10 +21,11 @@ type Headers struct {
 }
 
 type Healthcheck struct {
-	Method       string `json:"method"`
-	URL          string `yaml:"url" json:"url"`
-	Status       int    `json:"status"`
-	RetryTimeout int    `yaml:"retry_timeout" json:"retryTimeout"`
+	Method        string `json:"method"`
+	URL           string `yaml:"url" json:"url"`
+	Status        int    `json:"status"`
+	RetryInterval int    `yaml:"retry_interval" json:"retryInterval"`
+	RetryTimeout  int    `yaml:"retry_timeout" json:"retryTimeout"`
 }
 
 type Recycle struct {
@@ -37,9 +38,10 @@ type Commands struct {
 }
 
 type Command struct {
-	Command        string   `json:"command"`
-	Environment    []string `yaml:"environment,omitempty" json:"environment"`
-	OutputVariable string   `yaml:"output_variable,omitempty" json:"outputVariable"`
+	Command         string   `json:"command"`
+	Environment     []string `yaml:"environment,omitempty" json:"environment"`
+	OutputVariable  string   `yaml:"output_variable,omitempty" json:"outputVariable"`
+	ContinueOnError bool     `yaml:"continue_on_error" json:"continueOnError"`
 }
 
 type PortConfiguration struct {

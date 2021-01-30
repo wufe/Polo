@@ -19,7 +19,7 @@ func (server *HTTPServer) serveDashboard(res http.ResponseWriter, req *http.Requ
 	isDev := true
 	if isDev {
 		req.URL.Path = "/_polo_/static/dashboard.html"
-		server.serveReverseProxy("http://localhost:9000/", res, req) // webpack dev server
+		server.serveReverseProxy("http://localhost:9000/", res, req, nil) // webpack dev server
 	} else {
 		path := filepath.Join(StaticFolder, "dashboard.html")
 		content, err := ioutil.ReadFile(path)

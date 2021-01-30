@@ -83,32 +83,9 @@ func (sessionHandler *SessionHandler) startAcceptingNewSessionRequests() {
 			// Wait here until someone requests some work
 			sessionBuildRequest := <-sessionHandler.sessionRequestChan
 
-			// Check if someone else just requested the same type of session
-			// looking through all open session and comparing services and checkouts
-			sessionAlreadyBeingBuilt := sessionHandler.GetAliveServiceSessionByCheckout(
-				sessionBuildRequest.Checkout,
-				sessionBuildRequest.Service,
-			)
+			sessionBuildResult := sessionHandler.buildSession(sessionBuildRequest)
 
-			var result *SessionBuildResult
-
-			if sessionAlreadyBeingBuilt != nil {
-				log.Infof(
-					"Another session with the UUID %s has already being requested for checkout %s",
-					sessionAlreadyBeingBuilt.UUID,
-					sessionBuildRequest.Checkout,
-				)
-				result = &SessionBuildResult{
-					Result:  SessionBuildResultSucceeded,
-					Session: sessionAlreadyBeingBuilt,
-				}
-			} else {
-				sessionBuildResult := sessionHandler.buildSession(sessionBuildRequest)
-				// Oke, session has been created; Or Nope, it failed miserably
-				result = sessionBuildResult
-			}
-
-			sessionHandler.sessionResponseChan <- result
+			sessionHandler.sessionResponseChan <- sessionBuildResult
 
 		}
 	}()
@@ -118,6 +95,7 @@ func (sessionHandler *SessionHandler) startAcceptingSessionCleanRequests() {
 	go func() {
 		for {
 			sessionToClean := <-sessionHandler.sessionCleanChan
+			sessionToClean.session.LogInfo("Cleaning up session")
 			sessionToCleanIndex := -1
 			for i, session := range sessionHandler.sessions {
 				if session == sessionToClean.session {
@@ -151,7 +129,6 @@ func (sessionHandler *SessionHandler) MarkSessionAsStarted(session *models.Sessi
 	sessionHandler.StartSessionInactivityTimer(session)
 }
 
-// TODO: Call this on net requests
 func (sessionHandler *SessionHandler) MarkSessionAsBeingRequested(session *models.Session) {
 	// Refreshes the inactiveAt field every time someone makes a request to this session
 	session.InactiveAt = time.Now().Add(time.Second * time.Duration(session.Service.Recycle.InactivityTimeout))

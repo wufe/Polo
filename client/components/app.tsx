@@ -7,7 +7,16 @@ const Dashboard = React.lazy(() => import('@/components/dashboard/dashboard'));
 const Session = React.lazy(() => import('@/components/session/session'));
 
 export const App = () => {
-    return <div className="app__component">
+    return <div className="
+        app__component
+        text-black
+        bg-gradient-to-br
+        from-gray-50
+        to-gray-100
+        dark:from-nord-4
+        dark:to-nord-1
+        dark:bg-gray-800
+        dark:text-gray-300">
         <BrowserRouter>
             <React.Suspense fallback="">
                 <Switch>

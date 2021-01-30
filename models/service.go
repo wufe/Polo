@@ -71,6 +71,9 @@ func NewService(service *Service) (*Service, error) {
 	if service.Healthcheck.Status == 0 {
 		service.Healthcheck.Status = 200
 	}
+	if service.Healthcheck.RetryInterval == 0 {
+		service.Healthcheck.RetryInterval = 30
+	}
 	if service.Healthcheck.RetryTimeout == 0 {
 		service.Healthcheck.RetryTimeout = 300 // 10 minutes
 	}

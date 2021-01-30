@@ -39,6 +39,20 @@ type SessionBuildResult struct {
 }
 
 func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *SessionBuildResult {
+	sessionUUID := uuid.NewString()
+	log.Infof("[SESSION:%s] Building session.", sessionUUID)
+	session := models.NewSession(&models.Session{
+		UUID:     sessionUUID,
+		Name:     input.Service.Name,
+		Port:     0,
+		Target:   "",
+		Status:   models.SessionStatusStarting,
+		Done:     make(chan struct{}),
+		Service:  input.Service,
+		Logs:     []models.Log{},
+		Checkout: input.Checkout,
+	})
+	session.LogInfo(fmt.Sprintf("Creating session %s", session.UUID))
 
 	freePort, err := sessionHandler.getFreePort(&input.Service.Port)
 	if err != nil {
@@ -48,9 +62,10 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 			FailingReason: "Could not get a free port",
 		}
 	}
+	session.Port = freePort
+	session.LogInfo(fmt.Sprintf("Found new free port: %d", session.Port))
 
 	checkout, ok := input.Service.ObjectsToHashMap[input.Checkout]
-
 	if !ok {
 		log.Errorf("Could not find the hash of the selected checkout %s", input.Checkout)
 		return &SessionBuildResult{
@@ -58,26 +73,37 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 			FailingReason: fmt.Sprintf("Could not find the hash of the selected checkout %s", input.Checkout),
 		}
 	}
+	session.Checkout = checkout
+	session.LogInfo(fmt.Sprintf("Requested checkout to %s (%s)", input.Checkout, session.Checkout))
 
-	session := models.NewSession(&models.Session{
-		UUID:     uuid.NewString(),
-		Name:     input.Service.Name,
-		Port:     freePort,
-		Target:   strings.ReplaceAll(input.Service.Target, "{{port}}", fmt.Sprint(freePort)),
-		Status:   models.SessionStatusStarting,
-		Done:     make(chan struct{}),
-		Service:  input.Service,
-		Logs:     []string{},
-		Checkout: checkout,
-	})
+	// Check if someone else just requested the same type of session
+	// looking through all open session and comparing services and checkouts
+	sessionAlreadyBeingBuilt := sessionHandler.GetAliveServiceSessionByCheckout(
+		checkout,
+		input.Service,
+	)
+	if sessionAlreadyBeingBuilt != nil {
+		log.Warnf(
+			"Another session with the UUID %s has already being requested for checkout %s",
+			sessionAlreadyBeingBuilt.UUID,
+			input.Checkout,
+		)
+		session.LogWarn(fmt.Sprintf("Another session with the UUID %s has already being requested for checkout %s", sessionAlreadyBeingBuilt.UUID, input.Checkout))
+		return &SessionBuildResult{
+			Result:  SessionBuildResultSucceeded,
+			Session: sessionAlreadyBeingBuilt,
+		}
+	}
+
+	target := strings.ReplaceAll(input.Service.Target, "{{port}}", fmt.Sprint(freePort))
+	session.Target = target
+	session.LogInfo(fmt.Sprintf("Setting session target to %s", session.Target))
 
 	session.Variables["uuid"] = session.UUID
 	session.Variables["name"] = session.Name
 	session.Variables["port"] = fmt.Sprint(session.Port)
 	session.Variables["target"] = session.Target
 	session.Variables["checkout"] = session.Checkout
-
-	log.Infof("[SESSION:%s] Building session.", session.UUID)
 
 	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(session.Service.Healthcheck.RetryTimeout))
 	done := make(chan struct{})
@@ -99,6 +125,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 				select {
 				case <-sessionStartContext.Done():
 					log.Warnf("[SESSION:%s] Execution aborted", session.UUID)
+					session.LogError("Execution aborted (sessionStartContext ended)")
 					sessionHandler.CleanupSession(session, models.SessionStatusStartFailed)
 					return
 				case <-done:
@@ -111,15 +138,18 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 		// Start healthcheck routine
 		// TODO: Add option to start healthchecking after N seconds (sessionStartContext should be updated accordingly)
 		go func() {
+			time.Sleep(5 * time.Second)
 			for {
-				time.Sleep(5 * time.Second)
 				select {
 				case <-sessionStartContext.Done():
 					return
 				default:
 					target, err := url.Parse(session.Target)
 					if err != nil {
+						session.LogError(fmt.Sprintf("Could not parse target URL: %s", err.Error()))
 						log.Errorln("Could not parse target URL", err)
+						cancelSessionStart()
+						return
 					}
 					target.Path = path.Join(target.Path, input.Service.Healthcheck.URL)
 					client := &http.Client{
@@ -153,7 +183,8 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 							return
 						}
 					}
-					log.Infof("[SESSION:%s] Session not ready yet. Retrying in 10 seconds", session.UUID)
+					log.Infof("[SESSION:%s] Session not ready yet. Retrying in %d seconds", session.UUID, session.Service.Healthcheck.RetryInterval)
+					time.Sleep(time.Duration(session.Service.Healthcheck.RetryInterval) * time.Second)
 				}
 			}
 		}()
@@ -164,8 +195,9 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 			case <-sessionStartContext.Done():
 				return
 			default:
-				cmds := []*exec.Cmd{}
+				session.LogStdin(command.Command)
 
+				cmds := []*exec.Cmd{}
 				for _, command := range strings.Split(command.Command, "|") {
 
 					command = strings.TrimSpace(command)
@@ -183,13 +215,19 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 				}
 
 				err := utils.ThroughCallback(utils.ExecuteCommand(cmds...))(func(line string) {
+					session.LogStdout(line)
 					log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line)
 					sessionHandler.parseSessionCommandOuput(session, &command, line)
 				})
 
 				if err != nil {
+					session.LogError(err.Error())
 					log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
-					return
+					if !command.ContinueOnError {
+						session.LogError("Halting")
+						cancelSessionStart()
+						return
+					}
 				}
 			}
 		}
@@ -202,7 +240,6 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 }
 
 func (sessionHandler *SessionHandler) parseSessionCommandOuput(session *models.Session, command *models.Command, output string) {
-	session.Logs = append(session.Logs, output)
 	session.CommandsLogs = append(session.CommandsLogs, output)
 	session.Variables["last_output"] = output
 	re := regexp.MustCompile(`polo\[([^\]]+?)=([^\]]+?)\]`)
@@ -223,8 +260,6 @@ func buildCommand(command string, session *models.Session) string {
 	for key, value := range session.Variables {
 		command = strings.ReplaceAll(command, fmt.Sprintf("{{%s}}", key), fmt.Sprintf("%v", value))
 	}
-
-	fmt.Println(command)
 
 	return command
 }

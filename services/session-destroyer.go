@@ -51,7 +51,7 @@ func (sessionHandler *SessionHandler) DestroySession(session *models.Session) {
 
 				err := utils.ThroughCallback(utils.ExecuteCommand(cmd))(func(line string) {
 					log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line)
-					session.Logs = append(session.Logs, line)
+					session.LogStdout(line)
 				})
 
 				if err != nil {
