@@ -16,7 +16,8 @@ const mode = isProduction ? 'production' : 'development';
 module.exports = env => ({
     mode,
     entry: {
-        index: './client/index.tsx'
+        'manager'       : './client/manager-index.tsx',
+        'session-helper': './client/session-helper-index.tsx',
     },
     output: {
         publicPath: '/_polo_/static/',
@@ -25,7 +26,7 @@ module.exports = env => ({
     },
     devtool: 'source-map',
     resolve: {
-        extensions: ['.ts', '.tsx', '.js', '.scss', '.sass'],
+        extensions: ['.ts', '.tsx', '.js', '.scss', '.sass', '.hbs'],
         plugins: [new TsconfigPathsPlugin({ configFile: path.resolve(__dirname, 'tsconfig.json') })]
     },
     module: {
@@ -59,7 +60,8 @@ module.exports = env => ({
                     'postcss-loader',
                     'sass-loader'
                 ]
-            }
+            },
+            { test: /\.hbs$/, loader: "handlebars-loader" }
 
         ]
     },
@@ -80,8 +82,15 @@ module.exports = env => ({
             chunkFilename: "[id].css",
         }),
         new HtmlWebpackPlugin({
-            filename: './dashboard.html',
-            template: './client/dashboard.html',
+            filename: './session-helper.html',
+            template: './client/session-helper.hbs',
+            inject: false,
+            chunks: ['session-helper']
+        }),
+        new HtmlWebpackPlugin({
+            filename: './manager.html',
+            template: './client/manager.html',
+            chunks: ['manager'],
         }),
         // isDevelopment && new webpack.HotModuleReplacementPlugin(),
 

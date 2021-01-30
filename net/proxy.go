@@ -104,7 +104,9 @@ func (server *HTTPServer) serveReverseProxy(target string, res http.ResponseWrit
 					log.Printf("Error reading body: %v", err)
 				}
 
-				buffer := bytes.NewBufferString(fmt.Sprintf("<div style=\"position:fixed;bottom:0;right:0;padding:30px;z-index:9999;background:white;\">SESSION: %s</div>", session.UUID))
+				buffer := bytes.NewBuffer(server.sessionHelperContent)
+
+				// buffer := bytes.NewBufferString(fmt.Sprintf("<div style=\"position:fixed;bottom:0;right:0;padding:30px;z-index:9999;background:white;\">SESSION: %s</div>", session.UUID))
 				buffer.Write(body)
 
 				res.Body = ioutil.NopCloser(buffer)

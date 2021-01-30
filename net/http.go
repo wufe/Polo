@@ -1,9 +1,11 @@
 package net
 
 import (
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
@@ -25,17 +27,46 @@ const (
 )
 
 type HTTPServer struct {
-	SessionHandler *services.SessionHandler
-	Configuration  *models.RootConfiguration
+	SessionHandler       *services.SessionHandler
+	Configuration        *models.RootConfiguration
+	sessionHelperContent []byte
 }
 
 type ServerRoute string
 
 func NewHTTPServer(port string, sessionHandler *services.SessionHandler, configuration *models.RootConfiguration, wg *sync.WaitGroup) *HTTPServer {
+
 	server := &HTTPServer{
-		SessionHandler: sessionHandler,
-		Configuration:  configuration,
+		SessionHandler:       sessionHandler,
+		Configuration:        configuration,
+		sessionHelperContent: []byte{},
 	}
+
+	// Session helper content retrieval
+	isDev := true
+	if isDev {
+		// If in dev mode, the content is available via webpack dev server
+		go func() {
+			for {
+				resp, err := http.Get("http://localhost:9000/_polo_/static/session-helper.html")
+				if err != nil {
+					log.Errorf("Error while getting session helper: %s", err.Error())
+				} else {
+					body, err := ioutil.ReadAll(resp.Body)
+					if err != nil {
+						log.Errorf("Error while reading session helper response: %s", err.Error())
+					} else {
+						server.sessionHelperContent = body
+					}
+				}
+				resp.Body.Close()
+				time.Sleep(30 * time.Second)
+			}
+		}()
+	} else {
+		// TODO: Implement getting from /static folder
+	}
+
 	wg.Add(1)
 	go func() {
 		router := httprouter.New()

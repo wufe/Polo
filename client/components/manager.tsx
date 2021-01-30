@@ -1,12 +1,12 @@
 import { store } from '@/state/models';
 import React from 'react';
 import { BrowserRouter, Switch, Route } from 'react-router-dom';
-import './app.scss';
+import './manager.scss';
 
 const Dashboard = React.lazy(() => import('@/components/dashboard/dashboard'));
 const Session = React.lazy(() => import('@/components/session/session'));
 
-export const App = () => {
+export const ManagerApp = () => {
     return <div className="
         app__component
         text-black
