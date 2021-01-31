@@ -3,7 +3,6 @@ package services
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -29,6 +28,7 @@ func NewServiceHandler(rootConfiguration *models.RootConfiguration) *ServiceHand
 }
 
 func (serviceHandler *ServiceHandler) InitializeService(service *models.Service) error {
+	log.Infof("[SERVICE:%s] Initializing", service.Name)
 	sessionsFolder, err := filepath.Abs(serviceHandler.configuration.Global.SessionsFolder)
 	if err != nil {
 		return err
@@ -52,13 +52,15 @@ func (serviceHandler *ServiceHandler) InitializeService(service *models.Service)
 	serviceBaseFolder := filepath.Join(serviceFolder, "_base")    // Folder used for performing periodic git fetch --all and/or git log
 	if _, err := os.Stat(serviceBaseFolder); os.IsNotExist(err) { // Service folder does not exist
 
-		cmd := exec.Command("git", "clone", service.Remote, "_base")
-		cmd.Dir = serviceFolder
+		auth, err := service.GetAuth()
+		if err != nil {
+			return err
+		}
 
-		err := utils.ThroughCallback(utils.ExecuteCommand(cmd))(func(line string) {
-			log.Infof("[SERVICE:%s (stdout)> ] %s", service.Name, line)
+		_, err = git.PlainClone(serviceBaseFolder, false, &git.CloneOptions{
+			URL:  service.Remote,
+			Auth: auth,
 		})
-
 		if err != nil {
 			return err
 		}
@@ -128,6 +130,10 @@ func appendWithoutDup(slice []string, elem ...string) {
 
 func (serviceHandler *ServiceHandler) fetchServiceRemote(service *models.Service) {
 
+	// TODO: Handle all these errors
+
+	auth, err := service.GetAuth()
+
 	// Open repository
 	repo, err := git.PlainOpen(service.ServiceBaseFolder)
 	serviceHandler.defaultServiceErrorLog(service, err)
@@ -138,6 +144,7 @@ func (serviceHandler *ServiceHandler) fetchServiceRemote(service *models.Service
 	// Fetch
 	err = repo.Fetch(&git.FetchOptions{
 		RefSpecs: []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
+		Auth:     auth,
 	})
 	serviceHandler.defaultServiceErrorLog(service, err, git.NoErrAlreadyUpToDate)
 	if err != nil && err != git.NoErrAlreadyUpToDate {
@@ -153,9 +160,7 @@ func (serviceHandler *ServiceHandler) fetchServiceRemote(service *models.Service
 
 	// Branches
 	refs, err := remote.List(&git.ListOptions{
-		// Auth: &http.BasicAuth{
-		// 	Username: ,
-		// }
+		Auth: auth,
 	})
 	serviceHandler.defaultServiceErrorLog(service, err)
 

@@ -6,9 +6,13 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/transport"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 )
 
 type Service struct {
+	Auth                  Auth                       `json:"-"`
 	Name                  string                     `json:"name"`
 	Remote                string                     `json:"remote"`
 	Target                string                     `json:"target"`
@@ -29,6 +33,23 @@ type Service struct {
 	Tags                  []string                   `yaml:"-" json:"-"`
 	Commits               []string                   `yaml:"-" json:"-"`
 	CommitMap             map[string]*object.Commit  `yaml:"-" json:"-"`
+}
+
+type Auth struct {
+	Basic BasicAuth `json:"basic"`
+	Token string    `json:"token"`
+	SSH   SSHAuth   `yaml:"ssh" json:"ssh"`
+}
+
+type BasicAuth struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type SSHAuth struct {
+	User       string `json:"user"`
+	PrivateKey string `yaml:"private_key" json:"privateKey"`
+	Password   string `json:"password"`
 }
 
 type ServiceCommand struct {
@@ -102,6 +123,11 @@ func NewService(service *Service) (*Service, error) {
 	if service.Port.Except == nil {
 		service.Port.Except = []int{}
 	}
+	if service.Auth.SSH != (SSHAuth{}) {
+		if service.Auth.SSH.User == "" {
+			service.Auth.SSH.User = "git"
+		}
+	}
 	service.CommandChan = make(chan *ServiceCommand)
 	service.CommandResponseChan = make(chan *ServiceCommandOutput)
 	service.ObjectsToHashMap = make(map[string]string)
@@ -111,4 +137,34 @@ func NewService(service *Service) (*Service, error) {
 	service.Commits = []string{}
 	service.CommitMap = make(map[string]*object.Commit)
 	return service, nil
+}
+
+func (service *Service) GetAuth() (transport.AuthMethod, error) {
+	if service.Auth == (Auth{}) {
+		return nil, nil
+	}
+	if service.Auth.Basic != (BasicAuth{}) {
+		return &http.BasicAuth{
+			Username: service.Auth.Basic.Username,
+			Password: service.Auth.Basic.Password,
+		}, nil
+	}
+	if service.Auth.Token != "" {
+		return &http.BasicAuth{
+			Username: "_",
+			Password: service.Auth.Token,
+		}, nil
+	}
+	if service.Auth.SSH != (SSHAuth{}) {
+		publicKeys, err := ssh.NewPublicKeysFromFile(
+			service.Auth.SSH.User,
+			service.Auth.SSH.PrivateKey,
+			service.Auth.SSH.Password,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return publicKeys, nil
+	}
+	return nil, nil
 }

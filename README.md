@@ -29,7 +29,6 @@ You can find an example of a configuration file with all the options in the fold
 ## Known issues / missing features
 
 - Piped commands not working (e.g. `docker run ... | xargs -I %s echo "%i"` )  
-- Authorization for git commands missing
 - Improve manager design
 - Optional target in configuration
 - Implement concurrent sessions globally and in services

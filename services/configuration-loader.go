@@ -97,7 +97,7 @@ func unmarshalConfigurations(files []string) (*models.RootConfiguration, *Servic
 	for _, service := range rootConfiguration.Services {
 		err := serviceHandler.InitializeService(service)
 		if err != nil {
-			log.Fatalln(fmt.Sprintf("Could not provision service %s", service.Name))
+			log.Fatalln(fmt.Sprintf("Could not provision service %s: %s", service.Name, err.Error()))
 			panic(err)
 		}
 	}

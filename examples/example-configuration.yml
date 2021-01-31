@@ -10,13 +10,13 @@ services:
       - pattern: ^/path/(.+)$
         to: http://127.0.0.1:{{port2}}/$1
         host: host2.example.com
-    auth: # Not implemented yet
+    auth:
       basic:
         username: ""
         password: ""
-      pat:
-        token: ""
+      token: ""
       ssh:
+        user: ""
         private_key: ""
         password: ""
     host: "hello-world.dev" # Not implemented yet

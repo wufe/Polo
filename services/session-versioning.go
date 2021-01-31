@@ -18,12 +18,19 @@ func (sessionHandler *SessionHandler) buildSessionCommitStructure(session *model
 	checkout := sanitize.Name(session.Checkout)
 	sessionCommitFolder := filepath.Join(session.Service.ServiceFolder, checkout)
 
+	auth, err := session.Service.GetAuth()
+	if err != nil {
+		session.LogError(fmt.Sprintf("Error while providing authentication: %s", err.Error()))
+		return "", err
+	}
+
 	var repo *git.Repository
 
 	if _, err := os.Stat(sessionCommitFolder); os.IsNotExist(err) {
 		session.LogInfo(fmt.Sprintf("Cloning from remote %s into %s", session.Service.Remote, sessionCommitFolder))
 		repo, err = git.PlainClone(sessionCommitFolder, false, &git.CloneOptions{
-			URL: session.Service.Remote,
+			URL:  session.Service.Remote,
+			Auth: auth,
 		})
 		if err != nil {
 			session.LogError(fmt.Sprintf("Error while cloning: %s", err.Error()))
@@ -38,9 +45,10 @@ func (sessionHandler *SessionHandler) buildSessionCommitStructure(session *model
 	}
 
 	session.LogInfo("Fetching from remote")
-	err := repo.Fetch(&git.FetchOptions{
+	err = repo.Fetch(&git.FetchOptions{
 		RefSpecs: []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
 		Force:    true,
+		Auth:     auth,
 	})
 	if err != nil && err != git.NoErrAlreadyUpToDate {
 		session.LogError(fmt.Sprintf("Error while fetching from remote: %s", err.Error()))
