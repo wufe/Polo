@@ -13,3 +13,11 @@ export function retrieveSessionAPI(uuid: string) {
 export function trackSessionAPI(uuid: string) {
     return buildRequest<void>(() => Axios.post(`/_polo_/api/session/${uuid}/track`));
 }
+
+export function untrackSessionAPI() {
+    return buildRequest<void>(() => Axios.delete(`/_polo_/api/session/track`))
+}
+
+export function retrieveSessionAgeAPI(uuid: string) {
+    return buildRequest<number>(() => Axios.get(`/_polo_/api/session/${uuid}/age`));
+}

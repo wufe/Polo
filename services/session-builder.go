@@ -105,6 +105,8 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 	session.Variables["target"] = session.Target
 	session.Variables["checkout"] = session.Checkout
 
+	sessionHandler.sessions = append(sessionHandler.sessions, session)
+
 	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(session.Service.Healthcheck.RetryTimeout))
 	done := make(chan struct{})
 
@@ -195,14 +197,12 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 			case <-sessionStartContext.Done():
 				return
 			default:
-				session.LogStdin(command.Command)
+				builtCommand := buildCommand(command.Command, session)
+				session.LogStdin(builtCommand)
 
 				cmds := []*exec.Cmd{}
-				for _, command := range strings.Split(command.Command, "|") {
+				for _, commandProg := range strings.Split(builtCommand, "|") {
 
-					command = strings.TrimSpace(command)
-
-					commandProg := buildCommand(command, session)
 					progAndArgs := strings.Split(commandProg, " ")
 
 					cmd := exec.CommandContext(sessionStartContext, progAndArgs[0], progAndArgs[1:]...)
@@ -260,8 +260,7 @@ func buildCommand(command string, session *models.Session) string {
 	for key, value := range session.Variables {
 		command = strings.ReplaceAll(command, fmt.Sprintf("{{%s}}", key), fmt.Sprintf("%v", value))
 	}
-
-	return command
+	return strings.TrimSpace(command)
 }
 
 func (sessionHandler *SessionHandler) getFreePort(portConfiguration *models.PortConfiguration) (int, error) {

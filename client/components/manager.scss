@@ -21,6 +21,7 @@ h6 {
 
 body {
     min-height: 100vh;
+    min-width: 0;
     display: flex;
     align-items: stretch;
     background-image: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%);
@@ -30,6 +31,7 @@ body {
     flex: 1;
     display: flex;
     align-items: stretch;
+    min-width: 0;
 }
 
 .app__component {
@@ -39,6 +41,7 @@ body {
     align-items: stretch;
     justify-content: center;
     padding: 20px;
+    min-width: 0;
 }
 
 @tailwind base;

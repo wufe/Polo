@@ -2,6 +2,7 @@ package net
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/models"
+	"github.com/wufe/polo/utils"
 )
 
 const (
@@ -19,8 +21,7 @@ const (
 
 func (server *HTTPServer) getReverseProxyHandlerFunc() http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		isDev := true
-		if isDev && (strings.HasPrefix(req.URL.Path, string(ServerRouteRoot)) ||
+		if utils.IsDev() && (strings.HasPrefix(req.URL.Path, string(ServerRouteRoot)) ||
 			strings.HasPrefix(req.URL.Path, "/sockjs-node")) {
 			server.serveReverseProxy("http://localhost:9000/", res, req, nil) // Webpack dev server
 		} else {
@@ -95,6 +96,7 @@ func (server *HTTPServer) serveReverseProxy(target string, res http.ResponseWrit
 	proxy := httputil.NewSingleHostReverseProxy(url)
 
 	if session != nil {
+		server.SessionHandler.MarkSessionAsBeingRequested(session)
 		proxy.ModifyResponse = func(res *http.Response) error {
 
 			if res.Header.Get("Content-Type") == "text/html" {
@@ -104,7 +106,14 @@ func (server *HTTPServer) serveReverseProxy(target string, res http.ResponseWrit
 					log.Printf("Error reading body: %v", err)
 				}
 
-				buffer := bytes.NewBuffer(server.sessionHelperContent)
+				serializedSession, err := json.Marshal(session)
+				if err != nil {
+					serializedSession = []byte(`{}`)
+				}
+
+				sessionHelper := strings.ReplaceAll(server.sessionHelperContent, "%%currentSession%%", string(serializedSession))
+
+				buffer := bytes.NewBufferString(sessionHelper)
 
 				// buffer := bytes.NewBufferString(fmt.Sprintf("<div style=\"position:fixed;bottom:0;right:0;padding:30px;z-index:9999;background:white;\">SESSION: %s</div>", session.UUID))
 				buffer.Write(body)
@@ -123,7 +132,6 @@ func (server *HTTPServer) serveReverseProxy(target string, res http.ResponseWrit
 	req.Host = url.Host
 
 	if session != nil {
-		server.SessionHandler.MarkSessionAsBeingRequested(session)
 		log.Printf("[PROXY -> SESSION:%s] %s", session.UUID, req.URL.RequestURI())
 	} else {
 		log.Printf("[PROXY -> _POLO_] %s", req.URL.RequestURI())

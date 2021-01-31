@@ -35,7 +35,8 @@ type Session struct {
 	Logs         []Log             `json:"logs"`
 	Checkout     string            `json:"checkout"` // The object to be checked out (branch/tag/commit id)
 	Done         chan struct{}     `json:"-"`
-	InactiveAt   time.Time         `json:"inactiveAt"`
+	MaxAge       int               `json:"maxAge"`
+	InactiveAt   time.Time         `json:"-"`
 	Folder       string            `json:"folder"`
 	CommandsLogs []string          `json:"commandsLogs"`
 	Variables    map[string]string `json:"variables"`

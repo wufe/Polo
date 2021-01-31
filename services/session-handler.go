@@ -40,9 +40,6 @@ func NewSessionHandler(configuration *models.RootConfiguration, serviceHandler *
 func (sessionHandler *SessionHandler) RequestNewSession(buildInput *SessionBuildInput) *SessionBuildResult {
 	sessionHandler.sessionRequestChan <- buildInput
 	buildResult := <-sessionHandler.sessionResponseChan
-	if buildResult.Result == SessionBuildResultSucceeded {
-		sessionHandler.sessions = append(sessionHandler.sessions, buildResult.Session)
-	}
 	return buildResult
 }
 
@@ -132,6 +129,7 @@ func (sessionHandler *SessionHandler) MarkSessionAsStarted(session *models.Sessi
 func (sessionHandler *SessionHandler) MarkSessionAsBeingRequested(session *models.Session) {
 	// Refreshes the inactiveAt field every time someone makes a request to this session
 	session.InactiveAt = time.Now().Add(time.Second * time.Duration(session.Service.Recycle.InactivityTimeout))
+	session.MaxAge = session.Service.Recycle.InactivityTimeout
 }
 
 func (sessionHandler *SessionHandler) StartSessionInactivityTimer(session *models.Session) {
@@ -142,6 +140,7 @@ func (sessionHandler *SessionHandler) StartSessionInactivityTimer(session *model
 				sessionHandler.DestroySession(session)
 				return
 			}
+			session.MaxAge--
 			time.Sleep(1 * time.Second)
 		}
 	}()

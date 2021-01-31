@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/models"
 	"github.com/wufe/polo/services"
+	"github.com/wufe/polo/utils"
 )
 
 const (
@@ -21,7 +22,9 @@ const (
 	ServerRouteAPIServices           ServerRoute = "/_polo_/api/service/"
 	ServerRouteAPISession            ServerRoute = "/_polo_/api/session/"
 	ServerRouteAPISessionByUUID      ServerRoute = "/_polo_/api/session/:uuid"
+	ServerRouteAPISessionAgeByUUID   ServerRoute = "/_polo_/api/session/:uuid/age"
 	ServerRouteAPITrackSessionByUUID ServerRoute = "/_polo_/api/session/:uuid/track"
+	ServerRouteAPIUntrackSession     ServerRoute = "/_polo_/api/session/track"
 
 	StaticFolder string = "./static"
 )
@@ -29,7 +32,7 @@ const (
 type HTTPServer struct {
 	SessionHandler       *services.SessionHandler
 	Configuration        *models.RootConfiguration
-	sessionHelperContent []byte
+	sessionHelperContent string
 }
 
 type ServerRoute string
@@ -39,12 +42,11 @@ func NewHTTPServer(port string, sessionHandler *services.SessionHandler, configu
 	server := &HTTPServer{
 		SessionHandler:       sessionHandler,
 		Configuration:        configuration,
-		sessionHelperContent: []byte{},
+		sessionHelperContent: "",
 	}
 
 	// Session helper content retrieval
-	isDev := true
-	if isDev {
+	if utils.IsDev() {
 		// If in dev mode, the content is available via webpack dev server
 		go func() {
 			for {
@@ -56,15 +58,27 @@ func NewHTTPServer(port string, sessionHandler *services.SessionHandler, configu
 					if err != nil {
 						log.Errorf("Error while reading session helper response: %s", err.Error())
 					} else {
-						server.sessionHelperContent = body
+						server.sessionHelperContent = string(body)
 					}
+					resp.Body.Close()
 				}
-				resp.Body.Close()
+
 				time.Sleep(30 * time.Second)
 			}
 		}()
 	} else {
-		// TODO: Implement getting from /static folder
+		file, err := http.Dir(StaticFolder).Open("session-helper.html")
+		if err != nil {
+			log.Errorf("Error while getting session helper: %s", err.Error())
+		} else {
+			defer file.Close()
+			content, err := ioutil.ReadAll(file)
+			if err != nil {
+				log.Errorf("Error while reading session helper content: %s", err.Error())
+			} else {
+				server.sessionHelperContent = string(content)
+			}
+		}
 	}
 
 	wg.Add(1)
@@ -77,9 +91,11 @@ func NewHTTPServer(port string, sessionHandler *services.SessionHandler, configu
 		router.POST(string(ServerRouteAPISession), server.postSessionAPI)
 		router.GET(string(ServerRouteAPISession), server.getAllSessionsAPI)
 		router.GET(string(ServerRouteAPISessionByUUID), server.getSessionByUUIDAPI)
+		router.GET(string(ServerRouteAPISessionAgeByUUID), server.getSessionAgeByUUIDAPI)
 		router.POST(string(ServerRouteAPITrackSessionByUUID), server.postTrackSessionByUUIDAPI)
+		router.DELETE(string(ServerRouteAPIUntrackSession), server.postUntrackSessionAPI)
 
-		// router.ServeFiles(string(ServerRouteStatic), http.Dir(StaticFolder))
+		server.serveStatic(router)
 
 		router.NotFound = server.getReverseProxyHandlerFunc()
 

@@ -1,60 +1,67 @@
 import { APIPayload, APIRequestResult } from "@/api/common";
 import { retrieveServicesAPI } from "@/api/services";
 import { retrieveAllSessionsAPI, retrieveSessionAPI } from "@/api/session";
-import { types, flow, cast, Instance } from "mobx-state-tree";
+import { values } from "mobx";
+import { types, flow, cast, Instance, getType, applySnapshot, applyPatch } from "mobx-state-tree";
 import { ServiceModel, IService } from "./service-model";
 import { SessionModel, ISession } from "./session-model";
 
 export const AppModel = types.model({
-    services: types.optional(types.array(ServiceModel), []),
     session: types.maybeNull(SessionModel),
-    sessions: types.optional(types.array(SessionModel), []),
+    sessions: types.map(SessionModel),
+    services: types.map(ServiceModel)
 })
-    .actions(self => {
-        const retrieveServices = flow(function* retrieveServices() {
-            const services: APIPayload<IService[]> = yield retrieveServicesAPI();
-            if (services.result === APIRequestResult.SUCCEEDED) {
-                self.services = cast(services.payload);
-            }
-            return services;
-        });
-        return { retrieveServices };
-    })
-    .actions(self => {
+.actions(self => {
+    const retrieveServices = flow(function* retrieveServices() {
+        const services: APIPayload<IService[]> = yield retrieveServicesAPI();
+        if (services.result === APIRequestResult.SUCCEEDED) {
 
-        const retrieveAllSessions = flow(function* retrieveAllSessions() {
-            const sessions: APIPayload<ISession[]> = yield retrieveAllSessionsAPI();
-            if (sessions.result === APIRequestResult.SUCCEEDED) {
-                self.sessions = cast(sessions.payload);
-            }
-            return sessions;
-        });
+            const servicesMap = services.payload.reduce<{[serviceName: string]: IService}>((acc, service) => {
+                acc[service.name] = service;
+                return acc;
+            }, {});
 
-        const retrieveSession = flow(function* retrieveSession(uuid: string) {
-            self.session = null
-            const session: APIPayload<ISession> = yield retrieveSessionAPI(uuid);
-            if (session.result == APIRequestResult.SUCCEEDED) {
-                self.session = session.payload;
-            }
-            return session;
-        });
-        return { retrieveSession, retrieveAllSessions };
-    })
-    .views(self => ({
-        get sessionsByServiceName() {
+            self.services.replace(servicesMap);
+        }
+        return services;
+    });
 
-            return self.sessions.reduce<{ [serviceName: string]: ISession[] }>((accumulator, session) => {
+    const retrieveAllSessions = flow(function* retrieveAllSessions() {
+        const sessions: APIPayload<ISession[]> = yield retrieveAllSessionsAPI();
+        if (sessions.result === APIRequestResult.SUCCEEDED) {
+            const sessionsMap = sessions.payload.reduce<{ [serviceName: string]: ISession }>((acc, session) => {
+                acc[session.uuid] = session;
+                return acc;
+            }, {});
+
+            self.sessions.replace(sessionsMap);
+        }
+        return sessions;
+    });
+
+    const retrieveSession = flow(function* retrieveSession(uuid: string) {
+        const session: APIPayload<ISession> = yield retrieveSessionAPI(uuid);
+        if (session.result == APIRequestResult.SUCCEEDED) {
+            self.session = session.payload;
+        }
+        return session;
+    });
+    return { retrieveSession, retrieveAllSessions, retrieveServices };
+})
+.views(self => ({
+    get sessionsByServiceName() {
+        return (values(self.sessions) as any as ISession[])
+            .reduce<{ [serviceName: string]: ISession[] }>((accumulator, session: ISession) => {
                 const serviceName = session.service.name;
                 if (!accumulator[serviceName]) accumulator[serviceName] = [];
                 accumulator[serviceName].push(session);
                 return accumulator
             }, {});
-
-        }
-    }));
+    }
+}));
 
 export interface IApp extends Instance<typeof AppModel> { }
 
 export const initialAppState = AppModel.create({
-    services: []
+    
 });

@@ -13,6 +13,9 @@ module.exports = {
     },
     fontFamily: {
       'quicksand': ['Quicksand', 'sans-serif']
+    },
+    minWidth: {
+      "16": "4rem"
     }
   },
   variants: {

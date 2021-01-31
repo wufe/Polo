@@ -11,13 +11,13 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/wufe/polo/models"
 	"github.com/wufe/polo/services"
+	"github.com/wufe/polo/utils"
 
 	log "github.com/sirupsen/logrus"
 )
 
 func (server *HTTPServer) serveDashboard(res http.ResponseWriter, req *http.Request) {
-	isDev := true
-	if isDev {
+	if utils.IsDev() {
 		req.URL.Path = "/_polo_/static/manager.html"
 		server.serveReverseProxy("http://localhost:9000/", res, req, nil) // webpack dev server
 	} else {
@@ -117,6 +117,43 @@ func (server *HTTPServer) getSessionByUUIDAPI(
 	res.Write(resString)
 }
 
+func (server *HTTPServer) getSessionAgeByUUIDAPI(
+	res http.ResponseWriter,
+	req *http.Request,
+	ps httprouter.Params,
+) {
+	uuid := ps.ByName("uuid")
+
+	var foundSession *models.Session
+	for _, session := range server.SessionHandler.GetAllAliveSessions() {
+		if session.UUID == uuid {
+			foundSession = session
+		}
+	}
+
+	if foundSession == nil {
+		resString, resStatus := buildResponse((ResponseObjectWithFailingReason{
+			ResponseObject: ResponseObject{
+				Message: "Not found",
+			},
+		}), 404)
+		res.Header().Add("Content-Type", "application/json")
+		res.WriteHeader(resStatus)
+		res.Write(resString)
+		return
+	}
+
+	resString, resStatus := buildResponse(ResponseObjectWithResult{
+		ResponseObject: ResponseObject{
+			Message: "Ok",
+		},
+		Result: foundSession.MaxAge,
+	}, 200)
+	res.Header().Add("Content-Type", "application/json")
+	res.WriteHeader(resStatus)
+	res.Write(resString)
+}
+
 func (server *HTTPServer) postTrackSessionByUUIDAPI(
 	res http.ResponseWriter,
 	req *http.Request,
@@ -149,6 +186,22 @@ func (server *HTTPServer) postTrackSessionByUUIDAPI(
 		},
 	}, 200)
 	server.trackSession(res, foundSession)
+	res.Header().Add("Content-Type", "application/json")
+	res.WriteHeader(resStatus)
+	res.Write(resString)
+}
+
+func (server *HTTPServer) postUntrackSessionAPI(
+	res http.ResponseWriter,
+	req *http.Request,
+	ps httprouter.Params,
+) {
+	server.untrackSession(res)
+	resString, resStatus := buildResponse(ResponseObjectWithResult{
+		ResponseObject: ResponseObject{
+			Message: "Ok",
+		},
+	}, 200)
 	res.Header().Add("Content-Type", "application/json")
 	res.WriteHeader(resStatus)
 	res.Write(resString)

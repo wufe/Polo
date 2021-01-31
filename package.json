@@ -5,6 +5,11 @@
   "author": "Simone Bembi <simone.bembi@gmail.com>",
   "license": "MIT",
   "scripts": {
+    "start": "run-s compile start:proxy",
+    "start:prod": "run-s compile start:proxy:prod",
+    "start:proxy": "cross-env GO_ENV=development ./polo",
+    "start:proxy:prod": "./polo",
+    "compile": "go build",
     "build": "cross-env NODE_ENV=development webpack --config webpack.config.js",
     "build:prod": "cross-env NODE_ENV=production webpack --config webpack.config.js",
     "clean": "rimraf static",
