@@ -1,12 +1,13 @@
-import { cast, getSnapshot } from 'mobx-state-tree';
+import { cast, getSnapshot, getType } from 'mobx-state-tree';
 import React, { createContext } from 'react';
 import { render } from 'react-dom';
+import { IAPISession } from './api/session';
 import { SessionHelperApp } from './components/session-helper';
-import { AppModel, createStore, initialAppState, ISession } from './state/models';
+import { AppModel, castAPISessionToSessionModel, createStore, initialAppState, ISession } from './state/models';
 
 const store = createStore({
     app: AppModel.create({
-        session: window.currentSession as any
+        session: castAPISessionToSessionModel(window.currentSession) as any
     })
 });
 const context = createContext(store);
@@ -15,6 +16,6 @@ render(<SessionHelperApp store={store} />, document.getElementById('polo-session
 
 declare global {
     interface Window {
-        currentSession: ISession;
+        currentSession: IAPISession;
     }
 }
