@@ -42,6 +42,7 @@ type Command struct {
 	Environment     []string `yaml:"environment,omitempty" json:"environment"`
 	OutputVariable  string   `yaml:"output_variable,omitempty" json:"outputVariable"`
 	ContinueOnError bool     `yaml:"continue_on_error" json:"continueOnError"`
+	WorkingDir      string   `yaml:"working_dir" json:"workingDir"`
 }
 
 type PortConfiguration struct {

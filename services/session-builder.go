@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -165,7 +166,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 						os.Environ(),
 						cmd.Env...,
 					)
-					cmd.Dir = workingDir
+					cmd.Dir = sessionHandler.getWorkingDir(workingDir, command.WorkingDir)
 					cmds = append(cmds, cmd)
 				}
 
@@ -246,6 +247,16 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 		Result:  SessionBuildResultSucceeded,
 		Session: session,
 	}
+}
+
+func (sessionHandler *SessionHandler) getWorkingDir(baseDir string, commandWorkingDir string) string {
+	if commandWorkingDir == "" {
+		return baseDir
+	}
+	if strings.HasPrefix(commandWorkingDir, "./") || !strings.HasPrefix(commandWorkingDir, "/") {
+		return filepath.Join(baseDir, commandWorkingDir)
+	}
+	return commandWorkingDir
 }
 
 func (sessionHandler *SessionHandler) parseSessionCommandOuput(session *models.Session, command *models.Command, output string) {

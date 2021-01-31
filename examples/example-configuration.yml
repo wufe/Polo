@@ -41,7 +41,7 @@ services:
           environment:
             - ENV=development
           continue_on_error: false
-          working_dir: /nginx-hello # Not implemented yet
+          working_dir: /nginx-hello
         - command: 'docker run -p {{port2}}:80 -d nginxdemos/hello | xargs -I % echo "polo[container_id_2=%]"' # Pipe not working yet
       stop: # At least one stop command is mandatory
         - command: "docker kill {{container_id}}"

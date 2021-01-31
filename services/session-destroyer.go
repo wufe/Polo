@@ -56,7 +56,7 @@ func (sessionHandler *SessionHandler) DestroySession(session *models.Session) {
 					os.Environ(),
 					cmd.Env...,
 				)
-				cmd.Dir = session.Folder
+				cmd.Dir = sessionHandler.getWorkingDir(session.Folder, command.WorkingDir)
 
 				err = utils.ThroughCallback(utils.ExecuteCommand(cmd))(func(line string) {
 					log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line)
