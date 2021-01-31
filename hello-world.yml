@@ -27,6 +27,22 @@ services:
       inactivity_timeout: 20
     healthcheck:
       retry_interval: 5
+  - name: hello-world-short-lifespan-two-containers
+    remote: "https://github.com/nginxinc/NGINX-Demos"
+    target: "http://127.0.0.1:{{port}}"
+    commands:
+      start:
+        - command: 'docker run -p {{port}}:80 -d nginxdemos/hello'
+          output_variable: 'container_id'
+        - command: 'docker run -p {{port2}}:80 -d nginxdemos/hello'
+          output_variable: 'container_id_2'
+      stop:
+        - command: "docker kill {{container_id}}"
+        - command: "docker kill {{container_id_2}}"
+    recycle:
+      inactivity_timeout: 20
+    healthcheck:
+      retry_interval: 5
   - name: hello-world-long-starttime
     remote: "https://github.com/nginxinc/NGINX-Demos"
     target: "http://127.0.0.1:{{port}}"

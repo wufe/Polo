@@ -197,7 +197,16 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 			case <-sessionStartContext.Done():
 				return
 			default:
-				builtCommand := buildCommand(command.Command, session)
+				builtCommand, err := sessionHandler.buildCommand(command.Command, session)
+				if err != nil {
+					session.LogError(err.Error())
+					log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
+					if !command.ContinueOnError {
+						session.LogError("Halting")
+						cancelSessionStart()
+						return
+					}
+				}
 				session.LogStdin(builtCommand)
 
 				cmds := []*exec.Cmd{}
@@ -214,7 +223,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 					cmds = append(cmds, cmd)
 				}
 
-				err := utils.ThroughCallback(utils.ExecuteCommand(cmds...))(func(line string) {
+				err = utils.ThroughCallback(utils.ExecuteCommand(cmds...))(func(line string) {
 					session.LogStdout(line)
 					log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line)
 					sessionHandler.parseSessionCommandOuput(session, &command, line)
@@ -256,11 +265,28 @@ func (sessionHandler *SessionHandler) parseSessionCommandOuput(session *models.S
 	}
 }
 
-func buildCommand(command string, session *models.Session) string {
+func (sessionHandler *SessionHandler) buildCommand(command string, session *models.Session) (string, error) {
+	sessionHandler.addPortsOnDemand(command, session)
 	for key, value := range session.Variables {
 		command = strings.ReplaceAll(command, fmt.Sprintf("{{%s}}", key), fmt.Sprintf("%v", value))
 	}
-	return strings.TrimSpace(command)
+	return strings.TrimSpace(command), nil
+}
+
+func (sessionHandler *SessionHandler) addPortsOnDemand(input string, session *models.Session) (string, error) {
+	re := regexp.MustCompile(`{{(port(.+?))}}`)
+	matches := re.FindAllStringSubmatch(input, -1)
+	for _, match := range matches {
+		portVariable := match[1]
+		if _, ok := session.Variables[portVariable]; !ok {
+			port, err := sessionHandler.getFreePort(&session.Service.Port)
+			if err != nil {
+				return "", err
+			}
+			session.Variables[portVariable] = fmt.Sprint(port)
+		}
+	}
+	return input, nil
 }
 
 func (sessionHandler *SessionHandler) getFreePort(portConfiguration *models.PortConfiguration) (int, error) {
