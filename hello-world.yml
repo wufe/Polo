@@ -10,7 +10,7 @@ services:
       stop:
         - command: "docker kill {{container_id}}"
     recycle:
-      inactivity_timeout: 3000
+      inactivity_timeout: 60
     healthcheck:
       retry_interval: 5
 

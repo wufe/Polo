@@ -1,7 +1,7 @@
 global:
   port: 59876
   sessions_folder: ./.sessions
-  max_concurrent_sessions: 10  # Not implemented yet
+  max_concurrent_sessions: 10
 services:
   - name: hello-world # Mandatory
     remote: https://github.com/nginxinc/NGINX-Demos # Mandatory
@@ -33,7 +33,7 @@ services:
       retry_timeout: 300 # in seconds
     recycle:
       inactivity_timeout: 120 # in seconds
-    max_concurrent_sessions: 5 # Not implemented yet
+    max_concurrent_sessions: 5
     commands:
       start: # At least one start command is mandatory
         - command: 'docker run -p {{port}}:80 -d nginxdemos/hello' # Mandatory

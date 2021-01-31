@@ -40,6 +40,21 @@ type SessionBuildResult struct {
 }
 
 func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *SessionBuildResult {
+
+	if sessionHandler.getTotalNumberOfSessions() >= sessionHandler.configuration.Global.MaxConcurrentSessions {
+		return &SessionBuildResult{
+			Result:        SessionBuildResultFailed,
+			FailingReason: "Reached global maximum concurrent sessions",
+		}
+	}
+
+	if sessionHandler.getNumberOfSessionsByService(input.Service) >= input.Service.MaxConcurrentSessions {
+		return &SessionBuildResult{
+			Result:        SessionBuildResultFailed,
+			FailingReason: "Reached maximum concurrent sessions for this service",
+		}
+	}
+
 	sessionUUID := uuid.NewString()
 	log.Infof("[SESSION:%s] Building session.", sessionUUID)
 	session := models.NewSession(&models.Session{
@@ -316,4 +331,24 @@ L:
 		foundPort = freePort
 	}
 	return foundPort, nil
+}
+
+func (sessionHandler *SessionHandler) getTotalNumberOfSessions() int {
+	count := 0
+	for _, session := range sessionHandler.sessions {
+		if session.Status.IsAlive() {
+			count++
+		}
+	}
+	return count
+}
+
+func (sessionHandler *SessionHandler) getNumberOfSessionsByService(service *models.Service) int {
+	count := 0
+	for _, session := range sessionHandler.sessions {
+		if session.Service == service && session.Status.IsAlive() {
+			count++
+		}
+	}
+	return count
 }

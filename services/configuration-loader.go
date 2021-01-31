@@ -94,6 +94,10 @@ func unmarshalConfigurations(files []string) (*models.RootConfiguration, *Servic
 		rootConfiguration.Global.SessionsFolder = "./.sessions"
 	}
 
+	if rootConfiguration.Global.MaxConcurrentSessions == 0 {
+		rootConfiguration.Global.MaxConcurrentSessions = 10
+	}
+
 	for _, service := range rootConfiguration.Services {
 		err := serviceHandler.InitializeService(service)
 		if err != nil {

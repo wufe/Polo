@@ -11,10 +11,14 @@ export enum APIRequestFailReason {
     SERVER_ERROR = "server-error",
 }
 
-export type APIPayload<T = void> = {
-    result : APIRequestResult.FAILED;
-    reason?: APIRequestFailReason;
-} | {
+export type APIPayload<T = void> = APIFailingPayload | APISucceedingPayload<T>;
+
+export type APIFailingPayload = {
+    result: APIRequestResult.FAILED;
+    reason?: APIRequestFailReason | string;
+}
+
+export type APISucceedingPayload<T = any> = {
     result: APIRequestResult.SUCCEEDED;
     payload: T;
 }
@@ -31,7 +35,7 @@ export type APIReponseObjectFailed = {
     reason: string;
 };
 
-export function isAxiosError(e: Error): e is AxiosError {
+export function isAxiosError<T = any>(e: Error): e is AxiosError<T> {
     return 'isAxiosError' in e;
 }
 
@@ -45,10 +49,12 @@ export async function buildRequest<T>(
             payload: (response.data as APIResponseObejctSucceeded<T>).result
         };
     } catch (e) {
-        let reason: APIRequestFailReason = APIRequestFailReason.UNKNOWN;
-        if (isAxiosError(e)) {
+        let reason: APIRequestFailReason | string = APIRequestFailReason.UNKNOWN;
+        if (isAxiosError<APIFailingPayload>(e)) {
             if (e.response?.status == 404) {
                 reason = APIRequestFailReason.NOT_FOUND;
+            } else {
+                reason = e.response?.data.reason;
             }
         }
         return {

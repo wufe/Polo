@@ -10,10 +10,11 @@ type RootConfiguration struct {
 }
 
 type Global struct {
-	Port           int
-	TLSCertFile    string `yaml:"tls_cert,omitempty"`
-	TLSKeyFile     string `yaml:"tls_key,omitempty"`
-	SessionsFolder string `yaml:"sessions_folder"`
+	Port                  int
+	TLSCertFile           string `yaml:"tls_cert,omitempty"`
+	TLSKeyFile            string `yaml:"tls_key,omitempty"`
+	SessionsFolder        string `yaml:"sessions_folder"`
+	MaxConcurrentSessions int    `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
 }
 
 type Headers struct {
