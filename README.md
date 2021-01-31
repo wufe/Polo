@@ -23,3 +23,17 @@ Although it provides HTTPS support, it is not intended to be used in production.
 You must provide at least one yaml configuration file describing your service remote and how to build and run it.  
 The configuration file must be put next to the Polo executable file.  
 You can find an example of a configuration file with all the options in the folder *examples*.  
+
+***
+
+## Known issues / missing features
+
+- Piped commands not working (e.g. `docker run ... | xargs -I %s echo "%i"` )  
+- Authorization for git commands missing
+- Improve manager design
+- Optional target in configuration
+- Implement concurrent sessions globally and in services
+- Working dir for commands
+- Use host for main target forward
+- Additional forward rules
+- Improve session page requesting only logs and status
