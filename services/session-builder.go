@@ -137,6 +137,56 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 			}
 		}()
 
+		// Build the session here
+		for _, command := range input.Service.Commands.Start {
+			select {
+			case <-sessionStartContext.Done():
+				return
+			default:
+				builtCommand, err := sessionHandler.buildCommand(command.Command, session)
+				if err != nil {
+					session.LogError(err.Error())
+					log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
+					if !command.ContinueOnError {
+						session.LogError("Halting")
+						cancelSessionStart()
+						return
+					}
+				}
+				session.LogStdin(builtCommand)
+
+				cmds := []*exec.Cmd{}
+				for _, commandProg := range strings.Split(builtCommand, "|") {
+
+					progAndArgs := strings.Split(commandProg, " ")
+
+					cmd := exec.CommandContext(sessionStartContext, progAndArgs[0], progAndArgs[1:]...)
+					cmd.Env = append(
+						os.Environ(),
+						cmd.Env...,
+					)
+					cmd.Dir = workingDir
+					cmds = append(cmds, cmd)
+				}
+
+				err = utils.ThroughCallback(utils.ExecuteCommand(cmds...))(func(line string) {
+					session.LogStdout(line)
+					log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line)
+					sessionHandler.parseSessionCommandOuput(session, &command, line)
+				})
+
+				if err != nil {
+					session.LogError(err.Error())
+					log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
+					if !command.ContinueOnError {
+						session.LogError("Halting")
+						cancelSessionStart()
+						return
+					}
+				}
+			}
+		}
+
 		// Start healthcheck routine
 		// TODO: Add option to start healthchecking after N seconds (sessionStartContext should be updated accordingly)
 		go func() {
@@ -190,56 +240,6 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 				}
 			}
 		}()
-
-		// Build the session here
-		for _, command := range input.Service.Commands.Start {
-			select {
-			case <-sessionStartContext.Done():
-				return
-			default:
-				builtCommand, err := sessionHandler.buildCommand(command.Command, session)
-				if err != nil {
-					session.LogError(err.Error())
-					log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
-					if !command.ContinueOnError {
-						session.LogError("Halting")
-						cancelSessionStart()
-						return
-					}
-				}
-				session.LogStdin(builtCommand)
-
-				cmds := []*exec.Cmd{}
-				for _, commandProg := range strings.Split(builtCommand, "|") {
-
-					progAndArgs := strings.Split(commandProg, " ")
-
-					cmd := exec.CommandContext(sessionStartContext, progAndArgs[0], progAndArgs[1:]...)
-					cmd.Env = append(
-						os.Environ(),
-						cmd.Env...,
-					)
-					cmd.Dir = workingDir
-					cmds = append(cmds, cmd)
-				}
-
-				err = utils.ThroughCallback(utils.ExecuteCommand(cmds...))(func(line string) {
-					session.LogStdout(line)
-					log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line)
-					sessionHandler.parseSessionCommandOuput(session, &command, line)
-				})
-
-				if err != nil {
-					session.LogError(err.Error())
-					log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
-					if !command.ContinueOnError {
-						session.LogError("Halting")
-						cancelSessionStart()
-						return
-					}
-				}
-			}
-		}
 	}()
 
 	return &SessionBuildResult{
