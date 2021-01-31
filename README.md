@@ -1,3 +1,25 @@
 # Polo
 
 ## Proxy your application history
+
+Polo allows you to create a web server which provides the ability to serve your web application in a specific time in history, using git.  
+
+You just need to specify the git commit or the branch. A new session will be created for you to navigate into.
+
+Although it provides HTTPS support, it is not intended to be used in production.  
+
+***
+
+## Getting started
+
+- Download Polo from the release page
+- Create one or more configuration files for your application
+- Start Polo
+
+***
+
+## Configuration
+
+You must provide at least one yaml configuration file describing your service remote and how to build and run it.  
+The configuration file must be put next to the Polo executable file.  
+You can find an example of a configuration file with all the options in the folder *examples*.  

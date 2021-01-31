@@ -1,0 +1,42 @@
+global:
+  port: 59876
+  sessions_folder: ./.sessions
+  max_concurrent_sessions: 10  # Not implemented yet
+services:
+  - name: hello-world # Mandatory
+    remote: https://github.com/nginxinc/NGINX-Demos # Mandatory
+    target: "http://127.0.0.1:{{port}}" # Mandatory
+    auth: # Not implemented yet
+      basic:
+        username: ""
+        password: ""
+      pat:
+        token: ""
+      ssh:
+        private_key: ""
+        password: ""
+    host: "hello-world.dev" # Not implemented yet
+    port:
+      except: [9876]
+    headers:
+      add:
+        - X-Powered-By=Polo
+    healthcheck:
+      method: GET
+      url: /
+      status: 200
+      retry_interval: 5 # in seconds
+      retry_timeout: 300 # in seconds
+    recycle:
+      inactivity_timeout: 120 # in seconds
+    max_concurrent_sessions: 5 # Not implemented yet
+    commands:
+      start: # At least one start command is mandatory
+        - command: 'docker run -p {{port}}:80 -d nginxdemos/hello' # Mandatory
+          output_variable: 'container_id'
+          environment:
+            - ENV=development
+          continue_on_error: false
+          working_dir: /nginx-hello # Not implemented yet
+      stop: # At least one stop command is mandatory
+        - command: "docker kill {{container_id}}"

@@ -563,3 +563,4 @@ MigrationBackup/
 !/hello-world.yml
 
 /statik/statik.go
+!/examples/example-configuration.yml
