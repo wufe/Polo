@@ -28,7 +28,6 @@ You can find an example of a configuration file with all the options in the fold
 
 ## Known issues / missing features
 
-- Optional target in configuration
 - Working dir for commands
 - Implement concurrent sessions globally and in services
 - Improve session page requesting only logs and status

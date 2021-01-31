@@ -5,7 +5,7 @@ global:
 services:
   - name: hello-world # Mandatory
     remote: https://github.com/nginxinc/NGINX-Demos # Mandatory
-    target: "http://127.0.0.1:{{port}}" # Mandatory
+    target: "http://127.0.0.1:{{port}}"
     forwards: # Not implemented yet
       - pattern: ^/path/(.+)$
         to: http://127.0.0.1:{{port2}}/$1

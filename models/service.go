@@ -76,7 +76,7 @@ func NewService(service *Service) (*Service, error) {
 		return nil, errors.New("service.remote (required) not defined; put the git repository URL")
 	}
 	if service.Target == "" {
-		return nil, errors.New("service.target (required) not defined; put the target application URL; accepts placeholders")
+		service.Target = "http://127.0.0.1:{{port}}"
 	}
 	if service.Headers.Add == nil {
 		service.Headers.Add = []string{}
