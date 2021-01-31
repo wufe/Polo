@@ -33,3 +33,6 @@ You can find an example of a configuration file with all the options in the fold
 - Improve manager design
 - Use host for main target forward
 - Additional forward rules
+- Configuration persistence via sqlite
+- Configuration reload
+- Configuration CRUD via UI
