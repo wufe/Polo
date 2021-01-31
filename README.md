@@ -28,11 +28,11 @@ You can find an example of a configuration file with all the options in the fold
 
 ## Known issues / missing features
 
+- Optional target in configuration
+- Working dir for commands
+- Implement concurrent sessions globally and in services
+- Improve session page requesting only logs and status
 - Piped commands not working (e.g. `docker run ... | xargs -I %s echo "%i"` )  
 - Improve manager design
-- Optional target in configuration
-- Implement concurrent sessions globally and in services
-- Working dir for commands
 - Use host for main target forward
 - Additional forward rules
-- Improve session page requesting only logs and status
