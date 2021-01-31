@@ -1,10 +1,10 @@
 import { APIPayload, APIRequestResult } from "@/api/common";
 import { retrieveServicesAPI } from "@/api/services";
-import { retrieveAllSessionsAPI, retrieveSessionAPI } from "@/api/session";
+import { IAPISession, retrieveAllSessionsAPI, retrieveSessionAPI } from "@/api/session";
 import { values } from "mobx";
 import { types, flow, cast, Instance, getType, applySnapshot, applyPatch } from "mobx-state-tree";
 import { ServiceModel, IService } from "./service-model";
-import { SessionModel, ISession } from "./session-model";
+import { SessionModel, ISession, castAPISessionToSessionModel } from "./session-model";
 
 export const AppModel = types.model({
     session: types.maybeNull(SessionModel),
@@ -27,10 +27,10 @@ export const AppModel = types.model({
     });
 
     const retrieveAllSessions = flow(function* retrieveAllSessions() {
-        const sessions: APIPayload<ISession[]> = yield retrieveAllSessionsAPI();
+        const sessions: APIPayload<IAPISession[]> = yield retrieveAllSessionsAPI();
         if (sessions.result === APIRequestResult.SUCCEEDED) {
             const sessionsMap = sessions.payload.reduce<{ [serviceName: string]: ISession }>((acc, session) => {
-                acc[session.uuid] = session;
+                acc[session.uuid] = castAPISessionToSessionModel(session);
                 return acc;
             }, {});
 
@@ -40,9 +40,9 @@ export const AppModel = types.model({
     });
 
     const retrieveSession = flow(function* retrieveSession(uuid: string) {
-        const session: APIPayload<ISession> = yield retrieveSessionAPI(uuid);
+        const session: APIPayload<IAPISession> = yield retrieveSessionAPI(uuid);
         if (session.result == APIRequestResult.SUCCEEDED) {
-            self.session = session.payload;
+            self.session = castAPISessionToSessionModel(session.payload);
         }
         return session;
     });

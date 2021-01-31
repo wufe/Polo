@@ -1,6 +1,7 @@
 import { APIRequestResult } from '@/api/common';
 import { IApp } from '@/state/models';
 import { ISession, ISessionLog, SessionLogType, SessionStatus } from '@/state/models/session-model';
+import { values } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { string } from 'mobx-state-tree/dist/internal';
 import React, { useEffect, useRef } from 'react';
@@ -22,10 +23,20 @@ const colorsByLogType: {
 
 export const SessionLogs = observer((props: { session: ISession }) => {
 
+    const logsContainerDiv = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        if (logsContainerDiv.current) {
+            logsContainerDiv.current.scrollTop = logsContainerDiv.current.scrollHeight;
+        }
+    }, [logsContainerDiv])
+
     if (!props.session.logs) return null;
 
-    return <div className="m-2 shadow-lg text-nord4 py-5 rounded-md border flex-grow flex flex-col bg-nord-5 dark:border-black min-w-0 overflow-x-auto">
-        {props.session.logs.map((log, key) => {
+    return <div
+        ref={logsContainerDiv}
+        className="m-2 shadow-lg text-nord4 py-5 rounded-md border flex-grow flex flex-col bg-nord-5 dark:border-black min-w-0 overflow-x-auto">
+        {values(props.session.logs as any as ISessionLog[]).map((log: ISessionLog, key) => {
             const color = colorsByLogType[log.type];
             return <p className="mx-10 leading-relaxed text-sm whitespace-nowrap max-w-full min-w-0 flex items-center" key={key}>
                 <span className="uppercase text-xs w-16 min-w-16" style={{ color }}>{log.type}:</span> <span>{log.message}</span>

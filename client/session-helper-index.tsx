@@ -1,4 +1,4 @@
-import { getSnapshot } from 'mobx-state-tree';
+import { cast, getSnapshot } from 'mobx-state-tree';
 import React, { createContext } from 'react';
 import { render } from 'react-dom';
 import { SessionHelperApp } from './components/session-helper';
@@ -6,7 +6,7 @@ import { AppModel, createStore, initialAppState, ISession } from './state/models
 
 const store = createStore({
     app: AppModel.create({
-        session: window.currentSession
+        session: window.currentSession as any
     })
 });
 const context = createContext(store);

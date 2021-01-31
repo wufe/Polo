@@ -1,5 +1,5 @@
 import { APIPayload, APIRequestResult } from "@/api/common";
-import { retrieveSessionAgeAPI, trackSessionAPI, untrackSessionAPI } from "@/api/session";
+import { IAPISession, retrieveSessionAgeAPI, trackSessionAPI, untrackSessionAPI } from "@/api/session";
 import { flow, Instance, types } from "mobx-state-tree";
 import { ServiceModel } from "./service-model";
 
@@ -22,6 +22,16 @@ export const SessionLogModel = types.model({
 
 export interface ISessionLog extends Instance<typeof SessionLogModel> {}
 
+export const castAPISessionToSessionModel = (apiSession: IAPISession): ISession => {
+    const { logs, ...rest } = apiSession;
+    const session = rest as ISession;
+    session.logs = logs.reduce<{ [k: string]: ISessionLog }>((acc, log, index) => {
+        acc[index] = log;
+        return acc;
+    }, {}) as any;
+    return session;
+}
+
 export enum SessionStatus {
     STARTING     = 'starting',
     STARTED      = 'started',
@@ -36,7 +46,7 @@ export const SessionModel = types.model({
     port    : types.number,
     service : ServiceModel,
     status  : types.enumeration<SessionStatus>(Object.values(SessionStatus)),
-    logs    : types.optional(types.array(SessionLogModel), []),
+    logs    : types.map(SessionLogModel),
     checkout: types.string,
     maxAge  : types.number,
     folder  : types.string

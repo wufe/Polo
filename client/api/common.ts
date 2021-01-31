@@ -6,7 +6,7 @@ export enum APIRequestResult {
 }
 
 export enum APIRequestFailReason {
-    UNKNOWN      = "unknown",
+    UNKNOWN      = "unknown-error",
     NOT_FOUND    = "not-found",
     SERVER_ERROR = "server-error",
 }

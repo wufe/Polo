@@ -1,5 +1,5 @@
 import { AppModel, IApp, initialAppState } from '@/state/models/app-model';
-import { Instance, types } from 'mobx-state-tree';
+import { Instance, onPatch, types } from 'mobx-state-tree';
 import { isDev } from '@/utils/env';
 import makeInspectable from 'mobx-devtools-mst';
 
@@ -17,6 +17,7 @@ export const createStore = (state: { app: IApp }) =>
 export interface IStore extends Instance<typeof store> {}
 
 if (isDev()) {
+    onPatch(store.app, console.log);
     makeInspectable(store);
     window.store = store;
 }

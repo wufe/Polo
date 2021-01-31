@@ -1,13 +1,17 @@
-import { ISession } from '@/state/models/session-model';
+import { ISession, ISessionLog } from '@/state/models/session-model';
 import Axios from 'axios';
 import { buildRequest } from './common';
 
+export interface IAPISession extends Omit<ISession, 'logs'> {
+    logs: ISessionLog[];
+}
+
 export function retrieveAllSessionsAPI() {
-    return buildRequest<ISession[]>(() => Axios.get(`/_polo_/api/session/`));
+    return buildRequest<IAPISession[]>(() => Axios.get(`/_polo_/api/session/`));
 }
 
 export function retrieveSessionAPI(uuid: string) {
-    return buildRequest<ISession>(() => Axios.get(`/_polo_/api/session/${uuid}`));
+    return buildRequest<IAPISession>(() => Axios.get(`/_polo_/api/session/${uuid}`));
 }
 
 export function trackSessionAPI(uuid: string) {
