@@ -1,5 +1,5 @@
 import { APIPayload, APIRequestResult } from "@/api/common";
-import { IAPISession, retrieveSessionAgeAPI, trackSessionAPI, untrackSessionAPI } from "@/api/session";
+import { IAPISession, killSessionAPI, retrieveSessionAgeAPI, trackSessionAPI, untrackSessionAPI } from "@/api/session";
 import { flow, Instance, types } from "mobx-state-tree";
 import { ServiceModel } from "./service-model";
 
@@ -69,7 +69,12 @@ export const SessionModel = types.model({
         return age;
     });
 
-    return { retrieveAge, track, untrack };
+    const kill = flow(function* kill() {
+        const kill: APIPayload<void> = yield killSessionAPI(self.uuid);
+        return kill;
+    })
+
+    return { retrieveAge, track, untrack, kill };
 })
 
 export interface ISession extends Instance<typeof SessionModel> {}

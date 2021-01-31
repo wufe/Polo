@@ -10,6 +10,10 @@ export function retrieveAllSessionsAPI() {
     return buildRequest<IAPISession[]>(() => Axios.get(`/_polo_/api/session/`));
 }
 
+export function killSessionAPI(uuid: string) {
+    return buildRequest<void>(() => Axios.delete(`/_polo_/api/session/${uuid}`));
+}
+
 export function retrieveSessionAPI(uuid: string) {
     return buildRequest<IAPISession>(() => Axios.get(`/_polo_/api/session/${uuid}`));
 }
@@ -19,7 +23,7 @@ export function trackSessionAPI(uuid: string) {
 }
 
 export function untrackSessionAPI() {
-    return buildRequest<void>(() => Axios.delete(`/_polo_/api/session/track`))
+    return buildRequest<void>(() => Axios.delete(`/_polo_/api/session/<none>/track`))
 }
 
 export function retrieveSessionAgeAPI(uuid: string) {

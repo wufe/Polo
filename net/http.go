@@ -25,7 +25,6 @@ const (
 	ServerRouteAPISessionByUUID      ServerRoute = "/_polo_/api/session/:uuid"
 	ServerRouteAPISessionAgeByUUID   ServerRoute = "/_polo_/api/session/:uuid/age"
 	ServerRouteAPITrackSessionByUUID ServerRoute = "/_polo_/api/session/:uuid/track"
-	ServerRouteAPIUntrackSession     ServerRoute = "/_polo_/api/session/track"
 
 	StaticFolderPath string = "/_polo_/static"
 
@@ -102,9 +101,10 @@ func NewHTTPServer(port string, sessionHandler *services.SessionHandler, configu
 		router.POST(string(ServerRouteAPISession), server.postSessionAPI)
 		router.GET(string(ServerRouteAPISession), server.getAllSessionsAPI)
 		router.GET(string(ServerRouteAPISessionByUUID), server.getSessionByUUIDAPI)
+		router.DELETE(string(ServerRouteAPISessionByUUID), server.deleteSessionByUUIDAPI)
 		router.GET(string(ServerRouteAPISessionAgeByUUID), server.getSessionAgeByUUIDAPI)
 		router.POST(string(ServerRouteAPITrackSessionByUUID), server.postTrackSessionByUUIDAPI)
-		router.DELETE(string(ServerRouteAPIUntrackSession), server.postUntrackSessionAPI)
+		router.DELETE(string(ServerRouteAPITrackSessionByUUID), server.postUntrackSessionAPI)
 
 		server.serveStatic(router)
 

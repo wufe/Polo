@@ -117,6 +117,41 @@ func (server *HTTPServer) getSessionByUUIDAPI(
 	res.Write(resString)
 }
 
+func (server *HTTPServer) deleteSessionByUUIDAPI(
+	res http.ResponseWriter,
+	req *http.Request,
+	ps httprouter.Params,
+) {
+	uuid := ps.ByName("uuid")
+
+	var foundSession *models.Session
+	for _, session := range server.SessionHandler.GetAllAliveSessions() {
+		if session.UUID == uuid {
+			foundSession = session
+		}
+	}
+
+	if foundSession == nil {
+		resString, resStatus := buildResponse((ResponseObjectWithFailingReason{
+			ResponseObject: ResponseObject{
+				Message: "Not found",
+			},
+		}), 404)
+		res.Header().Add("Content-Type", "application/json")
+		res.WriteHeader(resStatus)
+		res.Write(resString)
+		return
+	}
+
+	server.SessionHandler.DestroySession(foundSession)
+	resString, resStatus := buildResponse(ResponseObject{
+		Message: "Ok",
+	}, 200)
+	res.Header().Add("Content-Type", "application/json")
+	res.WriteHeader(resStatus)
+	res.Write(resString)
+}
+
 func (server *HTTPServer) getSessionAgeByUUIDAPI(
 	res http.ResponseWriter,
 	req *http.Request,
