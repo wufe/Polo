@@ -6,6 +6,10 @@ services:
   - name: hello-world # Mandatory
     remote: https://github.com/nginxinc/NGINX-Demos # Mandatory
     target: "http://127.0.0.1:{{port}}" # Mandatory
+    forwards: # Not implemented yet
+      - pattern: ^/path/(.+)$
+        to: http://127.0.0.1:{{port2}}/$1
+        host: host2.example.com
     auth: # Not implemented yet
       basic:
         username: ""
@@ -38,5 +42,7 @@ services:
             - ENV=development
           continue_on_error: false
           working_dir: /nginx-hello # Not implemented yet
+        - command: 'docker run -p {{port2}}:80 -d nginxdemos/hello | xargs -I % echo polo[container_id_2=%s] ' # Port2 not implemented yet
       stop: # At least one stop command is mandatory
         - command: "docker kill {{container_id}}"
+        - command: "docker kill {{container_id_2}}"
