@@ -7,7 +7,10 @@ import (
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/wufe/polo/utils"
+
+	"github.com/rakyll/statik/fs"
+
+	_ "github.com/wufe/polo/statik"
 )
 
 type gzipResponseWriter struct {
@@ -26,10 +29,20 @@ func (w *gzipResponseWriter) Write(b []byte) (int, error) {
 	return w.Writer.Write(b)
 }
 
-func (httpServer *HTTPServer) serveStatic(router *httprouter.Router) {
-	if !utils.IsDev() {
+func (server *HTTPServer) initStaticFileSystem() {
+	if !server.isDev {
+		fileSystem, err := fs.New()
+		if err != nil {
+			panic(err)
+		}
+		server.fileSystem = &fileSystem
+	}
+}
 
-		fileServer := http.FileServer(http.Dir(StaticFolder))
+func (server *HTTPServer) serveStatic(router *httprouter.Router) {
+	if !server.isDev {
+
+		fileServer := http.FileServer(*server.fileSystem)
 
 		router.GET(string(ServerRouteStatic), func(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 			req.URL.Path = ps.ByName("filepath")

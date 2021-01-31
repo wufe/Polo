@@ -561,3 +561,5 @@ MigrationBackup/
 *.yml
 /polo
 !/hello-world.yml
+
+/statik/statik.go

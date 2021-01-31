@@ -5,26 +5,26 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"path/filepath"
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/wufe/polo/models"
 	"github.com/wufe/polo/services"
-	"github.com/wufe/polo/utils"
 
 	log "github.com/sirupsen/logrus"
 )
 
-func (server *HTTPServer) serveDashboard(res http.ResponseWriter, req *http.Request) {
-	if utils.IsDev() {
-		req.URL.Path = "/_polo_/static/manager.html"
-		server.serveReverseProxy("http://localhost:9000/", res, req, nil) // webpack dev server
+func (server *HTTPServer) serveManager(res http.ResponseWriter, req *http.Request) {
+	if server.isDev {
+		req.URL.Path = fmt.Sprintf("%s%s", StaticFolderPath, StaticManagerFile)
+		server.serveReverseProxy(server.devServerURL, res, req, nil) // webpack dev server
 	} else {
-		path := filepath.Join(StaticFolder, "manager.html")
-		content, err := ioutil.ReadFile(path)
+
+		file, err := (*server.fileSystem).Open(StaticManagerFile)
+		content, err := ioutil.ReadAll(file)
 		if err != nil {
-			log.Errorf("Could not read %s", path)
+			log.Errorf("Could not read " + StaticManagerFile)
+			return
 		}
 		res.WriteHeader(200)
 		res.Write(content)
@@ -36,7 +36,7 @@ func (server *HTTPServer) getDashboard(
 	req *http.Request,
 	ps httprouter.Params,
 ) {
-	server.serveDashboard(res, req)
+	server.serveManager(res, req)
 }
 
 func (server *HTTPServer) getSessionStatus(
@@ -44,7 +44,7 @@ func (server *HTTPServer) getSessionStatus(
 	req *http.Request,
 	ps httprouter.Params,
 ) {
-	server.serveDashboard(res, req)
+	server.serveManager(res, req)
 }
 
 func (server *HTTPServer) getServicesAPI(

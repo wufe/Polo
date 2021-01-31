@@ -12,7 +12,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/models"
-	"github.com/wufe/polo/utils"
 )
 
 const (
@@ -21,9 +20,10 @@ const (
 
 func (server *HTTPServer) getReverseProxyHandlerFunc() http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		if utils.IsDev() && (strings.HasPrefix(req.URL.Path, string(ServerRouteRoot)) ||
+		if server.isDev && (strings.HasPrefix(req.URL.Path, string(ServerRouteRoot)) ||
+			// Webpack dev server
 			strings.HasPrefix(req.URL.Path, "/sockjs-node")) {
-			server.serveReverseProxy("http://localhost:9000/", res, req, nil) // Webpack dev server
+			server.serveReverseProxy(server.devServerURL, res, req, nil)
 		} else {
 			session := server.detectSession(req)
 			if session == nil {

@@ -1,6 +1,7 @@
 package net
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -26,13 +27,19 @@ const (
 	ServerRouteAPITrackSessionByUUID ServerRoute = "/_polo_/api/session/:uuid/track"
 	ServerRouteAPIUntrackSession     ServerRoute = "/_polo_/api/session/track"
 
-	StaticFolder string = "./static"
+	StaticFolderPath string = "/_polo_/static"
+
+	StaticManagerFile       string = "/manager.html"
+	StaticSessionHelperFile string = "/session-helper.html"
 )
 
 type HTTPServer struct {
 	SessionHandler       *services.SessionHandler
 	Configuration        *models.RootConfiguration
 	sessionHelperContent string
+	fileSystem           *http.FileSystem
+	isDev                bool
+	devServerURL         string
 }
 
 type ServerRoute string
@@ -43,14 +50,18 @@ func NewHTTPServer(port string, sessionHandler *services.SessionHandler, configu
 		SessionHandler:       sessionHandler,
 		Configuration:        configuration,
 		sessionHelperContent: "",
+		isDev:                utils.IsDev(),
+		devServerURL:         utils.DevServerURL(),
 	}
 
+	server.initStaticFileSystem()
+
 	// Session helper content retrieval
-	if utils.IsDev() {
+	if server.isDev {
 		// If in dev mode, the content is available via webpack dev server
 		go func() {
 			for {
-				resp, err := http.Get("http://localhost:9000/_polo_/static/session-helper.html")
+				resp, err := http.Get(fmt.Sprintf("%s%s%s", server.devServerURL, StaticFolderPath, StaticSessionHelperFile))
 				if err != nil {
 					log.Errorf("Error while getting session helper: %s", err.Error())
 				} else {
@@ -67,7 +78,7 @@ func NewHTTPServer(port string, sessionHandler *services.SessionHandler, configu
 			}
 		}()
 	} else {
-		file, err := http.Dir(StaticFolder).Open("session-helper.html")
+		file, err := (*server.fileSystem).Open(StaticSessionHelperFile)
 		if err != nil {
 			log.Errorf("Error while getting session helper: %s", err.Error())
 		} else {

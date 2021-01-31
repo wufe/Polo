@@ -91,7 +91,7 @@ func unmarshalConfigurations(files []string) (*models.RootConfiguration, *Servic
 	}
 
 	if rootConfiguration.Global.SessionsFolder == "" {
-		rootConfiguration.Global.SessionsFolder = "./sessions"
+		rootConfiguration.Global.SessionsFolder = "./.sessions"
 	}
 
 	for _, service := range rootConfiguration.Services {
