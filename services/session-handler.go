@@ -136,6 +136,10 @@ func (sessionHandler *SessionHandler) StartSessionInactivityTimer(session *model
 	session.InactiveAt = time.Now().Add(time.Second * time.Duration(session.Service.Recycle.InactivityTimeout))
 	go func() {
 		for {
+			if session.Status != models.SessionStatusStarted {
+				return
+			}
+
 			if time.Now().After(session.InactiveAt) {
 				sessionHandler.DestroySession(session)
 				return

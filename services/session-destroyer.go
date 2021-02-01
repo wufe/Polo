@@ -13,6 +13,11 @@ import (
 )
 
 func (sessionHandler *SessionHandler) DestroySession(session *models.Session) {
+
+	if !session.Status.IsAlive() {
+		return
+	}
+
 	session.Status = models.SessionStatusStopping
 
 	go func() {

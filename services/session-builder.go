@@ -159,6 +159,12 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 			case <-sessionStartContext.Done():
 				return
 			default:
+
+				if session.Status != models.SessionStatusStarting {
+					cancelSessionStart()
+					return
+				}
+
 				builtCommand, err := sessionHandler.buildCommand(command.Command, session)
 				if err != nil {
 					session.LogError(err.Error())
@@ -212,6 +218,11 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 				case <-sessionStartContext.Done():
 					return
 				default:
+
+					if session.Status != models.SessionStatusStarting {
+						return
+					}
+
 					target, err := url.Parse(session.Target)
 					if err != nil {
 						session.LogError(fmt.Sprintf("Could not parse target URL: %s", err.Error()))
