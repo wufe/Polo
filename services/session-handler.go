@@ -3,6 +3,7 @@ package services
 import (
 	"time"
 
+	"github.com/dgraph-io/badger/v3"
 	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/models"
 )
@@ -14,6 +15,7 @@ type SessionHandler struct {
 	sessionRequestChan  chan *SessionBuildInput
 	sessionResponseChan chan *SessionBuildResult
 	sessionCleanChan    chan *SessionClean
+	database            *badger.DB
 }
 
 type SessionClean struct {
@@ -21,7 +23,7 @@ type SessionClean struct {
 	status  models.SessionStatus
 }
 
-func NewSessionHandler(configuration *models.RootConfiguration, serviceHandler *ServiceHandler) *SessionHandler {
+func NewSessionHandler(configuration *models.RootConfiguration, serviceHandler *ServiceHandler, database *badger.DB) *SessionHandler {
 	sessionHandler := &SessionHandler{
 		configuration:       configuration,
 		serviceHandler:      serviceHandler,
@@ -29,6 +31,7 @@ func NewSessionHandler(configuration *models.RootConfiguration, serviceHandler *
 		sessionRequestChan:  make(chan *SessionBuildInput),
 		sessionResponseChan: make(chan *SessionBuildResult),
 		sessionCleanChan:    make(chan *SessionClean),
+		database:            database,
 	}
 
 	sessionHandler.startAcceptingNewSessionRequests()
@@ -102,10 +105,7 @@ func (sessionHandler *SessionHandler) startAcceptingSessionCleanRequests() {
 			if sessionToCleanIndex == -1 { // No session found
 				log.Fatalf("[SESSION:%s] Requested session cleanup, but not found", sessionToClean.session.UUID)
 			} else {
-				// sessionHandler.sessions = append(
-				// 	sessionHandler.sessions[:sessionToCleanIndex],
-				// 	sessionHandler.sessions[sessionToCleanIndex+1:]...,
-				// )
+				// TODO: Persist session (delete)
 				sessionHandler.sessions[sessionToCleanIndex].Status = sessionToClean.status
 				log.Warnf("[SESSION:%s] Session cleaned up.", sessionToClean.session.UUID)
 			}
@@ -121,6 +121,7 @@ func (sessionHandler *SessionHandler) CleanupSession(session *models.Session, st
 }
 
 func (sessionHandler *SessionHandler) MarkSessionAsStarted(session *models.Session) {
+	// TODO: Persist session
 	session.Status = models.SessionStatusStarted
 	session.MaxAge = session.Service.Recycle.InactivityTimeout
 	if session.MaxAge > 0 {

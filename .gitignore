@@ -564,3 +564,4 @@ MigrationBackup/
 
 /statik/statik.go
 !/examples/example-configuration.yml
+/db
