@@ -81,22 +81,24 @@ func NewService(service *Service) (*Service, error) {
 	if service.Headers.Add == nil {
 		service.Headers.Add = []string{}
 	}
-	if service.Healthcheck.URL == "" {
-		service.Healthcheck.Method = "GET"
-	} else {
-		service.Healthcheck.Method = strings.ToUpper(service.Healthcheck.Method)
-	}
-	if service.Healthcheck.URL == "" {
-		service.Healthcheck.URL = "/"
-	}
-	if service.Healthcheck.Status == 0 {
-		service.Healthcheck.Status = 200
-	}
-	if service.Healthcheck.RetryInterval == 0 {
-		service.Healthcheck.RetryInterval = 30
-	}
-	if service.Healthcheck.RetryTimeout == 0 {
-		service.Healthcheck.RetryTimeout = 300 // 10 minutes
+	if service.Healthcheck != (Healthcheck{}) {
+		if service.Healthcheck.URL == "" {
+			service.Healthcheck.Method = "GET"
+		} else {
+			service.Healthcheck.Method = strings.ToUpper(service.Healthcheck.Method)
+		}
+		if service.Healthcheck.URL == "" {
+			service.Healthcheck.URL = "/"
+		}
+		if service.Healthcheck.Status == 0 {
+			service.Healthcheck.Status = 200
+		}
+		if service.Healthcheck.RetryInterval == 0 {
+			service.Healthcheck.RetryInterval = 30
+		}
+		if service.Healthcheck.RetryTimeout == 0 {
+			service.Healthcheck.RetryTimeout = 300 // 10 minutes
+		}
 	}
 	if service.Recycle.InactivityTimeout == 0 {
 		service.Recycle.InactivityTimeout = 3600 // 1 hour

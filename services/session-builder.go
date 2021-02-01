@@ -210,64 +210,71 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 			}
 		}
 
-		// Start healthcheck routine
-		// TODO: Add option to start healthchecking after N seconds (sessionStartContext should be updated accordingly)
-		go func() {
-			time.Sleep(5 * time.Second)
-			for {
-				select {
-				case <-sessionStartContext.Done():
-					return
-				default:
-
-					if session.Status != models.SessionStatusStarting {
+		if session.Service.Healthcheck == (models.Healthcheck{}) {
+			sessionHandler.MarkSessionAsStarted(session)
+			log.Infof("[SESSION:%s] Session started", session.UUID)
+			done <- struct{}{}
+		} else {
+			// Start healthcheck routine
+			// TODO: Add option to start healthchecking after N seconds (sessionStartContext should be updated accordingly)
+			go func() {
+				time.Sleep(5 * time.Second)
+				for {
+					select {
+					case <-sessionStartContext.Done():
 						return
-					}
+					default:
 
-					target, err := url.Parse(session.Target)
-					if err != nil {
-						session.LogError(fmt.Sprintf("Could not parse target URL: %s", err.Error()))
-						log.Errorln("Could not parse target URL", err)
-						cancelSessionStart()
-						return
-					}
-					target.Path = path.Join(target.Path, input.Service.Healthcheck.URL)
-					client := &http.Client{
-						Timeout: 120 * time.Second,
-					}
-					req, err := http.NewRequest(
-						input.Service.Healthcheck.Method,
-						target.String(),
-						nil,
-					)
-					req.WithContext(sessionStartContext)
-					for _, header := range input.Service.Headers.Add {
-						headerSegments := strings.Split(header, "=")
-						req.Header.Add(headerSegments[0], headerSegments[1])
-						if input.Service.Host != "" {
-							req.Header.Add("Host", input.Service.Host)
-						}
-					}
-					if err != nil {
-						log.Errorln("Could not build HTTP request", req)
-					}
-					log.Infof("[SESSION:%s] Requesting URL %s", session.UUID, req.URL.String())
-					response, err := client.Do(req)
-					if err != nil {
-						log.Errorf("[SESSION:%s] Could not perform HTTP request", session.UUID, err.Error())
-					} else {
-						if response.StatusCode == input.Service.Healthcheck.Status {
-							sessionHandler.MarkSessionAsStarted(session)
-							log.Infof("[SESSION:%s] Session started", session.UUID)
-							done <- struct{}{}
+						if session.Status != models.SessionStatusStarting {
 							return
 						}
+
+						target, err := url.Parse(session.Target)
+						if err != nil {
+							session.LogError(fmt.Sprintf("Could not parse target URL: %s", err.Error()))
+							log.Errorln("Could not parse target URL", err)
+							cancelSessionStart()
+							return
+						}
+						target.Path = path.Join(target.Path, input.Service.Healthcheck.URL)
+						client := &http.Client{
+							Timeout: 120 * time.Second,
+						}
+						req, err := http.NewRequest(
+							input.Service.Healthcheck.Method,
+							target.String(),
+							nil,
+						)
+						req.WithContext(sessionStartContext)
+						for _, header := range input.Service.Headers.Add {
+							headerSegments := strings.Split(header, "=")
+							req.Header.Add(headerSegments[0], headerSegments[1])
+							if input.Service.Host != "" {
+								req.Header.Add("Host", input.Service.Host)
+							}
+						}
+						if err != nil {
+							log.Errorln("Could not build HTTP request", req)
+						}
+						log.Infof("[SESSION:%s] Requesting URL %s", session.UUID, req.URL.String())
+						response, err := client.Do(req)
+						if err != nil {
+							log.Errorf("[SESSION:%s] Could not perform HTTP request", session.UUID, err.Error())
+						} else {
+							if response.StatusCode == input.Service.Healthcheck.Status {
+								sessionHandler.MarkSessionAsStarted(session)
+								log.Infof("[SESSION:%s] Session started", session.UUID)
+								done <- struct{}{}
+								return
+							}
+						}
+						log.Infof("[SESSION:%s] Session not ready yet. Retrying in %d seconds", session.UUID, session.Service.Healthcheck.RetryInterval)
+						time.Sleep(time.Duration(session.Service.Healthcheck.RetryInterval) * time.Second)
 					}
-					log.Infof("[SESSION:%s] Session not ready yet. Retrying in %d seconds", session.UUID, session.Service.Healthcheck.RetryInterval)
-					time.Sleep(time.Duration(session.Service.Healthcheck.RetryInterval) * time.Second)
 				}
-			}
-		}()
+			}()
+		}
+
 	}()
 
 	return &SessionBuildResult{
