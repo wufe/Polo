@@ -1,12 +1,13 @@
 import { APIRequestResult } from '@/api/common';
 import { ISession, SessionStatus } from '@/state/models';
+import { observer } from 'mobx-react-lite';
 import React from 'react';
 
 type TProps = {
     sessions: ISession[];
 }
 
-export const ServiceSessions = (props: TProps) => {
+export const ServiceSessions = observer((props: TProps) => {
 
     const attachToSession = async (session: ISession) => {
         const track = await session.track();
@@ -37,7 +38,7 @@ export const ServiceSessions = (props: TProps) => {
                 </span>
             </div>)}
     </>;
-}
+});
 
 function colorByStatus(status: SessionStatus): string {
     switch (status) {

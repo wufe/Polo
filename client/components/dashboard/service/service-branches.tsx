@@ -1,4 +1,5 @@
 import { values } from 'mobx';
+import { observer } from 'mobx-react-lite';
 import React from 'react';
 
 type TProps = {
@@ -6,7 +7,7 @@ type TProps = {
     onSessionCreationSubmission: (checkout: string) => void;
 }
 
-export const ServiceBranches = (props: TProps) => {
+export const ServiceBranches = observer((props: TProps) => {
     return <>
         <h4 className="mt-2 mb-1 text-sm text-gray-500 uppercase">Branches:</h4>
         {sortBranches(values(props.branches) as string[]).map((branch, key) =>
@@ -27,7 +28,7 @@ export const ServiceBranches = (props: TProps) => {
                 </span>
             </div>)}
     </>;
-}
+});
 
 function sortBranches(branches: string[]): string[] {
     const preferred = [
