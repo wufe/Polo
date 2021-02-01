@@ -112,6 +112,7 @@ func (server *HTTPServer) serveReverseProxy(target string, res http.ResponseWrit
 				}
 
 				sessionHelper := strings.ReplaceAll(server.sessionHelperContent, "%%currentSession%%", string(serializedSession))
+				sessionHelper = strings.ReplaceAll(sessionHelper, `\\`, `\\\\`)
 
 				buffer := bytes.NewBufferString(sessionHelper)
 
