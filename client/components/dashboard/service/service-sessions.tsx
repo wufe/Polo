@@ -1,9 +1,9 @@
 import { APIRequestResult } from '@/api/common';
-import { ISession } from '@/state/models';
+import { ISession, SessionStatus } from '@/state/models';
 import React from 'react';
 
 type TProps = {
-    sessions: ISession[] | null;
+    sessions: ISession[];
 }
 
 export const ServiceSessions = (props: TProps) => {
@@ -21,16 +21,33 @@ export const ServiceSessions = (props: TProps) => {
     }
 
     return <>
-        <h4 className="my-3">Sessions:</h4>
+        <h4 className="mt-2 mb-1 text-sm text-gray-500 uppercase">Sessions:</h4>
         {props.sessions.map((session, key) =>
             <div
                 key={key}
-                className="flex justify-between">
-                <span>Session: {session.uuid}</span>
-                <span>
-                    <span className="text-sm underline cursor-pointer inline-block mx-3" onClick={() => attachToSession(session)}>Attach</span>
-                    <span className="text-sm underline cursor-pointer inline-block mx-3" onClick={() => killSession(session)}>Kill</span>
+                className="items-center grid grid-cols-12 gap-2">
+                <span className="text-xs uppercase col-span-1" style={{ color: colorByStatus(session.status) }}>{session.status}</span>
+                <span className="text-sm mr-3 flex-grow col-span-7">{session.checkout}</span>
+                <span className="text-xs uppercase text-gray-500 col-span-2">
+                    Expires in {session.maxAge}s
+                </span>
+                <span className="col-span-2 text-center">
+                    <span className="text-sm underline cursor-pointer inline-block mx-3 hover:text-nord14" onClick={() => attachToSession(session)}>Attach</span>
+                    <span className="text-sm underline cursor-pointer inline-block mx-3 hover:text-nord11" onClick={() => killSession(session)}>Kill</span>
                 </span>
             </div>)}
     </>;
+}
+
+function colorByStatus(status: SessionStatus): string {
+    switch (status) {
+        case SessionStatus.STARTED:
+            return '#a3be8c';
+        case SessionStatus.STARTING:
+            return '#ebcb8b';
+        case SessionStatus.STOPPING:
+            return '#d08770';
+        case SessionStatus.START_FAILED:
+            return '#bf616a';
+    }
 }

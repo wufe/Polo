@@ -66,6 +66,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 		Done:     make(chan struct{}),
 		Service:  input.Service,
 		Logs:     []models.Log{},
+		CommitID: input.Checkout,
 		Checkout: input.Checkout,
 	})
 	session.LogInfo(fmt.Sprintf("Creating session %s", session.UUID))
@@ -89,8 +90,8 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 			FailingReason: fmt.Sprintf("Could not find the hash of the selected checkout %s", input.Checkout),
 		}
 	}
-	session.Checkout = checkout
-	session.LogInfo(fmt.Sprintf("Requested checkout to %s (%s)", input.Checkout, session.Checkout))
+	session.CommitID = checkout
+	session.LogInfo(fmt.Sprintf("Requested checkout to %s (%s)", input.Checkout, session.CommitID))
 
 	// Check if someone else just requested the same type of session
 	// looking through all open session and comparing services and checkouts
@@ -119,7 +120,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 	session.Variables["name"] = session.Name
 	session.Variables["port"] = fmt.Sprint(session.Port)
 	session.Variables["target"] = session.Target
-	session.Variables["checkout"] = session.Checkout
+	session.Variables["checkout"] = session.CommitID
 
 	sessionHandler.sessions = append(sessionHandler.sessions, session)
 

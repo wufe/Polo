@@ -114,7 +114,7 @@ func (serviceHandler *ServiceHandler) defaultServiceErrorLog(service *models.Ser
 	}
 }
 
-func appendWithoutDup(slice []string, elem ...string) {
+func appendWithoutDup(slice []string, elem ...string) []string {
 	for _, currentElem := range elem {
 		foundIndex := -1
 		for i, sliceElem := range slice {
@@ -126,6 +126,7 @@ func appendWithoutDup(slice []string, elem ...string) {
 			slice = append(slice, currentElem)
 		}
 	}
+	return slice
 }
 
 func (serviceHandler *ServiceHandler) fetchServiceRemote(service *models.Service) {
@@ -172,7 +173,7 @@ func (serviceHandler *ServiceHandler) fetchServiceRemote(service *models.Service
 		}
 		branchName := refName[len(refPrefix):]
 
-		appendWithoutDup(service.Branches, branchName)
+		service.Branches = appendWithoutDup(service.Branches, branchName)
 
 		service.ObjectsToHashMap[branchName] = ref.Hash().String()
 		service.ObjectsToHashMap[fmt.Sprintf("origin/%s", branchName)] = ref.Hash().String()
@@ -185,7 +186,7 @@ func (serviceHandler *ServiceHandler) fetchServiceRemote(service *models.Service
 			}
 		}
 
-		appendWithoutDup(service.HashToObjectsMap[ref.Hash().String()].Branches, branchName)
+		service.HashToObjectsMap[ref.Hash().String()].Branches = appendWithoutDup(service.HashToObjectsMap[ref.Hash().String()].Branches, branchName)
 	}
 
 	// Tags
@@ -201,7 +202,7 @@ func (serviceHandler *ServiceHandler) fetchServiceRemote(service *models.Service
 		tagName := refName[len(tagPrefix):]
 		service.ObjectsToHashMap[tagName] = ref.Hash().String()
 
-		appendWithoutDup(service.Tags, tagName)
+		service.Tags = appendWithoutDup(service.Tags, tagName)
 		service.ObjectsToHashMap[refName] = ref.Hash().String()
 
 		if service.HashToObjectsMap[ref.Hash().String()] == nil {
@@ -211,7 +212,7 @@ func (serviceHandler *ServiceHandler) fetchServiceRemote(service *models.Service
 			}
 		}
 
-		appendWithoutDup(service.HashToObjectsMap[ref.Hash().String()].Tags, tagName)
+		service.HashToObjectsMap[ref.Hash().String()].Tags = appendWithoutDup(service.HashToObjectsMap[ref.Hash().String()].Tags, tagName)
 
 		return nil
 	})

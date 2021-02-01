@@ -15,7 +15,7 @@ import (
 func (sessionHandler *SessionHandler) buildSessionCommitStructure(session *models.Session) (string, error) {
 	session.LogInfo(fmt.Sprintf("Trying to build session commit structure in folder %s", session.Service.ServiceFolder))
 
-	checkout := sanitize.Name(session.Checkout)
+	checkout := sanitize.Name(session.CommitID)
 	sessionCommitFolder := filepath.Join(session.Service.ServiceFolder, checkout)
 
 	auth, err := session.Service.GetAuth()
@@ -64,7 +64,7 @@ func (sessionHandler *SessionHandler) buildSessionCommitStructure(session *model
 	session.LogInfo("Performing an hard reset to the selected commit")
 	err = worktree.Reset(&git.ResetOptions{
 		Mode:   git.HardReset,
-		Commit: plumbing.NewHash(session.Checkout),
+		Commit: plumbing.NewHash(session.CommitID),
 	})
 	if err != nil {
 		session.LogError(fmt.Sprintf("Error while performing hard reset: %s", err.Error()))

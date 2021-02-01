@@ -33,7 +33,8 @@ type Session struct {
 	Service      *Service          `json:"service"`
 	Status       SessionStatus     `json:"status"`
 	Logs         []Log             `json:"logs"`
-	Checkout     string            `json:"checkout"` // The object to be checked out (branch/tag/commit id)
+	CommitID     string            `json:"commitID"` // The object to be checked out (branch/tag/commit id)
+	Checkout     string            `json:"checkout"`
 	Done         chan struct{}     `json:"-"`
 	MaxAge       int               `json:"maxAge"`
 	InactiveAt   time.Time         `json:"-"`

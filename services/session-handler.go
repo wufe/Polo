@@ -66,7 +66,7 @@ func (sessionHandler *SessionHandler) GetAllAliveSessions() []*models.Session {
 func (sessionHandler *SessionHandler) GetAliveServiceSessionByCheckout(checkout string, service *models.Service) *models.Session {
 	var foundSession *models.Session
 	for _, session := range sessionHandler.sessions {
-		if session.Service == service && session.Checkout == checkout && session.Status.IsAlive() {
+		if session.Service == service && session.CommitID == checkout && session.Status.IsAlive() {
 			foundSession = session
 		}
 	}
@@ -122,7 +122,7 @@ func (sessionHandler *SessionHandler) CleanupSession(session *models.Session, st
 
 func (sessionHandler *SessionHandler) MarkSessionAsStarted(session *models.Session) {
 	session.Status = models.SessionStatusStarted
-
+	session.MaxAge = session.Service.Recycle.InactivityTimeout
 	sessionHandler.StartSessionInactivityTimer(session)
 }
 

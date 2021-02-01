@@ -4,12 +4,13 @@ import { flow, Instance, SnapshotIn, SnapshotOut, types } from "mobx-state-tree"
 import { ISession } from "./session-model";
 
 export const ServiceModel = types.model({
-    name: types.string,
-    remote: types.string,
-    target: types.string,
-    host: types.string,
+    name                 : types.string,
+    remote               : types.string,
+    target               : types.string,
+    host                 : types.string,
     maxConcurrentSessions: types.number,
-    serviceFolder: types.string
+    serviceFolder        : types.string,
+    branches             : types.array(types.string)
 })
 .actions(self => {
 

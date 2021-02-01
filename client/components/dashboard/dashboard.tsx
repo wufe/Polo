@@ -25,16 +25,13 @@ export const Dashboard = observer((props: TProps) => {
         return () => clearInterval(interval);
     }, [])
 
-    return <div className="dashboard__component font-quicksand">
-        <h1 className="text-3xl font-light">Dashboard</h1>
-        <section>
-            <h2 className="pl-3 text-2xl font-light dark:text-gray-300">Services</h2>
-            {(values(props.app.services) as any as IService[]).map((service, index) =>
-                <Service
-                    key={index}
-                    sessions={props.app.sessionsByServiceName[service.name]}
-                    service={service} />)}
-        </section>
+    return <div className="dashboard__component font-quicksand w-10/12">
+        <h1 className="text-4xl mb-3 text-nord1 dark:text-nord5">Services</h1>
+        {(values(props.app.services) as any as IService[]).map((service, index) =>
+            <Service
+                key={index}
+                sessions={props.app.sessionsByServiceName[service.name]}
+                service={service} />)}
     </div>;
 })
 

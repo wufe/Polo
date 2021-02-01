@@ -29,7 +29,7 @@ type Service struct {
 	CommandResponseChan   chan *ServiceCommandOutput `yaml:"-" json:"-"`
 	ObjectsToHashMap      map[string]string          `yaml:"-" json:"-"`
 	HashToObjectsMap      map[string]*RemoteObject   `yaml:"-" json:"-"`
-	Branches              []string                   `yaml:"-" json:"-"`
+	Branches              []string                   `yaml:"-" json:"branches"`
 	Tags                  []string                   `yaml:"-" json:"-"`
 	Commits               []string                   `yaml:"-" json:"-"`
 	CommitMap             map[string]*object.Commit  `yaml:"-" json:"-"`
