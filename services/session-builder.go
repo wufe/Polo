@@ -127,6 +127,8 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(session.Service.Healthcheck.RetryTimeout))
 	done := make(chan struct{})
 
+	// TODO: Persist session
+
 	go func() {
 
 		workingDir, err := sessionHandler.buildSessionCommitStructure(session)
