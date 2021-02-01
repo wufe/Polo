@@ -28,12 +28,14 @@ You can find an example of a configuration file with all the options in the fold
 
 ## Known issues / missing features
 
-- Add "last author" and "last update" for each branch  in main manager page
+- Add "last author", "last update" and "last commit message" for each branch in main manager page
 - Improve session page requesting only logs and status
 - Piped commands not working (e.g. `docker run ... | xargs -I %s echo "%i"` )  
 - Improve manager design
 - Use host for main target forward
 - Additional forward rules
-- Configuration persistence via sqlite
+- Configuration persistence via embeddable database (badgerDB?)
+- Add possibility to always watch one or more branches and provide an always available session
+- Add possibility to manually trigger a fetch in a git service folder
 - Configuration reload
 - Configuration CRUD via UI
