@@ -123,7 +123,9 @@ func (sessionHandler *SessionHandler) CleanupSession(session *models.Session, st
 func (sessionHandler *SessionHandler) MarkSessionAsStarted(session *models.Session) {
 	session.Status = models.SessionStatusStarted
 	session.MaxAge = session.Service.Recycle.InactivityTimeout
-	sessionHandler.StartSessionInactivityTimer(session)
+	if session.MaxAge > 0 {
+		sessionHandler.StartSessionInactivityTimer(session)
+	}
 }
 
 func (sessionHandler *SessionHandler) MarkSessionAsBeingRequested(session *models.Session) {
