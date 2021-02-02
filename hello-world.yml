@@ -2,6 +2,7 @@ services:
   - name: hello-world
     remote: "https://github.com/nginxinc/NGINX-Demos"
     target: "http://127.0.0.1:{{port}}"
+    use_git_cli: true
     commands:
       start:
         # - command: 'docker run -p {{port}}:80 -d nginxdemos/hello | xargs -I % echo "polo[container_id=%]"'
@@ -10,23 +11,23 @@ services:
       stop:
         - command: "docker kill {{container_id}}"
     recycle:
-      inactivity_timeout: 60
+      inactivity_timeout: 30
     healthcheck:
       retry_interval: 5
 
-  - name: hello-world-long-starttime
-    remote: "https://github.com/nginxinc/NGINX-Demos"
-    target: "http://127.0.0.1:{{port}}"
-    commands:
-      start:
-        - command: pwd
-        - command: pwd
-          working_dir: ./autoscaling-demo
-        - command: pwd
-      stop:
-        - command: ''
-    recycle:
-      inactivity_timeout: 600
-    healthcheck:
-      retry_interval: 60
-      retry_timeout: 3600
+  # - name: hello-world-long-starttime
+  #   remote: "https://github.com/nginxinc/NGINX-Demos"
+  #   target: "http://127.0.0.1:{{port}}"
+  #   commands:
+  #     start:
+  #       - command: pwd
+  #       - command: pwd
+  #         working_dir: ./autoscaling-demo
+  #       - command: pwd
+  #     stop:
+  #       - command: ''
+  #   recycle:
+  #     inactivity_timeout: 600
+  #   healthcheck:
+  #     retry_interval: 60
+  #     retry_timeout: 3600

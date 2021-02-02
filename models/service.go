@@ -23,6 +23,7 @@ type Service struct {
 	Commands              Commands                   `json:"commands"`
 	MaxConcurrentSessions int                        `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
 	Port                  PortConfiguration          `yaml:"port" json:"port"`
+	UseGitCLI             bool                       `yaml:"use_git_cli" json:"useGitCLI"`
 	ServiceFolder         string                     `yaml:"-" json:"serviceFolder"`
 	ServiceBaseFolder     string                     `yaml:"-" json:"serviceBaseFolder"`
 	CommandChan           chan *ServiceCommand       `yaml:"-" json:"-"`

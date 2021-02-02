@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/kennygrant/sanitize"
 	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/models"
+	"github.com/wufe/polo/services/versioning"
 	"github.com/wufe/polo/utils"
 )
 
@@ -57,10 +57,9 @@ func (serviceHandler *ServiceHandler) InitializeService(service *models.Service)
 			return err
 		}
 
-		_, err = git.PlainClone(serviceBaseFolder, false, &git.CloneOptions{
-			URL:  service.Remote,
-			Auth: auth,
-		})
+		gitClient := versioning.GetGitClient(service, auth)
+
+		err = gitClient.Clone(serviceFolder, "_base", service.Remote)
 		if err != nil {
 			return err
 		}
@@ -134,6 +133,11 @@ func (serviceHandler *ServiceHandler) fetchServiceRemote(service *models.Service
 	// TODO: Handle all these errors
 
 	auth, err := service.GetAuth()
+	if err != nil {
+		return
+	}
+
+	gitClient := versioning.GetGitClient(service, auth)
 
 	// Open repository
 	repo, err := git.PlainOpen(service.ServiceBaseFolder)
@@ -143,33 +147,18 @@ func (serviceHandler *ServiceHandler) fetchServiceRemote(service *models.Service
 	}
 
 	// Fetch
-	err = repo.Fetch(&git.FetchOptions{
-		RefSpecs: []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
-		Auth:     auth,
-	})
+	err = gitClient.FetchAll(service.ServiceBaseFolder)
 	serviceHandler.defaultServiceErrorLog(service, err, git.NoErrAlreadyUpToDate)
-	if err != nil && err != git.NoErrAlreadyUpToDate {
-		return
-	}
-
-	// Get remote
-	remote, err := repo.Remote("origin")
-	serviceHandler.defaultServiceErrorLog(service, err)
-	if err != nil {
-		return
-	}
 
 	// Branches
-	refs, err := remote.List(&git.ListOptions{
-		Auth: auth,
-	})
+	branches, err := repo.Branches()
 	serviceHandler.defaultServiceErrorLog(service, err)
-
 	refPrefix := "refs/heads/"
-	for _, ref := range refs {
+	branches.ForEach(func(ref *plumbing.Reference) error {
+		fmt.Println(ref.Name())
 		refName := ref.Name().String()
 		if !strings.HasPrefix(refName, refPrefix) {
-			continue
+			return nil
 		}
 		branchName := refName[len(refPrefix):]
 
@@ -187,10 +176,15 @@ func (serviceHandler *ServiceHandler) fetchServiceRemote(service *models.Service
 		}
 
 		service.HashToObjectsMap[ref.Hash().String()].Branches = appendWithoutDup(service.HashToObjectsMap[ref.Hash().String()].Branches, branchName)
-	}
+		return nil
+	})
+	serviceHandler.defaultServiceErrorLog(service, err)
 
 	// Tags
 	tags, err := repo.Tags()
+	if err != nil {
+		return
+	}
 	serviceHandler.defaultServiceErrorLog(service, err)
 
 	tagPrefix := "refs/tags/"

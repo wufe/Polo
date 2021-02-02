@@ -6,17 +6,16 @@ import (
 	"path/filepath"
 
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/kennygrant/sanitize"
 	"github.com/wufe/polo/models"
+	"github.com/wufe/polo/services/versioning"
 )
 
 func (sessionHandler *SessionHandler) buildSessionCommitStructure(session *models.Session) (string, error) {
 	session.LogInfo(fmt.Sprintf("Trying to build session commit structure in folder %s", session.Service.ServiceFolder))
 
 	checkout := sanitize.Name(session.CommitID)
-	sessionCommitFolder := filepath.Join(session.Service.ServiceFolder, checkout)
 
 	auth, err := session.Service.GetAuth()
 	if err != nil {
@@ -24,33 +23,26 @@ func (sessionHandler *SessionHandler) buildSessionCommitStructure(session *model
 		return "", err
 	}
 
-	var repo *git.Repository
+	gitClient := versioning.GetGitClient(session.Service, auth)
 
+	sessionCommitFolder := filepath.Join(session.Service.ServiceFolder, checkout)
 	if _, err := os.Stat(sessionCommitFolder); os.IsNotExist(err) {
 		session.LogInfo(fmt.Sprintf("Cloning from remote %s into %s", session.Service.Remote, sessionCommitFolder))
-		repo, err = git.PlainClone(sessionCommitFolder, false, &git.CloneOptions{
-			URL:  session.Service.Remote,
-			Auth: auth,
-		})
+		err := gitClient.Clone(session.Service.ServiceFolder, checkout, session.Service.Remote)
 		if err != nil {
 			session.LogError(fmt.Sprintf("Error while cloning: %s", err.Error()))
 			return "", err
 		}
-	} else {
-		repo, err = git.PlainOpen(sessionCommitFolder)
-		if err != nil {
-			session.LogError(fmt.Sprintf("Error while using existing repository: %s", err.Error()))
-			return "", err
-		}
+	}
+	repo, err := git.PlainOpen(sessionCommitFolder)
+	if err != nil {
+		session.LogError(fmt.Sprintf("Error while using existing repository: %s", err.Error()))
+		return "", err
 	}
 
 	session.LogInfo("Fetching from remote")
-	err = repo.Fetch(&git.FetchOptions{
-		RefSpecs: []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
-		Force:    true,
-		Auth:     auth,
-	})
-	if err != nil && err != git.NoErrAlreadyUpToDate {
+	err = gitClient.FetchAll(sessionCommitFolder)
+	if err != nil {
 		session.LogError(fmt.Sprintf("Error while fetching from remote: %s", err.Error()))
 		return "", err
 	}
