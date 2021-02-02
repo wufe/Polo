@@ -28,6 +28,7 @@ You can find an example of a configuration file with all the options in the fold
 
 ## Known issues / missing features
 
+- Pruning branches does not work with embedded git client (prune is not supported)
 - Improve session page requesting only logs and status
 - Piped commands not working (e.g. `docker run ... | xargs -I %s echo "%i"` )  
 - Improve manager design
