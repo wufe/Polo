@@ -32,7 +32,7 @@ func (client *EmbeddedGitClient) FetchAll(repoFolder string) error {
 		return err
 	}
 	err = repo.Fetch(&git.FetchOptions{
-		RefSpecs: []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
+		RefSpecs: []config.RefSpec{"refs/*:refs/*"},
 		Force:    true,
 		Auth:     client.Auth,
 	})
