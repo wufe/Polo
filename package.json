@@ -17,6 +17,11 @@
 		"build:server:prod:statik": "statik -src=./static",
 		"build:server:prod:application": "go build -o dist/polo",
 		"build:client:prod": "cross-env NODE_ENV=production webpack --config webpack.config.js",
+
+		"build:prod:windows": "run-s clean build:client:prod build:server:prod:windows",
+		"build:server:prod:windows": "run-s build:server:prod:restore build:server:prod:statik build:server:prod:application:windows",
+		"build:server:prod:application:windows": "cross-env GOOS=windows GOARCH=amd64 go build -o dist/polo.exe",
+
 		"clean": "rimraf dist static statik/statik.go",
 		"serve": "webpack serve"
 	},
