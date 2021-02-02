@@ -13,7 +13,7 @@ export const ServiceBranches = observer((props: TProps) => {
     return <>
         <h4 className="mt-2 mb-1 text-sm text-gray-500 uppercase">Branches:</h4>
         <div
-            className="grid items-center gap-2" style={{ gridTemplateColumns: '2fr 3fr minmax(250px, 2fr) minmax(150px, 1fr) minmax(150px, 1fr)', gridTemplateRows: '3m'}}>
+            className="grid items-end gap-2" style={{ gridTemplateColumns: '2fr 3fr minmax(250px, 2fr) minmax(150px, 1fr) minmax(150px, 1fr)', gridTemplateRows: '3m'}}>
             {sortBranches(props.branches).map((branch, key) =>
             <React.Fragment key={key}>
                 <span className="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis " title={branch.name}>{branch.name}</span>
