@@ -1,6 +1,6 @@
 import { APIRequestResult } from '@/api/common';
 import { IApp } from '@/state/models';
-import { IService } from '@/state/models/service-model';
+import { IService, IServiceBranchModel } from '@/state/models/service-model';
 import { ISession } from '@/state/models/session-model';
 import { values } from 'mobx';
 import { observer } from 'mobx-react-lite';
@@ -36,12 +36,13 @@ export const Service = observer((props: TProps) => {
         }
     }
 
+    const branches: IServiceBranchModel[] = values(props.service.branches) as any;
+
     return <div className={`
         px-6
         divide-y dark:divide-gray-500
         mx-auto
-        my-5 rounded-md shadow-lg 
-        w-11/12
+        my-5 rounded-md shadow-lg
         dark:bg-nord0
         font-quicksand
         ${!open ? ' max-h-14 overflow-hidden dark:hover:bg-nord3' : ''}`}
@@ -72,8 +73,8 @@ export const Service = observer((props: TProps) => {
             <ServiceSessions sessions={props.sessions} />
         </div>}
 
-        {props.service.branches && props.service.branches.length && <div className="my-4">
-            <ServiceBranches branches={props.service.branches} onSessionCreationSubmission={submitSessionCreation} />
+        {branches && branches.length && <div className="my-4">
+            <ServiceBranches branches={branches} onSessionCreationSubmission={submitSessionCreation} />
         </div>}
         
         <div className="flex my-4 py-4">

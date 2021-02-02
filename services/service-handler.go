@@ -154,6 +154,7 @@ func (serviceHandler *ServiceHandler) fetchServiceRemote(service *models.Service
 	branches, err := repo.Branches()
 	serviceHandler.defaultServiceErrorLog(service, err)
 	refPrefix := "refs/heads/"
+	service.Branches = make(map[string]*models.Branch)
 	branches.ForEach(func(ref *plumbing.Reference) error {
 		refName := ref.Name().String()
 		if !strings.HasPrefix(refName, refPrefix) {
@@ -161,7 +162,7 @@ func (serviceHandler *ServiceHandler) fetchServiceRemote(service *models.Service
 		}
 		branchName := refName[len(refPrefix):]
 
-		service.Branches = appendWithoutDup(service.Branches, branchName)
+		// service.Branches = appendWithoutDup(service.Branches, branchName)
 
 		service.ObjectsToHashMap[branchName] = ref.Hash().String()
 		service.ObjectsToHashMap[fmt.Sprintf("origin/%s", branchName)] = ref.Hash().String()
@@ -175,6 +176,20 @@ func (serviceHandler *ServiceHandler) fetchServiceRemote(service *models.Service
 		}
 
 		service.HashToObjectsMap[ref.Hash().String()].Branches = appendWithoutDup(service.HashToObjectsMap[ref.Hash().String()].Branches, branchName)
+
+		commit, err := repo.CommitObject(ref.Hash())
+		if err != nil {
+			return err
+		}
+
+		service.Branches[branchName] = &models.Branch{
+			Name:    branchName,
+			Hash:    ref.Hash().String(),
+			Author:  commit.Author.Email,
+			Date:    commit.Author.When,
+			Message: commit.Message,
+		}
+
 		return nil
 	})
 	serviceHandler.defaultServiceErrorLog(service, err)

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport"
@@ -30,7 +31,7 @@ type Service struct {
 	CommandResponseChan   chan *ServiceCommandOutput `yaml:"-" json:"-"`
 	ObjectsToHashMap      map[string]string          `yaml:"-" json:"-"`
 	HashToObjectsMap      map[string]*RemoteObject   `yaml:"-" json:"-"`
-	Branches              []string                   `yaml:"-" json:"branches"`
+	Branches              map[string]*Branch         `yaml:"-" json:"branches"`
 	Tags                  []string                   `yaml:"-" json:"-"`
 	Commits               []string                   `yaml:"-" json:"-"`
 	CommitMap             map[string]*object.Commit  `yaml:"-" json:"-"`
@@ -66,6 +67,14 @@ type ServiceCommandOutput struct {
 type RemoteObject struct {
 	Branches []string
 	Tags     []string
+}
+
+type Branch struct {
+	Name    string    `json:"name"`
+	Hash    string    `json:"hash"`
+	Author  string    `json:"author"`
+	Date    time.Time `json:"date"`
+	Message string    `json:"message"`
 }
 
 func NewService(service *Service) (*Service, error) {
@@ -135,7 +144,7 @@ func NewService(service *Service) (*Service, error) {
 	service.CommandResponseChan = make(chan *ServiceCommandOutput)
 	service.ObjectsToHashMap = make(map[string]string)
 	service.HashToObjectsMap = make(map[string]*RemoteObject)
-	service.Branches = []string{}
+	service.Branches = make(map[string]*Branch)
 	service.Tags = []string{}
 	service.Commits = []string{}
 	service.CommitMap = make(map[string]*object.Commit)

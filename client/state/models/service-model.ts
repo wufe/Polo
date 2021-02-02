@@ -3,6 +3,16 @@ import { createNewSessionAPI } from "@/api/services";
 import { flow, Instance, SnapshotIn, SnapshotOut, types } from "mobx-state-tree";
 import { ISession } from "./session-model";
 
+export const ServiceBranchModel = types.model({
+    name   : types.string,
+    hash   : types.string,
+    author : types.string,
+    date   : types.string,
+    message: types.string,
+})
+
+export interface IServiceBranchModel extends Instance<typeof ServiceBranchModel> {}
+
 export const ServiceModel = types.model({
     name                 : types.string,
     remote               : types.string,
@@ -10,7 +20,7 @@ export const ServiceModel = types.model({
     host                 : types.string,
     maxConcurrentSessions: types.number,
     serviceFolder        : types.string,
-    branches             : types.array(types.string)
+    branches             : types.map(ServiceBranchModel)
 })
 .actions(self => {
 
