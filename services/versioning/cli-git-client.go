@@ -18,7 +18,7 @@ func (client *CLIGitClient) Clone(baseFolder string, outputFolder string, remote
 }
 
 func (client *CLIGitClient) FetchAll(repoFolder string) error {
-	cmd := exec.Command("git", "fetch", "--force", "-u", "origin", "+refs/*:refs/*")
+	cmd := exec.Command("git", "fetch", "--force", "-u", "origin", "+refs/*:refs/*", "--prune")
 	cmd.Dir = repoFolder
 	err := cmd.Run()
 	return err
