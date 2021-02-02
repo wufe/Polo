@@ -155,7 +155,6 @@ func (serviceHandler *ServiceHandler) fetchServiceRemote(service *models.Service
 	serviceHandler.defaultServiceErrorLog(service, err)
 	refPrefix := "refs/heads/"
 	branches.ForEach(func(ref *plumbing.Reference) error {
-		fmt.Println(ref.Name())
 		refName := ref.Name().String()
 		if !strings.HasPrefix(refName, refPrefix) {
 			return nil
