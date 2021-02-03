@@ -5,9 +5,11 @@ services:
     use_git_cli: true
     commands:
       start:
-        # - command: 'docker run -p {{port}}:80 -d nginxdemos/hello | xargs -I % echo "polo[container_id=%]"'
-        - command: 'docker run -p {{port}}:80 -d nginxdemos/hello'
-          output_variable: 'container_id'
+        - command: echo "command 1"
+        - command: 'docker run -p {{port}}:80 -d nginxdemos/hello | xargs -I % echo "polo[container_id=%]"'
+        - command: echo "command 3"
+        # - command: 'docker run -p {{port}}:80 -d nginxdemos/hello'
+          # output_variable: 'container_id'
       stop:
         - command: "docker kill {{container_id}}"
     recycle:

@@ -184,6 +184,8 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 				cmds := []*exec.Cmd{}
 				for _, commandProg := range strings.Split(builtCommand, "|") {
 
+					commandProg = strings.TrimSpace(commandProg)
+
 					progAndArgs := strings.Split(commandProg, " ")
 
 					if runtime.GOOS == "windows" {

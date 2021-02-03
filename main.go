@@ -3,8 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
-	"path/filepath"
 	"sync"
 
 	log "github.com/sirupsen/logrus"
@@ -33,13 +31,4 @@ func main() {
 	net.NewHTTPServer(*port, sessionHandler, configuration, &wg)
 	wg.Wait()
 
-}
-
-func getExecutableFolder() string {
-	executablePath, err := os.Executable()
-	if err != nil {
-		log.Fatalln("Error retrieving file path", err)
-	}
-	dir := filepath.Dir(executablePath)
-	return dir
 }
