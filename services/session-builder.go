@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"time"
 
@@ -185,6 +186,10 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 
 					progAndArgs := strings.Split(commandProg, " ")
 
+					if runtime.GOOS == "windows" {
+						progAndArgs = append([]string{"cmd", "/C"}, progAndArgs...)
+					}
+
 					cmd := exec.CommandContext(sessionStartContext, progAndArgs[0], progAndArgs[1:]...)
 					cmd.Env = append(
 						os.Environ(),
@@ -194,11 +199,17 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 					cmds = append(cmds, cmd)
 				}
 
-				err = utils.ThroughCallback(utils.ExecuteCommand(cmds...))(func(line string) {
-					session.LogStdout(line)
-					log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line)
-					sessionHandler.parseSessionCommandOuput(session, &command, line)
-				})
+				// err = utils.ThroughCallback(utils.ExecuteCommand(cmds...))(func(line string) {
+				// 	session.LogStdout(line)
+				// 	log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line)
+				// 	sessionHandler.parseSessionCommandOuput(session, &command, line)
+				// })
+
+				err = utils.ExecCmds(func(line *utils.StdLine) {
+					session.LogStdout(line.Line)
+					log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line.Line)
+					sessionHandler.parseSessionCommandOuput(session, &command, line.Line)
+				}, cmds...)
 
 				if err != nil {
 					session.LogError(err.Error())
