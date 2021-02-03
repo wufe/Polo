@@ -6,11 +6,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 	"time"
 
@@ -181,24 +179,13 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 				}
 				session.LogStdin(builtCommand)
 
-				cmds := []*exec.Cmd{}
-				for _, commandProg := range strings.Split(builtCommand, "|") {
-
-					commandProg = strings.TrimSpace(commandProg)
-
-					progAndArgs := strings.Split(commandProg, " ")
-
-					if runtime.GOOS == "windows" {
-						progAndArgs = append([]string{"cmd", "/C"}, progAndArgs...)
-					}
-
-					cmd := exec.CommandContext(sessionStartContext, progAndArgs[0], progAndArgs[1:]...)
+				cmds := utils.ParseCommandContext(sessionStartContext, builtCommand)
+				for _, cmd := range cmds {
 					cmd.Env = append(
 						os.Environ(),
-						cmd.Env...,
+						command.Environment...,
 					)
 					cmd.Dir = sessionHandler.getWorkingDir(workingDir, command.WorkingDir)
-					cmds = append(cmds, cmd)
 				}
 
 				err = utils.ExecCmds(func(line *utils.StdLine) {

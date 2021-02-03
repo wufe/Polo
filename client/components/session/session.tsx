@@ -35,7 +35,7 @@ export const SessionLogs = observer((props: { session: ISession }) => {
 
     return <div
         ref={logsContainerDiv}
-        className="m-2 shadow-lg text-nord4 py-5 rounded-md border flex-grow flex flex-col bg-nord-5 dark:border-black min-w-0 overflow-x-auto">
+        className="m-2 shadow-lg text-nord4 py-5 rounded-md border flex-grow flex flex-col bg-nord-5 dark:border-black min-w-0 min-h-0 overflow-x-auto">
         {values(props.session.logs as any as ISessionLog[]).map((log: ISessionLog, key) => {
             const color = colorsByLogType[log.type];
             return <p className="mx-10 leading-relaxed text-sm whitespace-nowrap max-w-full min-w-0 flex items-center" key={key}>
@@ -99,7 +99,7 @@ export const Session = observer((props: TProps) => {
 
     if (!session) return null;
 
-    return <div className="session__component w-10/12 max-w-full flex flex-col mt-3 min-w-0">
+    return <div className="session__component w-10/12 max-w-full flex flex-col pt-3 min-w-0 min-h-0 max-h-screen">
         <h1 className="text-4xl mb-3 text-nord1 dark:text-nord5">Session</h1>
         <div className="text-lg text-gray-500 mb-7">Id: {uuid}</div>
         <SessionLogs session={session} />

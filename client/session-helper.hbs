@@ -1,4 +1,4 @@
 <div id="polo-session-helper"></div>
-<script>window.currentSession = JSON.parse(`%%currentSession%%`);</script>
+<script>window.currentSession = JSON.parse(atob(`%%currentSession%%`));</script>
 {{{ htmlWebpackPlugin.tags.headTags }}}
 {{{ htmlWebpackPlugin.tags.bodyTags }}}

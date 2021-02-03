@@ -5,8 +5,29 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"runtime"
+	"strings"
 	"sync"
 )
+
+func ParseCommandContext(context context.Context, command string) []*exec.Cmd {
+
+	commands := []*exec.Cmd{}
+
+	for _, name := range strings.Split(command, "|") {
+		name = strings.TrimSpace(name)
+		nameAndArgs := strings.Split(name, " ")
+
+		if runtime.GOOS == "windows" {
+			nameAndArgs = append([]string{"cmd", "/C"}, nameAndArgs...)
+		}
+
+		cmd := exec.CommandContext(context, nameAndArgs[0], nameAndArgs[1:]...)
+		commands = append(commands, cmd)
+	}
+
+	return commands
+}
 
 func ExecCmds(callback func(*StdLine), cmds ...*exec.Cmd) error {
 

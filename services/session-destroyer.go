@@ -3,8 +3,6 @@ package services
 import (
 	"context"
 	"os"
-	"os/exec"
-	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -43,9 +41,10 @@ func (sessionHandler *SessionHandler) DestroySession(session *models.Session) {
 		for _, command := range session.Service.Commands.Stop {
 			select {
 			case <-sessionStopContext.Done():
+				cancelSessionStop()
 				return
 			default:
-				commandProg, err := sessionHandler.buildCommand(command.Command, session)
+				builtCommand, err := sessionHandler.buildCommand(command.Command, session)
 				if err != nil {
 					session.LogError(err.Error())
 					log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
@@ -55,17 +54,19 @@ func (sessionHandler *SessionHandler) DestroySession(session *models.Session) {
 						return
 					}
 				}
-				progAndArgs := strings.Split(commandProg, " ")
-				cmd := exec.CommandContext(sessionStopContext, progAndArgs[0], progAndArgs[1:]...)
-				cmd.Env = append(
-					os.Environ(),
-					cmd.Env...,
-				)
-				cmd.Dir = sessionHandler.getWorkingDir(session.Folder, command.WorkingDir)
+
+				cmds := utils.ParseCommandContext(sessionStopContext, builtCommand)
+				for _, cmd := range cmds {
+					cmd.Env = append(
+						os.Environ(),
+						command.Environment...,
+					)
+					cmd.Dir = sessionHandler.getWorkingDir(session.Folder, command.WorkingDir)
+				}
 				err = utils.ExecCmds(func(sl *utils.StdLine) {
 					log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, sl.Line)
 					session.LogStdout(sl.Line)
-				}, cmd)
+				}, cmds...)
 
 				if err != nil {
 					session.LogError(err.Error())
@@ -82,6 +83,8 @@ func (sessionHandler *SessionHandler) DestroySession(session *models.Session) {
 
 		// In the end
 		sessionHandler.CleanupSession(session, models.SessionStatusStopped)
+
+		cancelSessionStop()
 	}()
 
 }

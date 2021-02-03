@@ -2,6 +2,7 @@ package net
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -111,8 +112,8 @@ func (server *HTTPServer) serveReverseProxy(target string, res http.ResponseWrit
 					serializedSession = []byte(`{}`)
 				}
 
-				sessionHelper := strings.ReplaceAll(server.sessionHelperContent, "%%currentSession%%", string(serializedSession))
-				sessionHelper = strings.ReplaceAll(sessionHelper, `\\`, `\\\\`)
+				serializedSession = []byte(strings.ReplaceAll(string(serializedSession), `\\`, `\\\\`))
+				sessionHelper := strings.ReplaceAll(server.sessionHelperContent, "%%currentSession%%", base64.StdEncoding.EncodeToString(serializedSession))
 
 				buffer := bytes.NewBufferString(sessionHelper)
 
