@@ -28,6 +28,7 @@ You can find an example of a configuration file with all the options in the fold
 
 ## Known issues / missing features
 
+- Commands output stream not working
 - "cp" not working on windows
 - Add optional "copy mode" opposed to standard "clone mode" to initialize a service: copies the directory instead of cloning again
 - Add "initializing" status to a service, in order to allow the server to start asap
