@@ -201,12 +201,6 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 					cmds = append(cmds, cmd)
 				}
 
-				// err = utils.ThroughCallback(utils.ExecuteCommand(cmds...))(func(line string) {
-				// 	session.LogStdout(line)
-				// 	log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line)
-				// 	sessionHandler.parseSessionCommandOuput(session, &command, line)
-				// })
-
 				err = utils.ExecCmds(func(line *utils.StdLine) {
 					session.LogStdout(line.Line)
 					log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line.Line)

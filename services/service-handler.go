@@ -81,10 +81,10 @@ func (serviceHandler *ServiceHandler) startServiceCommandWatch(service *models.S
 
 			output := []string{}
 
-			err := utils.ThroughCallback(utils.ExecuteCommand(&cmd.Cmd))(func(line string) {
-				output = append(output, line)
-				log.Infof("[SERVICE:%s (stdout)> ] %s", service.Name, line)
-			})
+			err := utils.ExecCmds(func(sl *utils.StdLine) {
+				output = append(output, sl.Line)
+				log.Infof("[SERVICE:%s (stdout)> ] %s", service.Name, sl.Line)
+			}, &cmd.Cmd)
 
 			if err != nil {
 				log.Errorf("[SERVICE:%s] %s", service.Name, err.Error())
