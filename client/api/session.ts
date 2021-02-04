@@ -1,9 +1,14 @@
-import { ISession, ISessionLog } from '@/state/models/session-model';
+import { ISession, ISessionLog, SessionStatus } from '@/state/models/session-model';
 import Axios from 'axios';
 import { buildRequest } from './common';
 
 export interface IAPISession extends Omit<ISession, 'logs'> {
     logs: ISessionLog[];
+}
+
+export interface IAPISessionLogsAndStatus {
+    logs: ISessionLog[];
+    status: SessionStatus;
 }
 
 export function retrieveAllSessionsAPI() {
@@ -28,4 +33,8 @@ export function untrackSessionAPI() {
 
 export function retrieveSessionAgeAPI(uuid: string) {
     return buildRequest<number>(() => Axios.get(`/_polo_/api/session/${uuid}/age`));
+}
+
+export function retrieveLogsAndStatusAPI(uuid: string, lastUUID: string = "<none>") {
+    return buildRequest<IAPISessionLogsAndStatus>(() => Axios.get(`/_polo_/api/session/${uuid}/logs/${lastUUID}`));
 }

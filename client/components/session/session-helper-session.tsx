@@ -28,7 +28,7 @@ export const SessionHelperSession = observer((props: TProps) => {
 
     useEffect(() => {
         const sessionAgeRetrieval = () => {
-            props.session.retrieveAge(props.session.uuid)
+            props.session.retrieveAge()
                 .then(request => {
                     if (request.result === APIRequestResult.FAILED) {
                         alert('Session expired');

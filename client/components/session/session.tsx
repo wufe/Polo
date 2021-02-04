@@ -6,6 +6,7 @@ import { observer } from 'mobx-react-lite';
 import { string } from 'mobx-state-tree/dist/internal';
 import React, { useEffect, useRef } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
+import dayjs from 'dayjs';
 
 const colorsByLogType: {
     [key in SessionLogType]: string;
@@ -26,7 +27,6 @@ export const SessionLogs = observer((props: { logs: ISessionLog[] }) => {
     const logsContainerDiv = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
-        console.log('here')
         if (logsContainerDiv.current) {
             logsContainerDiv.current.scrollTop = logsContainerDiv.current.scrollHeight;
         }
@@ -40,7 +40,7 @@ export const SessionLogs = observer((props: { logs: ISessionLog[] }) => {
         {props.logs.map((log: ISessionLog, key) => {
             const color = colorsByLogType[log.type];
             return <p className="mx-10 leading-relaxed text-sm whitespace-nowrap max-w-full min-w-0 flex items-center" key={key}>
-                <span className="uppercase text-xs w-16 min-w-16" style={{ color }}>{log.type}:</span> <span>{log.message}</span>
+                <span className="uppercase text-xs font-mono min-w-16 px-3">[{dayjs(log.when).format('HH:mm:ss')}]</span><span className="uppercase text-xs w-16 min-w-16" style={{ color }}>{log.type}:</span> <span>{log.message}</span>
             </p>
         })}
     </div>
@@ -50,6 +50,7 @@ type TProps = {
     app: IApp;
 }
 
+// TODO: Move session retrieval logic from session presentation logic
 export const Session = observer((props: TProps) => {
 
     const { uuid } = useParams<{ uuid: string }>();
@@ -61,19 +62,36 @@ export const Session = observer((props: TProps) => {
 
     useEffect(() => {
 
-        const sessionRetrieval = () => {
-            props.app.retrieveSession(uuid)
+        const sessionStatusRetrieval = () => {
+
+            const logs: ISessionLog[] = values(props.app.session.logs) as any;
+
+            let lastLogUUID: string | undefined = undefined;
+
+            if (logs.length) {
+                lastLogUUID =  logs[logs.length-1].uuid;
+            }
+
+            props.app.session.retrieveLogsAndStatus(lastLogUUID)
                 .then(request => {
                     if (request.result === APIRequestResult.FAILED) {
                         alert(request.reason);
                         history.push(`/_polo_/`);
                     } else {
-                        interval.current = setTimeout(() => sessionRetrieval(), 1000);
+                        interval.current = setTimeout(() => sessionStatusRetrieval(), 1000);
                     }
                 });
         };
 
-        sessionRetrieval();
+        props.app.retrieveSession(uuid)
+            .then(request => {
+                if (request.result === APIRequestResult.FAILED) {
+                    alert(request.reason);
+                    history.push(`/_polo_/`);
+                } else {
+                    interval.current = setTimeout(() => sessionStatusRetrieval(), 1000);
+                }
+            });
         
         return () => {
             if (interval.current)

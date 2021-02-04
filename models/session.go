@@ -52,64 +52,64 @@ func NewSession(
 }
 
 func (session *Session) LogCritical(message string) {
-	session.Logs = append(session.Logs, Log{
-		Message: message,
-		Type:    LogTypeCritical,
-	})
+	session.Logs = append(
+		session.Logs,
+		NewLog(message, LogTypeCritical),
+	)
 }
 
 func (session *Session) LogError(message string) {
-	session.Logs = append(session.Logs, Log{
-		Message: message,
-		Type:    LogTypeError,
-	})
+	session.Logs = append(
+		session.Logs,
+		NewLog(message, LogTypeError),
+	)
 }
 
 func (session *Session) LogWarn(message string) {
-	session.Logs = append(session.Logs, Log{
-		Message: message,
-		Type:    LogTypeWarn,
-	})
+	session.Logs = append(
+		session.Logs,
+		NewLog(message, LogTypeWarn),
+	)
 }
 
 func (session *Session) LogInfo(message string) {
-	session.Logs = append(session.Logs, Log{
-		Message: message,
-		Type:    LogTypeInfo,
-	})
+	session.Logs = append(
+		session.Logs,
+		NewLog(message, LogTypeInfo),
+	)
 }
 
 func (session *Session) LogDebug(message string) {
-	session.Logs = append(session.Logs, Log{
-		Message: message,
-		Type:    LogTypeDebug,
-	})
+	session.Logs = append(
+		session.Logs,
+		NewLog(message, LogTypeDebug),
+	)
 }
 
 func (session *Session) LogTrace(message string) {
-	session.Logs = append(session.Logs, Log{
-		Message: message,
-		Type:    LogTypeTrace,
-	})
+	session.Logs = append(
+		session.Logs,
+		NewLog(message, LogTypeTrace),
+	)
 }
 
 func (session *Session) LogStdin(message string) {
-	session.Logs = append(session.Logs, Log{
-		Message: message,
-		Type:    LogTypeStdin,
-	})
+	session.Logs = append(
+		session.Logs,
+		NewLog(message, LogTypeStdin),
+	)
 }
 
 func (session *Session) LogStdout(message string) {
-	session.Logs = append(session.Logs, Log{
-		Message: message,
-		Type:    LogTypeStdout,
-	})
+	session.Logs = append(
+		session.Logs,
+		NewLog(message, LogTypeStdout),
+	)
 }
 
 func (session *Session) LogStderr(message string) {
-	session.Logs = append(session.Logs, Log{
-		Message: message,
-		Type:    LogTypeStderr,
-	})
+	session.Logs = append(
+		session.Logs,
+		NewLog(message, LogTypeStderr),
+	)
 }

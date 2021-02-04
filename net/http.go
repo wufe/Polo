@@ -16,15 +16,16 @@ import (
 )
 
 const (
-	ServerRouteRoot                  ServerRoute = "/_polo_"
-	ServerRouteDashboard             ServerRoute = "/_polo_/"
-	ServerRouteSessionStatus         ServerRoute = "/_polo_/session/%s/" // uuid
-	ServerRouteStatic                ServerRoute = "/_polo_/static/*filepath"
-	ServerRouteAPIApplications       ServerRoute = "/_polo_/api/application/"
-	ServerRouteAPISession            ServerRoute = "/_polo_/api/session/"
-	ServerRouteAPISessionByUUID      ServerRoute = "/_polo_/api/session/:uuid"
-	ServerRouteAPISessionAgeByUUID   ServerRoute = "/_polo_/api/session/:uuid/age"
-	ServerRouteAPITrackSessionByUUID ServerRoute = "/_polo_/api/session/:uuid/track"
+	ServerRouteRoot                          ServerRoute = "/_polo_"
+	ServerRouteDashboard                     ServerRoute = "/_polo_/"
+	ServerRouteSessionStatus                 ServerRoute = "/_polo_/session/%s/" // uuid
+	ServerRouteStatic                        ServerRoute = "/_polo_/static/*filepath"
+	ServerRouteAPIApplications               ServerRoute = "/_polo_/api/application/"
+	ServerRouteAPISession                    ServerRoute = "/_polo_/api/session/"
+	ServerRouteAPISessionByUUID              ServerRoute = "/_polo_/api/session/:uuid"
+	ServerRouteAPISessionAgeByUUID           ServerRoute = "/_polo_/api/session/:uuid/age"
+	ServerRouteAPITrackSessionByUUID         ServerRoute = "/_polo_/api/session/:uuid/track"
+	ServerRouteAPISessionLogsAndStatusByUUID ServerRoute = "/_polo_/api/session/:uuid/logs/:last_log"
 
 	StaticFolderPath string = "/_polo_/static"
 
@@ -105,6 +106,7 @@ func NewHTTPServer(port string, sessionHandler *services.SessionHandler, configu
 		router.GET(string(ServerRouteAPISessionAgeByUUID), server.getSessionAgeByUUIDAPI)
 		router.POST(string(ServerRouteAPITrackSessionByUUID), server.postTrackSessionByUUIDAPI)
 		router.DELETE(string(ServerRouteAPITrackSessionByUUID), server.postUntrackSessionAPI)
+		router.GET(string(ServerRouteAPISessionLogsAndStatusByUUID), server.getSessionLogsAndStatusByUUIDAPI)
 
 		server.serveStatic(router)
 

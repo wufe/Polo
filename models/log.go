@@ -1,5 +1,11 @@
 package models
 
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
+
 const (
 	LogTypeTrace    LogType = "trace"
 	LogTypeDebug    LogType = "debug"
@@ -10,8 +16,19 @@ const (
 )
 
 type Log struct {
-	Type    LogType `json:"type"`
-	Message string  `json:"message"`
+	When    time.Time `json:"when"`
+	UUID    string    `json:"uuid"`
+	Type    LogType   `json:"type"`
+	Message string    `json:"message"`
 }
 
 type LogType string
+
+func NewLog(message string, logType LogType) Log {
+	return Log{
+		When:    time.Now(),
+		UUID:    uuid.NewString(),
+		Message: message,
+		Type:    logType,
+	}
+}

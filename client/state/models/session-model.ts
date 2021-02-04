@@ -1,5 +1,5 @@
 import { APIPayload, APIRequestResult } from "@/api/common";
-import { IAPISession, killSessionAPI, retrieveSessionAgeAPI, trackSessionAPI, untrackSessionAPI } from "@/api/session";
+import { IAPISession, IAPISessionLogsAndStatus, killSessionAPI, retrieveLogsAndStatusAPI, retrieveSessionAgeAPI, trackSessionAPI, untrackSessionAPI } from "@/api/session";
 import { flow, Instance, types } from "mobx-state-tree";
 import { ApplicationModel } from "./application-model";
 
@@ -16,6 +16,8 @@ export enum SessionLogType {
 }
 
 export const SessionLogModel = types.model({
+    when   : types.string,
+    uuid   : types.string,
     type   : types.enumeration<SessionLogType>(Object.values(SessionLogType)),
     message: types.string,
 })
@@ -25,8 +27,8 @@ export interface ISessionLog extends Instance<typeof SessionLogModel> {}
 export const castAPISessionToSessionModel = (apiSession: IAPISession): ISession => {
     const { logs, ...rest } = apiSession;
     const session = rest as ISession;
-    session.logs = logs.reduce<{ [k: string]: ISessionLog }>((acc, log, index) => {
-        acc[index] = log;
+    session.logs = logs.reduce<{ [k: string]: ISessionLog }>((acc, log) => {
+        acc[log.uuid] = log;
         return acc;
     }, {}) as any;
     return session;
@@ -61,20 +63,33 @@ export const SessionModel = types.model({
         return untrack;
     });
 
-    const retrieveAge = flow(function* retrieveAge(uuid: string) {
-        const age: APIPayload<number> = yield retrieveSessionAgeAPI(uuid);
-        if (age.result == APIRequestResult.SUCCEEDED) {
+    const retrieveAge = flow(function* retrieveAge() {
+        const age: APIPayload<number> = yield retrieveSessionAgeAPI(self.uuid);
+        if (age.result === APIRequestResult.SUCCEEDED) {
             self.maxAge = age.payload;
         }
         return age;
     });
+
+    const retrieveLogsAndStatus = flow(function* retrieveLogsAndStatus(lastLogUUID?: string) {
+        const logsAndStatus: APIPayload<IAPISessionLogsAndStatus> = yield retrieveLogsAndStatusAPI(self.uuid, lastLogUUID);
+
+        if (logsAndStatus.result === APIRequestResult.SUCCEEDED) {
+            self.status = logsAndStatus.payload.status;
+            for (const log of logsAndStatus.payload.logs) {
+                self.logs.set(log.uuid, log);
+            }
+        }
+
+        return logsAndStatus;
+    })
 
     const kill = flow(function* kill() {
         const kill: APIPayload<void> = yield killSessionAPI(self.uuid);
         return kill;
     })
 
-    return { retrieveAge, track, untrack, kill };
+    return { retrieveAge, track, untrack, kill, retrieveLogsAndStatus };
 })
 
 export interface ISession extends Instance<typeof SessionModel> {}

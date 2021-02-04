@@ -152,6 +152,65 @@ func (server *HTTPServer) deleteSessionByUUIDAPI(
 	res.Write(resString)
 }
 
+func (server *HTTPServer) getSessionLogsAndStatusByUUIDAPI(
+	res http.ResponseWriter,
+	req *http.Request,
+	ps httprouter.Params,
+) {
+	uuid := ps.ByName("uuid")
+
+	var foundSession *models.Session
+	for _, session := range server.SessionHandler.GetAllAliveSessions() {
+		if session.UUID == uuid {
+			foundSession = session
+		}
+	}
+
+	if foundSession == nil {
+		resString, resStatus := buildResponse((ResponseObjectWithFailingReason{
+			ResponseObject: ResponseObject{
+				Message: "Not found",
+			},
+		}), 404)
+		res.Header().Add("Content-Type", "application/json")
+		res.WriteHeader(resStatus)
+		res.Write(resString)
+		return
+	}
+
+	logs := foundSession.Logs
+	lastLogUUID := ps.ByName("last_log")
+
+	if lastLogUUID != "" && lastLogUUID != "<none>" {
+		logs = []models.Log{}
+		afterLastLog := false
+		for _, log := range foundSession.Logs {
+			if afterLastLog {
+				logs = append(logs, log)
+			}
+			if log.UUID == lastLogUUID {
+				afterLastLog = true
+			}
+		}
+	}
+
+	resString, resStatus := buildResponse(ResponseObjectWithResult{
+		ResponseObject: ResponseObject{
+			Message: "Ok",
+		},
+		Result: struct {
+			Logs   []models.Log         `json:"logs"`
+			Status models.SessionStatus `json:"status"`
+		}{
+			Logs:   logs,
+			Status: foundSession.Status,
+		},
+	}, 200)
+	res.Header().Add("Content-Type", "application/json")
+	res.WriteHeader(resStatus)
+	res.Write(resString)
+}
+
 func (server *HTTPServer) getSessionAgeByUUIDAPI(
 	res http.ResponseWriter,
 	req *http.Request,
