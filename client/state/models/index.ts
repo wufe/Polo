@@ -17,7 +17,7 @@ export const createStore = (state: { app: IApp }) =>
 export interface IStore extends Instance<typeof store> {}
 
 if (isDev()) {
-    onPatch(store.app, console.log);
+    // onPatch(store.app, console.log);
     makeInspectable(store);
     window.store = store;
 }
