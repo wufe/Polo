@@ -29,7 +29,6 @@ You can find an example of a configuration file with all the options in the fold
 ## Known issues / missing features
 
 - Add support to command concatenations (; and &&)
-- Add possibility to generate a smart url (e.g. /<application_name>/<branch_name>)
 - Update session-helper design
 - Update design session page (fading terminal, better scrollbar, estimated time required, progress bar)
 - Add possibility to start healthchecking early
