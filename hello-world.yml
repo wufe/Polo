@@ -8,25 +8,25 @@ applications:
       start:
         - command: echo "command 1"
         # - command: 'docker run -p {{port}}:80 -d nginxdemos/hello | xargs -I % echo "polo[container_id=%]"'
-        - command: echo "command 3"
-        - command: sleep 1
-        - command: echo "slept 1s"
-        - command: sleep 2
-        - command: echo "slept 2s"
-        - command: sleep 3
-        - command: echo "slept 3s"
-        - command: sleep 4
-        - command: echo "slept 4s"
-        - command: sleep 5
-        - command: echo "slept 5s"
-        - command: sleep 6
-        - command: echo "slept 6s"
-        - command: sleep 7
-        - command: echo "slept 7s"
-        - command: sleep 8
-        - command: echo "slept 8s"
-        - command: sleep 9
-        - command: echo "slept 9s"
+        # - command: echo "command 3"
+        # - command: sleep 1
+        # - command: echo "slept 1s"
+        # - command: sleep 2
+        # - command: echo "slept 2s"
+        # - command: sleep 3
+        # - command: echo "slept 3s"
+        # - command: sleep 4
+        # - command: echo "slept 4s"
+        # - command: sleep 5
+        # - command: echo "slept 5s"
+        # - command: sleep 6
+        # - command: echo "slept 6s"
+        # - command: sleep 7
+        # - command: echo "slept 7s"
+        # - command: sleep 8
+        # - command: echo "slept 8s"
+        # - command: sleep 9
+        # - command: echo "slept 9s"
         - command: 'docker run -p {{port}}:80 -d nginxdemos/hello'
           output_variable: 'container_id'
       stop:

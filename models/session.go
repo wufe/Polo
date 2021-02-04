@@ -32,7 +32,7 @@ type Session struct {
 	Port         int               `json:"port"`
 	Application  *Application      `json:"application"`
 	Status       SessionStatus     `json:"status"`
-	Logs         []Log             `json:"logs"`
+	Logs         []Log             `json:"-"`
 	CommitID     string            `json:"commitID"` // The object to be checked out (branch/tag/commit id)
 	Checkout     string            `json:"checkout"`
 	Done         chan struct{}     `json:"-"`

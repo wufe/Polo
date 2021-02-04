@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"regexp"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -107,18 +108,29 @@ func (server *HTTPServer) serveReverseProxy(target string, res http.ResponseWrit
 					log.Printf("Error reading body: %v", err)
 				}
 
-				serializedSession, err := json.Marshal(session)
-				if err != nil {
-					serializedSession = []byte(`{}`)
+				stringBody := string(body)
+
+				var buffer *bytes.Buffer
+
+				bodyIndexPattern := regexp.MustCompile(`<body([^>]+?)>`)
+
+				if bodyIndex := bodyIndexPattern.FindStringIndex(stringBody); len(bodyIndex) > 1 {
+
+					serializedSession, err := json.Marshal(session)
+					if err != nil {
+						serializedSession = []byte(`{}`)
+					}
+
+					serializedSession = []byte(strings.ReplaceAll(string(serializedSession), `\\`, `\\\\`))
+					sessionHelper := strings.ReplaceAll(server.sessionHelperContent, "%%currentSession%%", base64.StdEncoding.EncodeToString(serializedSession))
+
+					stringBody = stringBody[:bodyIndex[1]] + sessionHelper + stringBody[bodyIndex[1]:]
+
+					buffer = bytes.NewBufferString(stringBody)
+
+				} else {
+					buffer = bytes.NewBuffer(body)
 				}
-
-				serializedSession = []byte(strings.ReplaceAll(string(serializedSession), `\\`, `\\\\`))
-				sessionHelper := strings.ReplaceAll(server.sessionHelperContent, "%%currentSession%%", base64.StdEncoding.EncodeToString(serializedSession))
-
-				buffer := bytes.NewBufferString(sessionHelper)
-
-				// buffer := bytes.NewBufferString(fmt.Sprintf("<div style=\"position:fixed;bottom:0;right:0;padding:30px;z-index:9999;background:white;\">SESSION: %s</div>", session.UUID))
-				buffer.Write(body)
 
 				res.Body = ioutil.NopCloser(buffer)
 				res.Header["Content-Length"] = []string{fmt.Sprint(buffer.Len())}

@@ -27,10 +27,15 @@ export interface ISessionLog extends Instance<typeof SessionLogModel> {}
 export const castAPISessionToSessionModel = (apiSession: IAPISession): ISession => {
     const { logs, ...rest } = apiSession;
     const session = rest as ISession;
-    session.logs = logs.reduce<{ [k: string]: ISessionLog }>((acc, log) => {
-        acc[log.uuid] = log;
-        return acc;
-    }, {}) as any;
+    if (logs) {
+        session.logs = logs.reduce<{ [k: string]: ISessionLog }>((acc, log) => {
+            acc[log.uuid] = log;
+            return acc;
+        }, {}) as any;
+    } else {
+        session.logs = {} as any;
+    }
+    
     return session;
 }
 

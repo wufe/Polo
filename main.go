@@ -3,9 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"sync"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/net"
 	"github.com/wufe/polo/services"
 )
