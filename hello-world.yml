@@ -2,6 +2,7 @@ applications:
   - name: hello-world
     remote: "https://github.com/nginxinc/NGINX-Demos"
     target: "http://127.0.0.1:{{port}}"
+    host: "test.archiproducts.com"
     use_git_cli: true
     commands:
       start:

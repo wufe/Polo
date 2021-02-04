@@ -136,6 +136,7 @@ func (server *HTTPServer) serveReverseProxy(target string, res http.ResponseWrit
 	if session != nil {
 		if session.Application.Host != "" {
 			req.Header.Add("Host", session.Application.Host)
+			req.Host = session.Application.Host
 		}
 		log.Printf("[PROXY -> SESSION:%s] %s", session.UUID, req.URL.RequestURI())
 	} else {
