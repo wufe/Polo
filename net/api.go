@@ -47,7 +47,7 @@ func (server *HTTPServer) getSessionStatus(
 	server.serveManager(res, req)
 }
 
-func (server *HTTPServer) getServicesAPI(
+func (server *HTTPServer) getApplicationsAPI(
 	res http.ResponseWriter,
 	req *http.Request,
 	ps httprouter.Params,
@@ -56,7 +56,7 @@ func (server *HTTPServer) getServicesAPI(
 		ResponseObject: ResponseObject{
 			Message: "Ok",
 		},
-		Result: server.Configuration.Services,
+		Result: server.Configuration.Applications,
 	}, 200)
 	res.Header().Add("Content-Type", "application/json")
 	res.WriteHeader(resStatus)
@@ -250,8 +250,8 @@ func (server *HTTPServer) postSessionAPI(
 
 	// Decoding body
 	sessionCreationInput := &struct {
-		Checkout    string `json:"checkout"`
-		ServiceName string `json:"serviceName"`
+		Checkout        string `json:"checkout"`
+		ApplicationName string `json:"applicationName"`
 	}{}
 	err := json.NewDecoder(req.Body).Decode(sessionCreationInput)
 	if err != nil {
@@ -267,19 +267,19 @@ func (server *HTTPServer) postSessionAPI(
 		return
 	}
 
-	// Looking for the required service
-	var foundService *models.Service
-	for _, service := range server.Configuration.Services {
-		if strings.ToLower(service.Name) == strings.ToLower(sessionCreationInput.ServiceName) {
-			foundService = service
+	// Looking for the required application
+	var foundApplication *models.Application
+	for _, application := range server.Configuration.Applications {
+		if strings.ToLower(application.Name) == strings.ToLower(sessionCreationInput.ApplicationName) {
+			foundApplication = application
 		}
 	}
-	if foundService == nil {
+	if foundApplication == nil {
 		resString, resStatus := buildResponse(ResponseObjectWithFailingReason{
 			ResponseObject: ResponseObject{
 				Message: "Bad request",
 			},
-			Reason: fmt.Sprintf("Service named %s not found", sessionCreationInput.ServiceName),
+			Reason: fmt.Sprintf("Application named %s not found", sessionCreationInput.ApplicationName),
 		}, 404)
 		res.Header().Add("Content-Type", "application/json")
 		res.WriteHeader(resStatus)
@@ -289,8 +289,8 @@ func (server *HTTPServer) postSessionAPI(
 
 	// Building the new session
 	response := server.SessionHandler.RequestNewSession(&services.SessionBuildInput{
-		Checkout: sessionCreationInput.Checkout,
-		Service:  foundService,
+		Checkout:    sessionCreationInput.Checkout,
+		Application: foundApplication,
 	})
 	if response.Result == services.SessionBuildResultFailed {
 

@@ -38,7 +38,7 @@ func (sessionHandler *SessionHandler) DestroySession(session *models.Session) {
 		}()
 
 		// Destroy the session here
-		for _, command := range session.Service.Commands.Stop {
+		for _, command := range session.Application.Commands.Stop {
 			select {
 			case <-sessionStopContext.Done():
 				cancelSessionStop()

@@ -1,15 +1,15 @@
-import { IServiceBranchModel } from '@/state/models';
+import { IApplicationBranchModel } from '@/state/models';
 import { values } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 import dayjs from 'dayjs';
 
 type TProps = {
-    branches: IServiceBranchModel[];
+    branches: IApplicationBranchModel[];
     onSessionCreationSubmission: (checkout: string) => void;
 }
 
-export const ServiceBranches = observer((props: TProps) => {
+export const ApplicationBranches = observer((props: TProps) => {
     return <>
         <h4 className="mt-2 mb-1 text-sm text-gray-500 uppercase">Branches:</h4>
         <div
@@ -34,7 +34,7 @@ export const ServiceBranches = observer((props: TProps) => {
     </>;
 });
 
-function sortBranches(branches: IServiceBranchModel[]): IServiceBranchModel[] {
+function sortBranches(branches: IApplicationBranchModel[]): IApplicationBranchModel[] {
     const preferred = [
         'master',
         'main',
@@ -44,7 +44,7 @@ function sortBranches(branches: IServiceBranchModel[]): IServiceBranchModel[] {
         'feature'
     ];
 
-    let result: IServiceBranchModel[] = [];
+    let result: IApplicationBranchModel[] = [];
     let length = branches.length;
 
     for (const pref of preferred) {

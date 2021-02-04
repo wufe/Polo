@@ -7,7 +7,7 @@ type TProps = {
     sessions: ISession[];
 }
 
-export const ServiceSessions = observer((props: TProps) => {
+export const ApplicationSessions = observer((props: TProps) => {
 
     const attachToSession = async (session: ISession) => {
         const track = await session.track();

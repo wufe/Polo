@@ -13,22 +13,22 @@ import (
 )
 
 func (sessionHandler *SessionHandler) buildSessionCommitStructure(session *models.Session) (string, error) {
-	session.LogInfo(fmt.Sprintf("Trying to build session commit structure in folder %s", session.Service.ServiceFolder))
+	session.LogInfo(fmt.Sprintf("Trying to build session commit structure in folder %s", session.Application.Folder))
 
 	checkout := sanitize.Name(session.CommitID)
 
-	auth, err := session.Service.GetAuth()
+	auth, err := session.Application.GetAuth()
 	if err != nil {
 		session.LogError(fmt.Sprintf("Error while providing authentication: %s", err.Error()))
 		return "", err
 	}
 
-	gitClient := versioning.GetGitClient(session.Service, auth)
+	gitClient := versioning.GetGitClient(session.Application, auth)
 
-	sessionCommitFolder := filepath.Join(session.Service.ServiceFolder, checkout)
+	sessionCommitFolder := filepath.Join(session.Application.Folder, checkout)
 	if _, err := os.Stat(sessionCommitFolder); os.IsNotExist(err) {
-		session.LogInfo(fmt.Sprintf("Cloning from remote %s into %s", session.Service.Remote, sessionCommitFolder))
-		err := gitClient.Clone(session.Service.ServiceFolder, checkout, session.Service.Remote)
+		session.LogInfo(fmt.Sprintf("Cloning from remote %s into %s", session.Application.Remote, sessionCommitFolder))
+		err := gitClient.Clone(session.Application.Folder, checkout, session.Application.Remote)
 		if err != nil {
 			session.LogError(fmt.Sprintf("Error while cloning: %s", err.Error()))
 			return "", err

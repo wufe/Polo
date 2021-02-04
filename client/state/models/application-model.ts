@@ -1,9 +1,9 @@
 import { APIPayload } from "@/api/common";
-import { createNewSessionAPI } from "@/api/services";
+import { createNewSessionAPI } from "@/api/applications";
 import { flow, Instance, SnapshotIn, SnapshotOut, types } from "mobx-state-tree";
 import { ISession } from "./session-model";
 
-export const ServiceBranchModel = types.model({
+export const ApplicationBranchModel = types.model({
     name   : types.string,
     hash   : types.string,
     author : types.string,
@@ -11,16 +11,16 @@ export const ServiceBranchModel = types.model({
     message: types.string,
 })
 
-export interface IServiceBranchModel extends Instance<typeof ServiceBranchModel> {}
+export interface IApplicationBranchModel extends Instance<typeof ApplicationBranchModel> {}
 
-export const ServiceModel = types.model({
+export const ApplicationModel = types.model({
     name                 : types.string,
     remote               : types.string,
     target               : types.string,
     host                 : types.string,
     maxConcurrentSessions: types.number,
-    serviceFolder        : types.string,
-    branches             : types.map(ServiceBranchModel)
+    folder               : types.string,
+    branches             : types.map(ApplicationBranchModel)
 })
 .actions(self => {
 
@@ -32,6 +32,6 @@ export const ServiceModel = types.model({
     return { newSession };
 })
 
-export interface IService extends Instance<typeof ServiceModel> { }
-export interface IServiceSnapshotOut extends SnapshotOut<typeof ServiceModel> { }
-export interface IServiceSnapshotIn extends SnapshotIn<typeof ServiceModel> { }
+export interface IApplication extends Instance<typeof ApplicationModel> { }
+export interface IApplicationSnapshotOut extends SnapshotOut<typeof ApplicationModel> { }
+export interface IApplicationSnapshotIn extends SnapshotIn<typeof ApplicationModel> { }

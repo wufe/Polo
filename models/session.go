@@ -30,7 +30,7 @@ type Session struct {
 	Name         string            `json:"name"`
 	Target       string            `json:"target"`
 	Port         int               `json:"port"`
-	Service      *Service          `json:"service"`
+	Application  *Application      `json:"application"`
 	Status       SessionStatus     `json:"status"`
 	Logs         []Log             `json:"logs"`
 	CommitID     string            `json:"commitID"` // The object to be checked out (branch/tag/commit id)

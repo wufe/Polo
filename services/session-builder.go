@@ -28,8 +28,8 @@ const (
 type SessionBuildResultType string
 
 type SessionBuildInput struct {
-	Checkout string
-	Service  *models.Service
+	Checkout    string
+	Application *models.Application
 }
 
 type SessionBuildResult struct {
@@ -47,30 +47,30 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 		}
 	}
 
-	if sessionHandler.getNumberOfSessionsByService(input.Service) >= input.Service.MaxConcurrentSessions {
+	if sessionHandler.getNumberOfSessionsByApplication(input.Application) >= input.Application.MaxConcurrentSessions {
 		return &SessionBuildResult{
 			Result:        SessionBuildResultFailed,
-			FailingReason: "Reached maximum concurrent sessions for this service",
+			FailingReason: "Reached maximum concurrent sessions for this application",
 		}
 	}
 
 	sessionUUID := uuid.NewString()
 	log.Infof("[SESSION:%s] Building session.", sessionUUID)
 	session := models.NewSession(&models.Session{
-		UUID:     sessionUUID,
-		Name:     input.Service.Name,
-		Port:     0,
-		Target:   "",
-		Status:   models.SessionStatusStarting,
-		Done:     make(chan struct{}),
-		Service:  input.Service,
-		Logs:     []models.Log{},
-		CommitID: input.Checkout,
-		Checkout: input.Checkout,
+		UUID:        sessionUUID,
+		Name:        input.Application.Name,
+		Port:        0,
+		Target:      "",
+		Status:      models.SessionStatusStarting,
+		Done:        make(chan struct{}),
+		Application: input.Application,
+		Logs:        []models.Log{},
+		CommitID:    input.Checkout,
+		Checkout:    input.Checkout,
 	})
 	session.LogInfo(fmt.Sprintf("Creating session %s", session.UUID))
 
-	freePort, err := sessionHandler.getFreePort(&input.Service.Port)
+	freePort, err := sessionHandler.getFreePort(&input.Application.Port)
 	if err != nil {
 		log.Errorln("Could not get a free port", err)
 		return &SessionBuildResult{
@@ -81,7 +81,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 	session.Port = freePort
 	session.LogInfo(fmt.Sprintf("Found new free port: %d", session.Port))
 
-	checkout, ok := input.Service.ObjectsToHashMap[input.Checkout]
+	checkout, ok := input.Application.ObjectsToHashMap[input.Checkout]
 	if !ok {
 		log.Errorf("Could not find the hash of the selected checkout %s", input.Checkout)
 		return &SessionBuildResult{
@@ -93,10 +93,10 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 	session.LogInfo(fmt.Sprintf("Requested checkout to %s (%s)", input.Checkout, session.CommitID))
 
 	// Check if someone else just requested the same type of session
-	// looking through all open session and comparing services and checkouts
-	sessionAlreadyBeingBuilt := sessionHandler.GetAliveServiceSessionByCheckout(
+	// looking through all open session and comparing applications and checkouts
+	sessionAlreadyBeingBuilt := sessionHandler.GetAliveApplicationSessionByCheckout(
 		checkout,
-		input.Service,
+		input.Application,
 	)
 	if sessionAlreadyBeingBuilt != nil {
 		log.Warnf(
@@ -111,7 +111,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 		}
 	}
 
-	target := strings.ReplaceAll(input.Service.Target, "{{port}}", fmt.Sprint(freePort))
+	target := strings.ReplaceAll(input.Application.Target, "{{port}}", fmt.Sprint(freePort))
 	session.Target = target
 	session.LogInfo(fmt.Sprintf("Setting session target to %s", session.Target))
 
@@ -123,7 +123,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 
 	sessionHandler.sessions = append(sessionHandler.sessions, session)
 
-	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(session.Service.Healthcheck.RetryTimeout))
+	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(session.Application.Healthcheck.RetryTimeout))
 	done := make(chan struct{})
 
 	// TODO: Persist session
@@ -156,7 +156,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 		}()
 
 		// Build the session here
-		for _, command := range input.Service.Commands.Start {
+		for _, command := range input.Application.Commands.Start {
 			select {
 			case <-sessionStartContext.Done():
 				return
@@ -206,7 +206,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 			}
 		}
 
-		if session.Service.Healthcheck == (models.Healthcheck{}) {
+		if session.Application.Healthcheck == (models.Healthcheck{}) {
 			sessionHandler.MarkSessionAsStarted(session)
 			log.Infof("[SESSION:%s] Session started", session.UUID)
 			done <- struct{}{}
@@ -232,21 +232,21 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 							cancelSessionStart()
 							return
 						}
-						target.Path = path.Join(target.Path, input.Service.Healthcheck.URL)
+						target.Path = path.Join(target.Path, input.Application.Healthcheck.URL)
 						client := &http.Client{
 							Timeout: 120 * time.Second,
 						}
 						req, err := http.NewRequest(
-							input.Service.Healthcheck.Method,
+							input.Application.Healthcheck.Method,
 							target.String(),
 							nil,
 						)
 						req.WithContext(sessionStartContext)
-						for _, header := range input.Service.Headers.Add {
+						for _, header := range input.Application.Headers.Add {
 							headerSegments := strings.Split(header, "=")
 							req.Header.Add(headerSegments[0], headerSegments[1])
-							if input.Service.Host != "" {
-								req.Header.Add("Host", input.Service.Host)
+							if input.Application.Host != "" {
+								req.Header.Add("Host", input.Application.Host)
 							}
 						}
 						if err != nil {
@@ -257,15 +257,15 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 						if err != nil {
 							log.Errorf("[SESSION:%s] Could not perform HTTP request", session.UUID, err.Error())
 						} else {
-							if response.StatusCode == input.Service.Healthcheck.Status {
+							if response.StatusCode == input.Application.Healthcheck.Status {
 								sessionHandler.MarkSessionAsStarted(session)
 								log.Infof("[SESSION:%s] Session started", session.UUID)
 								done <- struct{}{}
 								return
 							}
 						}
-						log.Infof("[SESSION:%s] Session not ready yet. Retrying in %d seconds", session.UUID, session.Service.Healthcheck.RetryInterval)
-						time.Sleep(time.Duration(session.Service.Healthcheck.RetryInterval) * time.Second)
+						log.Infof("[SESSION:%s] Session not ready yet. Retrying in %d seconds", session.UUID, session.Application.Healthcheck.RetryInterval)
+						time.Sleep(time.Duration(session.Application.Healthcheck.RetryInterval) * time.Second)
 					}
 				}
 			}()
@@ -320,7 +320,7 @@ func (sessionHandler *SessionHandler) addPortsOnDemand(input string, session *mo
 	for _, match := range matches {
 		portVariable := match[1]
 		if _, ok := session.Variables[portVariable]; !ok {
-			port, err := sessionHandler.getFreePort(&session.Service.Port)
+			port, err := sessionHandler.getFreePort(&session.Application.Port)
 			if err != nil {
 				return "", err
 			}
@@ -358,10 +358,10 @@ func (sessionHandler *SessionHandler) getTotalNumberOfSessions() int {
 	return count
 }
 
-func (sessionHandler *SessionHandler) getNumberOfSessionsByService(service *models.Service) int {
+func (sessionHandler *SessionHandler) getNumberOfSessionsByApplication(application *models.Application) int {
 	count := 0
 	for _, session := range sessionHandler.sessions {
-		if session.Service == service && session.Status.IsAlive() {
+		if session.Application == application && session.Status.IsAlive() {
 			count++
 		}
 	}

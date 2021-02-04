@@ -5,8 +5,8 @@ import (
 )
 
 type RootConfiguration struct {
-	Global   Global
-	Services []*Service
+	Global       Global
+	Applications []*Application
 }
 
 type Global struct {

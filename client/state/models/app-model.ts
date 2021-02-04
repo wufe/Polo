@@ -1,35 +1,35 @@
 import { APIPayload, APIRequestResult } from "@/api/common";
-import { retrieveServicesAPI } from "@/api/services";
+import { retrieveApplicationsAPI } from "@/api/applications";
 import { IAPISession, retrieveAllSessionsAPI, retrieveSessionAPI } from "@/api/session";
 import { values } from "mobx";
 import { types, flow, cast, Instance, getType, applySnapshot, applyPatch } from "mobx-state-tree";
-import { ServiceModel, IService } from "./service-model";
+import { ApplicationModel, IApplication } from "./application-model";
 import { SessionModel, ISession, castAPISessionToSessionModel } from "./session-model";
 
 export const AppModel = types.model({
-    session: types.maybeNull(SessionModel),
-    sessions: types.map(SessionModel),
-    services: types.map(ServiceModel)
+    session     : types.maybeNull(SessionModel),
+    sessions    : types.map(SessionModel),
+    applications: types.map(ApplicationModel)
 })
 .actions(self => {
-    const retrieveServices = flow(function* retrieveServices() {
-        const services: APIPayload<IService[]> = yield retrieveServicesAPI();
-        if (services.result === APIRequestResult.SUCCEEDED) {
+    const retrieveApplications = flow(function* retrieveApplications() {
+        const applications: APIPayload<IApplication[]> = yield retrieveApplicationsAPI();
+        if (applications.result === APIRequestResult.SUCCEEDED) {
 
-            const servicesMap = services.payload.reduce<{[serviceName: string]: IService}>((acc, service) => {
-                acc[service.name] = service;
+            const applicationsMap = applications.payload.reduce<{[applicationName: string]: IApplication}>((acc, application) => {
+                acc[application.name] = application;
                 return acc;
             }, {});
 
-            self.services.replace(servicesMap);
+            self.applications.replace(applicationsMap);
         }
-        return services;
+        return applications;
     });
 
     const retrieveAllSessions = flow(function* retrieveAllSessions() {
         const sessions: APIPayload<IAPISession[]> = yield retrieveAllSessionsAPI();
         if (sessions.result === APIRequestResult.SUCCEEDED) {
-            const sessionsMap = sessions.payload.reduce<{ [serviceName: string]: ISession }>((acc, session) => {
+            const sessionsMap = sessions.payload.reduce<{ [applicationName: string]: ISession }>((acc, session) => {
                 acc[session.uuid] = castAPISessionToSessionModel(session);
                 return acc;
             }, {});
@@ -46,15 +46,15 @@ export const AppModel = types.model({
         }
         return session;
     });
-    return { retrieveSession, retrieveAllSessions, retrieveServices };
+    return { retrieveSession, retrieveAllSessions, retrieveApplications };
 })
 .views(self => ({
-    get sessionsByServiceName() {
+    get sessionsByApplicationName() {
         return (values(self.sessions) as any as ISession[])
-            .reduce<{ [serviceName: string]: ISession[] }>((accumulator, session: ISession) => {
-                const serviceName = session.service.name;
-                if (!accumulator[serviceName]) accumulator[serviceName] = [];
-                accumulator[serviceName].push(session);
+            .reduce<{ [name: string]: ISession[] }>((accumulator, session: ISession) => {
+                const applicationName = session.application.name;
+                if (!accumulator[applicationName]) accumulator[applicationName] = [];
+                accumulator[applicationName].push(session);
                 return accumulator
             }, {});
     }

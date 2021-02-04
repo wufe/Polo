@@ -21,9 +21,9 @@ func main() {
 	}
 	defer db.Close()
 
-	configuration, serviceHandler := services.LoadConfigurations()
+	configuration, applicationHandler := services.LoadConfigurations()
 
-	sessionHandler := services.NewSessionHandler(configuration, serviceHandler, db)
+	sessionHandler := services.NewSessionHandler(configuration, applicationHandler, db)
 
 	port := flag.String("port", fmt.Sprint(configuration.Global.Port), "Port")
 	flag.Parse()

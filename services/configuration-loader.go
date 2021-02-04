@@ -12,7 +12,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func LoadConfigurations() (*models.RootConfiguration, *ServiceHandler) {
+func LoadConfigurations() (*models.RootConfiguration, *ApplicationHandler) {
 	dir := getExecutableFolder()
 
 	files := getYamlFiles(dir)
@@ -52,9 +52,9 @@ func getYamlFiles(root string) []string {
 	return files
 }
 
-func unmarshalConfigurations(files []string) (*models.RootConfiguration, *ServiceHandler) {
+func unmarshalConfigurations(files []string) (*models.RootConfiguration, *ApplicationHandler) {
 	rootConfiguration := &models.RootConfiguration{
-		Services: []*models.Service{},
+		Applications: []*models.Application{},
 	}
 	for _, file := range files {
 		log.Infof("Found configuration file %s", file)
@@ -70,20 +70,20 @@ func unmarshalConfigurations(files []string) (*models.RootConfiguration, *Servic
 		if root.Global != (models.Global{}) {
 			rootConfiguration.Global = root.Global
 		}
-		if root.Services != nil {
-			for _, service := range root.Services {
+		if root.Applications != nil {
+			for _, application := range root.Applications {
 
-				builtService, err := models.NewService(service)
+				builtApplication, err := models.NewApplication(application)
 				if err != nil {
-					log.Errorf("Service %s configuration error: %s", service.Name, err.Error())
+					log.Errorf("Application %s configuration error: %s", application.Name, err.Error())
 				} else {
-					rootConfiguration.Services = append(rootConfiguration.Services, builtService)
+					rootConfiguration.Applications = append(rootConfiguration.Applications, builtApplication)
 				}
 			}
 		}
 	}
 
-	serviceHandler := NewServiceHandler(rootConfiguration)
+	applicationHandler := NewApplicationHandler(rootConfiguration)
 
 	// Default global configurations
 	if rootConfiguration.Global.Port == 0 {
@@ -98,13 +98,13 @@ func unmarshalConfigurations(files []string) (*models.RootConfiguration, *Servic
 		rootConfiguration.Global.MaxConcurrentSessions = 10
 	}
 
-	for _, service := range rootConfiguration.Services {
-		err := serviceHandler.InitializeService(service)
+	for _, application := range rootConfiguration.Applications {
+		err := applicationHandler.InitializeApplication(application)
 		if err != nil {
-			log.Fatalln(fmt.Sprintf("Could not provision service %s: %s", service.Name, err.Error()))
+			log.Fatalln(fmt.Sprintf("Could not provision application %s: %s", application.Name, err.Error()))
 			panic(err)
 		}
 	}
 
-	return rootConfiguration, serviceHandler
+	return rootConfiguration, applicationHandler
 }

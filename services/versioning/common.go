@@ -10,8 +10,8 @@ type GitClient interface {
 	FetchAll(repoFolder string) error
 }
 
-func GetGitClient(service *models.Service, auth transport.AuthMethod) GitClient {
-	if service.UseGitCLI {
+func GetGitClient(application *models.Application, auth transport.AuthMethod) GitClient {
+	if application.UseGitCLI {
 		return NewCLIGitClient()
 	}
 	return NewEmbeddedGitClient(auth)

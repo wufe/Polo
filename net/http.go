@@ -20,7 +20,7 @@ const (
 	ServerRouteDashboard             ServerRoute = "/_polo_/"
 	ServerRouteSessionStatus         ServerRoute = "/_polo_/session/%s/" // uuid
 	ServerRouteStatic                ServerRoute = "/_polo_/static/*filepath"
-	ServerRouteAPIServices           ServerRoute = "/_polo_/api/service/"
+	ServerRouteAPIApplications       ServerRoute = "/_polo_/api/application/"
 	ServerRouteAPISession            ServerRoute = "/_polo_/api/session/"
 	ServerRouteAPISessionByUUID      ServerRoute = "/_polo_/api/session/:uuid"
 	ServerRouteAPISessionAgeByUUID   ServerRoute = "/_polo_/api/session/:uuid/age"
@@ -97,7 +97,7 @@ func NewHTTPServer(port string, sessionHandler *services.SessionHandler, configu
 
 		router.GET(string(ServerRouteDashboard), server.getDashboard)
 		router.GET(strings.ReplaceAll(string(ServerRouteSessionStatus), "%s", ":uuid"), server.getSessionStatus)
-		router.GET(string(ServerRouteAPIServices), server.getServicesAPI)
+		router.GET(string(ServerRouteAPIApplications), server.getApplicationsAPI)
 		router.POST(string(ServerRouteAPISession), server.postSessionAPI)
 		router.GET(string(ServerRouteAPISession), server.getAllSessionsAPI)
 		router.GET(string(ServerRouteAPISessionByUUID), server.getSessionByUUIDAPI)

@@ -23,5 +23,5 @@ if (isDev()) {
 }
 
 export * from './app-model';
-export * from './service-model';
+export * from './application-model';
 export * from './session-model';

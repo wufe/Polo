@@ -10,7 +10,7 @@ import (
 
 type SessionHandler struct {
 	configuration       *models.RootConfiguration
-	serviceHandler      *ServiceHandler
+	applicationHandler  *ApplicationHandler
 	sessions            []*models.Session
 	sessionRequestChan  chan *SessionBuildInput
 	sessionResponseChan chan *SessionBuildResult
@@ -23,10 +23,10 @@ type SessionClean struct {
 	status  models.SessionStatus
 }
 
-func NewSessionHandler(configuration *models.RootConfiguration, serviceHandler *ServiceHandler, database *badger.DB) *SessionHandler {
+func NewSessionHandler(configuration *models.RootConfiguration, applicationHandler *ApplicationHandler, database *badger.DB) *SessionHandler {
 	sessionHandler := &SessionHandler{
 		configuration:       configuration,
-		serviceHandler:      serviceHandler,
+		applicationHandler:  applicationHandler,
 		sessions:            []*models.Session{},
 		sessionRequestChan:  make(chan *SessionBuildInput),
 		sessionResponseChan: make(chan *SessionBuildResult),
@@ -66,10 +66,10 @@ func (sessionHandler *SessionHandler) GetAllAliveSessions() []*models.Session {
 	return filteredSessions
 }
 
-func (sessionHandler *SessionHandler) GetAliveServiceSessionByCheckout(checkout string, service *models.Service) *models.Session {
+func (sessionHandler *SessionHandler) GetAliveApplicationSessionByCheckout(checkout string, application *models.Application) *models.Session {
 	var foundSession *models.Session
 	for _, session := range sessionHandler.sessions {
-		if session.Service == service && session.CommitID == checkout && session.Status.IsAlive() {
+		if session.Application == application && session.CommitID == checkout && session.Status.IsAlive() {
 			foundSession = session
 		}
 	}
@@ -123,7 +123,7 @@ func (sessionHandler *SessionHandler) CleanupSession(session *models.Session, st
 func (sessionHandler *SessionHandler) MarkSessionAsStarted(session *models.Session) {
 	// TODO: Persist session
 	session.Status = models.SessionStatusStarted
-	session.MaxAge = session.Service.Recycle.InactivityTimeout
+	session.MaxAge = session.Application.Recycle.InactivityTimeout
 	if session.MaxAge > 0 {
 		sessionHandler.StartSessionInactivityTimer(session)
 	}
@@ -131,12 +131,12 @@ func (sessionHandler *SessionHandler) MarkSessionAsStarted(session *models.Sessi
 
 func (sessionHandler *SessionHandler) MarkSessionAsBeingRequested(session *models.Session) {
 	// Refreshes the inactiveAt field every time someone makes a request to this session
-	session.InactiveAt = time.Now().Add(time.Second * time.Duration(session.Service.Recycle.InactivityTimeout))
-	session.MaxAge = session.Service.Recycle.InactivityTimeout
+	session.InactiveAt = time.Now().Add(time.Second * time.Duration(session.Application.Recycle.InactivityTimeout))
+	session.MaxAge = session.Application.Recycle.InactivityTimeout
 }
 
 func (sessionHandler *SessionHandler) StartSessionInactivityTimer(session *models.Session) {
-	session.InactiveAt = time.Now().Add(time.Second * time.Duration(session.Service.Recycle.InactivityTimeout))
+	session.InactiveAt = time.Now().Add(time.Second * time.Duration(session.Application.Recycle.InactivityTimeout))
 	go func() {
 		for {
 			if session.Status != models.SessionStatusStarted {
