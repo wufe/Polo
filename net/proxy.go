@@ -100,7 +100,7 @@ func (server *HTTPServer) serveReverseProxy(target string, res http.ResponseWrit
 		server.SessionHandler.MarkSessionAsBeingRequested(session)
 		proxy.ModifyResponse = func(res *http.Response) error {
 
-			if res.Header.Get("Content-Type") == "text/html" {
+			if strings.Contains(res.Header.Get("Content-Type"), "text/html") {
 
 				body, err := ioutil.ReadAll(res.Body)
 				if err != nil {
