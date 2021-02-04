@@ -28,6 +28,7 @@ You can find an example of a configuration file with all the options in the fold
 
 ## Known issues / missing features
 
+- Add possibility to start healthchecking early
 - Ended sessions cleanup (folder structure)
 - Add timestamp and uuid to session logs
 - Fix vertical scroll in session page
