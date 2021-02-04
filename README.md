@@ -28,6 +28,8 @@ You can find an example of a configuration file with all the options in the fold
 
 ## Known issues / missing features
 
+- Add timestamp and uuid to session logs
+- Fix vertical scroll in session page
 - Add optional "copy mode" opposed to standard "clone mode" to initialize a application: copies the directory instead of cloning again
 - Add "initializing" status to a application, in order to allow the server to start asap
 - Pruning branches does not work with embedded git client (prune is not supported)
