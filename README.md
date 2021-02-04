@@ -28,6 +28,9 @@ You can find an example of a configuration file with all the options in the fold
 
 ## Known issues / missing features
 
+- Improve injection of session-helper (into body if present, do not print logs)
+- Update session-helper design
+- Update design session page (fading terminal, better scrollbar, estimated time required, progress bar)
 - Add possibility to start healthchecking early
 - Ended sessions cleanup (folder structure)
 - Add timestamp and uuid to session logs
