@@ -245,9 +245,10 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 						for _, header := range input.Application.Headers.Add {
 							headerSegments := strings.Split(header, "=")
 							req.Header.Add(headerSegments[0], headerSegments[1])
-							if input.Application.Host != "" {
-								req.Header.Add("Host", input.Application.Host)
-							}
+						}
+						if input.Application.Host != "" {
+							req.Header.Add("Host", input.Application.Host)
+							req.Host = input.Application.Host
 						}
 						if err != nil {
 							log.Errorln("Could not build HTTP request", req)
