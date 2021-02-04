@@ -28,6 +28,7 @@ You can find an example of a configuration file with all the options in the fold
 
 ## Known issues / missing features
 
+- Ended sessions cleanup (folder structure)
 - Add timestamp and uuid to session logs
 - Fix vertical scroll in session page
 - Add optional "copy mode" opposed to standard "clone mode" to initialize a application: copies the directory instead of cloning again
