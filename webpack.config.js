@@ -103,7 +103,7 @@ module.exports = env => ({
     ].filter(Boolean),
     devServer: {
         contentBase: path.join(__dirname, 'static'),
-        public: 'test.bembi.dev',
+        public: 'localhost',
         compress: true,
         port: 9000,
         hot: true
