@@ -18,7 +18,8 @@ type Global struct {
 }
 
 type Headers struct {
-	Add []string `json:"add"`
+	Add    []string `json:"add"`
+	Remove []string `json:"remove"`
 }
 
 type Healthcheck struct {
@@ -39,11 +40,12 @@ type Commands struct {
 }
 
 type Command struct {
-	Command         string   `json:"command"`
-	Environment     []string `yaml:"environment,omitempty" json:"environment"`
-	OutputVariable  string   `yaml:"output_variable,omitempty" json:"outputVariable"`
-	ContinueOnError bool     `yaml:"continue_on_error" json:"continueOnError"`
-	WorkingDir      string   `yaml:"working_dir" json:"workingDir"`
+	Command             string   `json:"command"`
+	Environment         []string `yaml:"environment,omitempty" json:"environment"`
+	OutputVariable      string   `yaml:"output_variable,omitempty" json:"outputVariable"`
+	ContinueOnError     bool     `yaml:"continue_on_error" json:"continueOnError"`
+	WorkingDir          string   `yaml:"working_dir" json:"workingDir"`
+	StartHealthchecking bool     `yaml:"start_healthchecking" json:"startHealthchecking"`
 }
 
 type PortConfiguration struct {
