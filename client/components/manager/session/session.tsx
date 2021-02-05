@@ -50,7 +50,7 @@ export const SessionLogs = observer((props: { logs: ISessionLog[], onLogsProport
 
     return <div
         ref={logsContainerDiv}
-        className="m-2 text-nord-3 dark:text-nord4 py-5 rounded-md flex-grow mt-16 mb-36 flex flex-col min-w-0 min-h-0 overflow-x-auto custom-scrollbar">
+        className="m-2 text-nord-3 dark:text-nord4 py-5 rounded-md flex-grow mt-16 mb-36 flex flex-col min-w-0 min-h-0 overflow-x-auto no-horizontal-scrollbar">
         {props.logs.map((log: ISessionLog, key) => {
             const color = colorsByLogType[log.type];
             return <p className="mx-10 leading-relaxed text-sm whitespace-nowrap max-w-full min-w-0 flex items-center" key={key}>
