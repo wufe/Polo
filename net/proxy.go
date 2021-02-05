@@ -28,60 +28,25 @@ func (server *HTTPServer) getReverseProxyHandlerFunc() http.Handler {
 			strings.HasPrefix(req.URL.Path, "/sockjs-node")) {
 			server.serveReverseProxy(server.devServerURL, res, req, nil)
 		} else {
+			usingSmartURL := false
 			session := server.detectSession(req)
 			if session == nil {
-
-				// TODO: Fix this ugly code
-				if req.URL.Path != "" && req.URL.Path != "/" {
-					appAndCheckRegexp := regexp.MustCompile(`^/([^/]+?)/(.+?)/?$`)
-					if appAndCheck := appAndCheckRegexp.FindStringSubmatch(req.URL.Path); len(appAndCheck) == 3 {
-						var foundApplication *models.Application
-						for _, application := range server.Configuration.Applications {
-							if strings.ToLower(application.Name) == strings.ToLower(appAndCheck[1]) {
-								foundApplication = application
-							}
-						}
-						if foundApplication == nil {
-							server.temporaryRedirect(res, string(ServerRouteDashboard))
-							return
-						}
-						response := server.SessionHandler.RequestNewSession(&services.SessionBuildInput{
-							Checkout:    appAndCheck[2],
-							Application: foundApplication,
-						})
-						if response.Result == services.SessionBuildResultFailed {
-							server.temporaryRedirect(res, string(ServerRouteDashboard))
-							return
-						}
-
-						session = response.Session
-
-						server.trackSession(res, session)
-						switch session.Status {
-						case models.SessionStatusStarted:
-							server.serveReverseProxy(session.Target, res, req, session)
-							break
-						case models.SessionStatusStarting:
-							server.temporaryRedirect(res, fmt.Sprintf(string(ServerRouteSessionStatus), session.UUID))
-							break
-						default:
-							server.untrackSession(res)
-							server.temporaryRedirect(res, string(ServerRouteDashboard))
-							break
-						}
-
-					}
-				}
-
+				session = server.tryGetSessionByRequestURL(req)
+				usingSmartURL = true
+			}
+			if session == nil {
 				server.temporaryRedirect(res, string(ServerRouteDashboard))
 			} else {
 				switch session.Status {
 				case models.SessionStatusStarted:
 					server.trackSession(res, session)
-					server.serveReverseProxy(session.Target, res, req, session)
+					if usingSmartURL {
+						server.temporaryRedirect(res, "/")
+					} else {
+						server.serveReverseProxy(session.Target, res, req, session)
+					}
 					break
 				case models.SessionStatusStarting:
-					server.trackSession(res, session)
 					server.temporaryRedirect(res, fmt.Sprintf(string(ServerRouteSessionStatus), session.UUID))
 					break
 				default:
@@ -92,6 +57,31 @@ func (server *HTTPServer) getReverseProxyHandlerFunc() http.Handler {
 			}
 		}
 	})
+}
+
+func (server *HTTPServer) tryGetSessionByRequestURL(req *http.Request) *models.Session {
+	if req.URL.Path != "" && req.URL.Path != "/" {
+		appAndCheckRegexp := regexp.MustCompile(`^/([^/]+?)/(.+?)/?$`)
+		if appAndCheck := appAndCheckRegexp.FindStringSubmatch(req.URL.Path); len(appAndCheck) == 3 {
+			application := appAndCheck[1]
+			checkout := appAndCheck[2]
+			foundApplication := findApplicationByName(&server.Configuration.Applications, application)
+			if foundApplication == nil {
+				return nil
+			}
+			response := server.SessionHandler.RequestNewSession(&services.SessionBuildInput{
+				Checkout:    checkout,
+				Application: foundApplication,
+			})
+			if response.Result == services.SessionBuildResultFailed {
+				return nil
+			}
+
+			return response.Session
+
+		}
+	}
+	return nil
 }
 
 func (server *HTTPServer) detectSession(req *http.Request) *models.Session {

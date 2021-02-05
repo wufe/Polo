@@ -14,6 +14,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func findApplicationByName(applications *[]*models.Application, name string) *models.Application {
+	var foundApplication *models.Application
+	for _, application := range *applications {
+		if strings.ToLower(application.Name) == strings.ToLower(name) {
+			foundApplication = application
+		}
+	}
+	return foundApplication
+}
+
 func (server *HTTPServer) serveManager(res http.ResponseWriter, req *http.Request) {
 	if server.isDev {
 		req.URL.Path = fmt.Sprintf("%s%s", StaticFolderPath, StaticManagerFile)
@@ -327,12 +337,7 @@ func (server *HTTPServer) postSessionAPI(
 	}
 
 	// Looking for the required application
-	var foundApplication *models.Application
-	for _, application := range server.Configuration.Applications {
-		if strings.ToLower(application.Name) == strings.ToLower(sessionCreationInput.ApplicationName) {
-			foundApplication = application
-		}
-	}
+	foundApplication := findApplicationByName(&server.Configuration.Applications, sessionCreationInput.ApplicationName)
 	if foundApplication == nil {
 		resString, resStatus := buildResponse(ResponseObjectWithFailingReason{
 			ResponseObject: ResponseObject{

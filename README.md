@@ -30,7 +30,7 @@ You can find an example of a configuration file with all the options in the fold
 
 - Add support to command concatenations (; and &&)
 - Update session-helper design
-- Update design session page (fading terminal, better scrollbar, estimated time required, progress bar)
+- Update session page design (fading terminal, better scrollbar, estimated time required, progress bar)
 - Add possibility to start healthchecking early
 - Ended sessions cleanup (folder structure)
 - Add optional "copy mode" opposed to standard "clone mode" to initialize a application: copies the directory instead of cloning again
@@ -41,4 +41,5 @@ You can find an example of a configuration file with all the options in the fold
 - Add possibility to always watch one or more branches and provide an always available session
 - Add possibility to manually trigger a fetch in a git application folder
 - Configuration reload
+- Configuration reload via watching files
 - Configuration CRUD via UI

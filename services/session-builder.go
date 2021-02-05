@@ -119,7 +119,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 	session.Variables["name"] = session.Name
 	session.Variables["port"] = fmt.Sprint(session.Port)
 	session.Variables["target"] = session.Target
-	session.Variables["checkout"] = session.CommitID
+	session.Variables["commit"] = session.CommitID
 
 	sessionHandler.sessions = append(sessionHandler.sessions, session)
 
