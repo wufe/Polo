@@ -61,13 +61,29 @@ func (server *HTTPServer) getReverseProxyHandlerFunc() http.Handler {
 
 func (server *HTTPServer) tryGetSessionByRequestURL(req *http.Request) *models.Session {
 	if req.URL.Path != "" && req.URL.Path != "/" {
-		appAndCheckRegexp := regexp.MustCompile(`^/([^/]+?)/(.+?)/?$`)
-		if appAndCheck := appAndCheckRegexp.FindStringSubmatch(req.URL.Path); len(appAndCheck) == 3 {
-			application := appAndCheck[1]
-			checkout := appAndCheck[2]
+		appAndCheckRegexp := regexp.MustCompile(`^(/([^/]+?))?/(.+?)/?$`)
+		if appAndCheck := appAndCheckRegexp.FindStringSubmatch(req.URL.Path); len(appAndCheck) == 4 {
+			// Matching /<application>/<branch-seg-1>/<branch-seg-2>
+			// as
+			// 		application: <application>
+			//		checkout: <branch-seg-1>/<branch-seg-2>
+			application := appAndCheck[2]
+			checkout := appAndCheck[3]
+			log.Traceln("application", application)
+			log.Traceln("checkout", checkout)
 			foundApplication := findApplicationByName(&server.Configuration.Applications, application)
 			if foundApplication == nil {
-				return nil
+
+				// Matching /<branch-seg-1>/<branch-seg-2>
+				// as
+				// 		application: ""
+				// 		<branch-seg-1>/<branch-seg-2>
+				checkout = fmt.Sprintf("%s/%s", application, checkout)
+				foundApplication = findApplicationByName(&server.Configuration.Applications, "")
+				if foundApplication == nil {
+					return nil
+				}
+
 			}
 			response := server.SessionHandler.RequestNewSession(&services.SessionBuildInput{
 				Checkout:    checkout,

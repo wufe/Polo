@@ -18,6 +18,7 @@ type Application struct {
 	Remote                string                         `json:"remote"`
 	Target                string                         `json:"target"`
 	Host                  string                         `json:"host"`
+	IsDefault             bool                           `yaml:"is_default" json:"isDefault"`
 	Headers               Headers                        `json:"headers"`
 	Healthcheck           Healthcheck                    `json:"healthCheck"`
 	Recycle               Recycle                        `json:"recycle"`

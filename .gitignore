@@ -560,7 +560,6 @@ MigrationBackup/
 /.sessions
 *.yml
 /polo
-!/hello-world.yml
 
 /statik/statik.go
 !/examples/example-configuration.yml

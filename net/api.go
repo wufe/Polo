@@ -17,8 +17,12 @@ import (
 func findApplicationByName(applications *[]*models.Application, name string) *models.Application {
 	var foundApplication *models.Application
 	for _, application := range *applications {
-		if strings.ToLower(application.Name) == strings.ToLower(name) {
+		if name == "" && application.IsDefault {
 			foundApplication = application
+			break
+		} else if strings.ToLower(application.Name) == strings.ToLower(name) {
+			foundApplication = application
+			break
 		}
 	}
 	return foundApplication
