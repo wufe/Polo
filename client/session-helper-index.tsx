@@ -2,7 +2,7 @@ import { cast, getSnapshot, getType } from 'mobx-state-tree';
 import React, { createContext } from 'react';
 import { render } from 'react-dom';
 import { IAPISession } from './api/session';
-import { SessionHelperApp } from './components/session-helper';
+import { SessionHelperApp } from './components/helper';
 import { AppModel, castAPISessionToSessionModel, createStore, initialAppState, ISession } from './state/models';
 
 const store = createStore({

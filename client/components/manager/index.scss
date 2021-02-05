@@ -1,4 +1,4 @@
-@import "../styles/index.scss";
+@import "../../styles/index.scss";
 
 *,
 *:before,
@@ -31,16 +31,6 @@ body {
     flex: 1;
     display: flex;
     align-items: stretch;
-    min-width: 0;
-    min-height: 0;
-}
-
-.app__component {
-    flex: 1;
-    width: 100%;
-    display: flex;
-    align-items: stretch;
-    justify-content: center;
     min-width: 0;
     min-height: 0;
 }

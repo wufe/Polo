@@ -1,14 +1,20 @@
 import { store } from '@/state/models';
 import React from 'react';
 import { BrowserRouter, Switch, Route } from 'react-router-dom';
-import './manager.scss';
+import './index.scss';
 
-const Dashboard = React.lazy(() => import('@/components/dashboard/dashboard'));
-const Session = React.lazy(() => import('@/components/session/session'));
+const Dashboard = React.lazy(() => import('@/components/manager/dashboard/dashboard-page'));
+const Session = React.lazy(() => import('@/components/manager/session/session-page'));
 
 export const ManagerApp = () => {
     return <div className="
-        app__component
+        flex-1
+        w-full
+        flex
+        items-stretch
+        justify-stretch
+        min-w-0
+        min-h-0
         text-black
         bg-gradient-to-br
         from-gray-50

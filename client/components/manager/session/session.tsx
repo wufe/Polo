@@ -47,32 +47,26 @@ export const SessionLogs = observer((props: { logs: ISessionLog[] }) => {
 })
 
 type TProps = {
-    app: IApp;
+    session: ISession;
 }
-
-// TODO: Move session retrieval logic from session presentation logic
 export const Session = observer((props: TProps) => {
 
-    const { uuid } = useParams<{ uuid: string }>();
     const interval = useRef<NodeJS.Timeout | null>(null);
-
-    const { session } = props.app;
-
     const history = useHistory();
 
     useEffect(() => {
 
         const sessionStatusRetrieval = () => {
 
-            const logs: ISessionLog[] = values(props.app.session.logs) as any;
+            const logs: ISessionLog[] = values(props.session.logs) as any;
 
             let lastLogUUID: string | undefined = undefined;
 
             if (logs.length) {
-                lastLogUUID =  logs[logs.length-1].uuid;
+                lastLogUUID = logs[logs.length - 1].uuid;
             }
 
-            props.app.session.retrieveLogsAndStatus(lastLogUUID)
+            props.session.retrieveLogsAndStatus(lastLogUUID)
                 .then(request => {
                     if (request.result === APIRequestResult.FAILED) {
                         alert(request.reason);
@@ -83,45 +77,18 @@ export const Session = observer((props: TProps) => {
                 });
         };
 
-        props.app.retrieveSession(uuid)
-            .then(request => {
-                if (request.result === APIRequestResult.FAILED) {
-                    alert(request.reason);
-                    history.push(`/_polo_/`);
-                } else {
-                    interval.current = setTimeout(() => sessionStatusRetrieval(), 1000);
-                }
-            });
-        
+        sessionStatusRetrieval();
+
         return () => {
             if (interval.current)
                 clearTimeout(interval.current);
         }
-    }, [uuid])
+    }, [])
 
-    useEffect(() => {
-
-        if (session) {
-            if (session.status === SessionStatus.STARTED) {
-                session.track()
-                    .then(request => {
-                        if (request.result === APIRequestResult.SUCCEEDED) {
-                            location.href = '/';
-                        } else {
-                            alert(request.reason);
-                        }
-                    });
-            }
-        }
-
-    }, [session && session.status]);
-
-    if (!session) return null;
-
-    return <div className="session__component w-10/12 max-w-full flex flex-col pt-3 min-w-0 min-h-0 max-h-screen">
+    return <div className="mx-auto w-10/12 max-w-full flex flex-col pt-3 min-w-0 min-h-0 max-h-screen">
         <h1 className="text-4xl mb-3 text-nord1 dark:text-nord5">Session</h1>
-        <div className="text-lg text-gray-500 mb-7">Id: {uuid}</div>
-        <SessionLogs logs={values(session.logs) as any as ISessionLog[]} />
+        <div className="text-lg text-gray-500 mb-7">Id: {props.session.uuid}</div>
+        <SessionLogs logs={values(props.session.logs) as any as ISessionLog[]} />
     </div>
 });
 

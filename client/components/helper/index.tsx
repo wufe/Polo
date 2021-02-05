@@ -3,8 +3,8 @@ import { IApp, IStore } from '@/state/models';
 import { observer } from 'mobx-react-lite';
 import { Instance } from 'mobx-state-tree';
 import React, { useEffect, useRef } from 'react';
-import './session-helper.scss';
-import { SessionHelperSession } from './session/session-helper-session';
+import './index.scss';
+import { SessionHelperSession } from './session-helper-session';
 
 type TProps = {
     store: IStore;
