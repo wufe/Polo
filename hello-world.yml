@@ -7,6 +7,135 @@ applications:
     commands:
       start:
         - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        - command: sleep 1
+        - command: echo "slept 1s"
+        
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        - command: echo "command 1"
+        
         # - command: 'docker run -p {{port}}:80 -d nginxdemos/hello | xargs -I % echo "polo[container_id=%]"'
         - command: echo "command 3"
         - command: sleep 1

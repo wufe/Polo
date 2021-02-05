@@ -19,8 +19,7 @@ export const ManagerApp = () => {
         bg-gradient-to-br
         from-gray-50
         to-gray-100
-        dark:from-nord-4
-        dark:to-nord-1
+        dark:from-nord-4 dark:to-nord-1
         dark:bg-gray-800
         dark:text-gray-300">
         <BrowserRouter>

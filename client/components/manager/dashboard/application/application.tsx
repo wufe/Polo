@@ -43,6 +43,7 @@ export const Application = observer((props: TProps) => {
         divide-y dark:divide-gray-500
         mx-auto
         my-5 rounded-md shadow-lg
+        bg-gray-50
         dark:bg-nord0
         font-quicksand
         ${!open ? ' max-h-14 overflow-hidden dark:hover:bg-nord3' : ''}`}
