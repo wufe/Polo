@@ -84,7 +84,6 @@ export const Session = observer((props: TProps) => {
             props.session.retrieveLogsAndStatus(lastLogUUID)
                 .then(request => {
                     if (request.result === APIRequestResult.FAILED) {
-                        alert(request.reason);
                         history.push(`/_polo_/`);
                     } else {
                         interval.current = setTimeout(() => sessionStatusRetrieval(), 1000);

@@ -38,7 +38,7 @@ export const SessionPage = observer((props: TProps) => {
                         if (request.result === APIRequestResult.SUCCEEDED) {
                             location.href = '/';
                         } else {
-                            alert(request.reason);
+                            
                         }
                     });
             }
