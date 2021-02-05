@@ -8,11 +8,11 @@ applications:
     remote: https://github.com/nginxinc/NGINX-Demos # Mandatory
     use_git_cli: false
     target: "http://127.0.0.1:{{port}}"
-    forwards: # Not implemented yet
+    forwards:
       - pattern: ^/path/(.+)$
         to: http://127.0.0.1:{{port2}}/$1
-        host: host2.example.com
-        headers:
+        host: host2.example.com  # Not implemented yet
+        headers:  # Not implemented yet
           add:
             - Origin=host2.example.com
           remove:

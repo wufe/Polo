@@ -21,6 +21,8 @@ const (
 	SESSION_COOKIE_NAME string = "PoloSession"
 )
 
+// http://localhost:8888/monito/d8cf5838-fa3a-4c63-b82e-a0c3fe46f402
+
 func (server *HTTPServer) getReverseProxyHandlerFunc() http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		if server.isDev && (strings.HasPrefix(req.URL.Path, string(ServerRouteRoot)) ||
@@ -43,7 +45,9 @@ func (server *HTTPServer) getReverseProxyHandlerFunc() http.Handler {
 					if usingSmartURL {
 						server.temporaryRedirect(res, "/")
 					} else {
-						server.serveReverseProxy(session.Target, res, req, session)
+						target := findReverseProxyTargetByRequestPath(req, session)
+						fmt.Println("target", target, "path", req.URL.Path, "scheme", req.URL.Scheme)
+						server.serveReverseProxy(target, res, req, session)
 					}
 					break
 				case models.SessionStatusStarting:
@@ -57,6 +61,30 @@ func (server *HTTPServer) getReverseProxyHandlerFunc() http.Handler {
 			}
 		}
 	})
+}
+
+func findReverseProxyTargetByRequestPath(req *http.Request, session *models.Session) string {
+	for _, compiledPattern := range session.Application.CompiledForwardPatterns {
+		if matches := compiledPattern.Pattern.FindStringSubmatch(req.URL.Path); len(matches) > 0 {
+			target := compiledPattern.Forward.To
+			for matchIndex, match := range matches {
+				target = strings.ReplaceAll(target, fmt.Sprintf("$%d", matchIndex), match)
+			}
+			toURL, err := url.Parse(target)
+			if err != nil {
+				log.Errorf("Error creating target url: %s", err.Error())
+				return session.Target
+			}
+			if toURL.IsAbs() {
+				req.URL = toURL
+				req.Host = toURL.Host
+				return fmt.Sprintf("%s://%s", req.URL.Scheme, req.Host)
+			}
+			req.URL.Path = toURL.Path
+			break
+		}
+	}
+	return session.Target
 }
 
 func (server *HTTPServer) tryGetSessionByRequestURL(req *http.Request) *models.Session {

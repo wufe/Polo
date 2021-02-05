@@ -2,7 +2,9 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"os/exec"
+	"regexp"
 	"strings"
 	"time"
 
@@ -13,29 +15,31 @@ import (
 )
 
 type Application struct {
-	Auth                  Auth                           `json:"-"`
-	Name                  string                         `json:"name"`
-	Remote                string                         `json:"remote"`
-	Target                string                         `json:"target"`
-	Host                  string                         `json:"host"`
-	IsDefault             bool                           `yaml:"is_default" json:"isDefault"`
-	Headers               Headers                        `json:"headers"`
-	Healthcheck           Healthcheck                    `json:"healthCheck"`
-	Recycle               Recycle                        `json:"recycle"`
-	Commands              Commands                       `json:"commands"`
-	MaxConcurrentSessions int                            `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
-	Port                  PortConfiguration              `yaml:"port" json:"port"`
-	UseGitCLI             bool                           `yaml:"use_git_cli" json:"useGitCLI"`
-	Folder                string                         `yaml:"-" json:"folder"`
-	BaseFolder            string                         `yaml:"-" json:"baseFolder"`
-	CommandChan           chan *ApplicationCommand       `yaml:"-" json:"-"`
-	CommandResponseChan   chan *ApplicationCommandOutput `yaml:"-" json:"-"`
-	ObjectsToHashMap      map[string]string              `yaml:"-" json:"-"`
-	HashToObjectsMap      map[string]*RemoteObject       `yaml:"-" json:"-"`
-	Branches              map[string]*Branch             `yaml:"-" json:"branches"`
-	Tags                  []string                       `yaml:"-" json:"-"`
-	Commits               []string                       `yaml:"-" json:"-"`
-	CommitMap             map[string]*object.Commit      `yaml:"-" json:"-"`
+	Auth                    Auth                           `json:"-"`
+	Name                    string                         `json:"name"`
+	Remote                  string                         `json:"remote"`
+	Target                  string                         `json:"target"`
+	Host                    string                         `json:"host"`
+	IsDefault               bool                           `yaml:"is_default" json:"isDefault"`
+	Forwards                []Forward                      `json:"forwards"`
+	Headers                 Headers                        `json:"headers"`
+	Healthcheck             Healthcheck                    `json:"healthCheck"`
+	Recycle                 Recycle                        `json:"recycle"`
+	Commands                Commands                       `json:"commands"`
+	MaxConcurrentSessions   int                            `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
+	Port                    PortConfiguration              `yaml:"port" json:"port"`
+	UseGitCLI               bool                           `yaml:"use_git_cli" json:"useGitCLI"`
+	Folder                  string                         `yaml:"-" json:"folder"`
+	BaseFolder              string                         `yaml:"-" json:"baseFolder"`
+	CommandChan             chan *ApplicationCommand       `yaml:"-" json:"-"`
+	CommandResponseChan     chan *ApplicationCommandOutput `yaml:"-" json:"-"`
+	ObjectsToHashMap        map[string]string              `yaml:"-" json:"-"`
+	HashToObjectsMap        map[string]*RemoteObject       `yaml:"-" json:"-"`
+	Branches                map[string]*Branch             `yaml:"-" json:"branches"`
+	Tags                    []string                       `yaml:"-" json:"-"`
+	Commits                 []string                       `yaml:"-" json:"-"`
+	CommitMap               map[string]*object.Commit      `yaml:"-" json:"-"`
+	CompiledForwardPatterns []CompiledForwardPattern       `yaml:"-" json:"-"`
 }
 
 type Auth struct {
@@ -53,6 +57,18 @@ type SSHAuth struct {
 	User       string `json:"user"`
 	PrivateKey string `yaml:"private_key" json:"privateKey"`
 	Password   string `json:"password"`
+}
+
+type Forward struct {
+	Pattern string  `json:"pattern"`
+	To      string  `json:"to"`
+	Host    string  `json:"host"`
+	Headers Headers `json:"headers"`
+}
+
+type CompiledForwardPattern struct {
+	Pattern *regexp.Regexp
+	Forward *Forward
 }
 
 type ApplicationCommand struct {
@@ -84,6 +100,28 @@ func NewApplication(application *Application) (*Application, error) {
 	}
 	if application.Remote == "" {
 		return nil, errors.New("application.remote (required) not defined; put the git repository URL")
+	}
+	if application.Forwards == nil {
+		application.Forwards = make([]Forward, 0)
+	}
+	for i, forward := range application.Forwards {
+		if forward.Pattern == "" {
+			return nil, fmt.Errorf("application.forwards[%d].pattern not defined", i)
+		}
+		compiledPattern, err := regexp.Compile(forward.Pattern)
+		if err != nil {
+			return nil, fmt.Errorf("application.forwards[%d].pattern is not a valid regex: %s", i, err.Error())
+		}
+		application.CompiledForwardPatterns = append(
+			application.CompiledForwardPatterns,
+			CompiledForwardPattern{
+				compiledPattern,
+				&forward,
+			},
+		)
+		if forward.To == "" {
+			return nil, fmt.Errorf("application.forwards[%d].to not defined", i)
+		}
 	}
 	if application.Target == "" {
 		application.Target = "http://127.0.0.1:{{port}}"
