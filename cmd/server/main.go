@@ -1,18 +1,18 @@
 package main
 
 import (
-	"github.com/wufe/polo/background"
-	"github.com/wufe/polo/background/pipe"
-	"github.com/wufe/polo/http/proxy"
-	"github.com/wufe/polo/http/rest"
-	"github.com/wufe/polo/http/routing"
-	"github.com/wufe/polo/query"
-	"github.com/wufe/polo/request"
-	"github.com/wufe/polo/services"
-	"github.com/wufe/polo/startup"
-	"github.com/wufe/polo/static"
-	"github.com/wufe/polo/storage"
-	"github.com/wufe/polo/utils"
+	"github.com/wufe/polo/pkg/background"
+	"github.com/wufe/polo/pkg/background/pipe"
+	"github.com/wufe/polo/pkg/http/proxy"
+	"github.com/wufe/polo/pkg/http/rest"
+	"github.com/wufe/polo/pkg/http/routing"
+	"github.com/wufe/polo/pkg/query"
+	"github.com/wufe/polo/pkg/request"
+	"github.com/wufe/polo/pkg/services"
+	"github.com/wufe/polo/pkg/startup"
+	"github.com/wufe/polo/pkg/static"
+	"github.com/wufe/polo/pkg/storage"
+	"github.com/wufe/polo/pkg/utils"
 )
 
 func main() {
