@@ -7,11 +7,15 @@ applications:
     forwards:
       - pattern: /github/(.+?)/(.+?)/?$
         to: https://github.com/$2/$1
+      - pattern: /testserver/(.+?)/(.+?)/?(\?(.+?))?$
+        to: /$2/$1$3
         headers:
           set:
             - Origin=test.bembi.dev
-      - pattern: /testserver/(.+?)/(.+?)/?(\?(.+?))?$
-        to: /$2/$1$3
+          add:
+            - X-Added=header
+          del:
+            - asd
     commands:
       start:
         - command: docker build -t polo-testserver:{{commit}} .

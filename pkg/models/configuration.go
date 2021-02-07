@@ -28,7 +28,7 @@ type GlobalConfiguration struct {
 
 type Header string
 
-func (h *Header) Parse() (string, string, error) {
+func (h Header) Parse() (string, string, error) {
 	kv := strings.Split(fmt.Sprint(h), "=")
 	if len(kv) != 2 {
 		return "", "", ErrMalformedHeader
