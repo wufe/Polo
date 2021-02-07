@@ -1,0 +1,25 @@
+applications:
+  - name: test-server
+    remote: "https://github.com/wufe/polo-testserver"
+    target: "http://127.0.0.1:{{port}}"
+    host: "my.app.host.dev"
+    is_default: true
+    forwards:
+      - pattern: /github/(.+?)/(.+?)/?$
+        to: https://github.com/$2/$1
+        headers:
+          set:
+            - Origin=test.bembi.dev
+      - pattern: /testserver/(.+?)/(.+?)/?(\?(.+?))?$
+        to: /$2/$1$3
+    commands:
+      start:
+        - command: docker build -t polo-testserver:{{commit}} .
+        - command: 'docker run -p {{port}}:3000 -d polo-testserver:{{commit}}'
+          output_variable: 'container_id'
+      stop:
+        - command: "docker kill {{container_id}}"
+    recycle:
+      inactivity_timeout: 3000
+    healthcheck:
+      retry_interval: 5

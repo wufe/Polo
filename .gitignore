@@ -564,3 +564,4 @@ MigrationBackup/
 /pkg/static/statik.go
 !/examples/example-configuration.yml
 /db
+!/testserver.yml
