@@ -38,7 +38,6 @@ You can find an example of a configuration file with all the options in the fold
 - Add optional "copy mode" opposed to standard "clone mode" to initialize a application: copies the directory instead of cloning again
 - Add "initializing" status to a application, in order to allow the server to start asap
 - Pruning branches does not work with embedded git client (prune is not supported)
-- Additional forward rules
 - Configuration persistence via embeddable database (badgerDB?)
 - Add possibility to always watch one or more branches and provide an always available session
 - Add possibility to manually trigger a fetch in a git application folder
