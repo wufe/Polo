@@ -116,7 +116,6 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 		proxy := httputil.NewSingleHostReverseProxy(url)
 		proxy.ModifyResponse = func(r *http.Response) error {
 			if strings.Contains(r.Header.Get("Content-Type"), "text/html") {
-
 				body, err := ioutil.ReadAll(r.Body)
 				if err != nil {
 					log.Printf("Error reading body: %v", err)
@@ -126,7 +125,7 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 
 				var buffer *bytes.Buffer
 
-				bodyIndexPattern := regexp.MustCompile(`<body([^>]+?)>`)
+				bodyIndexPattern := regexp.MustCompile(`<body([^>]*?)>`)
 
 				if bodyIndex := bodyIndexPattern.FindStringIndex(stringBody); len(bodyIndex) > 1 {
 
