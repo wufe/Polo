@@ -20,9 +20,9 @@ module.exports = env => ({
         'session-helper': './client/session-helper-index.tsx',
     },
     output: {
-        publicPath: '/_polo_/static/',
+        publicPath: '/_polo_/public/',
         filename: '[name].js',
-        path: path.resolve(__dirname, 'static')
+        path: path.resolve(__dirname, 'public')
     },
     devtool: 'source-map',
     resolve: {
@@ -102,7 +102,7 @@ module.exports = env => ({
 
     ].filter(Boolean),
     devServer: {
-        contentBase: path.join(__dirname, 'static'),
+        contentBase: path.join(__dirname, 'public'),
         public: 'localhost',
         compress: true,
         port: 9000,

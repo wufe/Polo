@@ -1,4 +1,4 @@
-package services
+package background
 
 import (
 	"context"
@@ -6,12 +6,35 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/background/pipe"
 	"github.com/wufe/polo/models"
 	"github.com/wufe/polo/utils"
 )
 
-func (sessionHandler *SessionHandler) DestroySession(session *models.Session) {
+type SessionDestroyWorker struct {
+	mediator *Mediator
+}
 
+func NewSessionDestroyWorker(mediator *Mediator) *SessionDestroyWorker {
+	worker := &SessionDestroyWorker{
+		mediator: mediator,
+	}
+
+	worker.startAcceptingDestroyRequests()
+	return worker
+}
+
+func (w *SessionDestroyWorker) startAcceptingDestroyRequests() {
+	go func() {
+		for {
+
+			session := <-w.mediator.DestroySession.Chan
+			w.DestroySession(session)
+		}
+	}()
+}
+
+func (w *SessionDestroyWorker) DestroySession(session *models.Session) {
 	if !session.Status.IsAlive() {
 		return
 	}
@@ -28,7 +51,9 @@ func (sessionHandler *SessionHandler) DestroySession(session *models.Session) {
 				select {
 				case <-sessionStopContext.Done():
 					log.Warnf("[SESSION:%s] Destruction aborted", session.UUID)
-					sessionHandler.CleanupSession(session, models.SessionStatusStopFailed)
+					w.mediator.CleanSession.Request(&pipe.SessionCleanupInput{
+						session, models.SessionStatusStopFailed,
+					})
 					return
 				case <-done:
 					done <- struct{}{}
@@ -44,7 +69,7 @@ func (sessionHandler *SessionHandler) DestroySession(session *models.Session) {
 				cancelSessionStop()
 				return
 			default:
-				builtCommand, err := sessionHandler.buildCommand(command.Command, session)
+				builtCommand, err := buildCommand(command.Command, session)
 				if err != nil {
 					session.LogError(err.Error())
 					log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
@@ -61,7 +86,7 @@ func (sessionHandler *SessionHandler) DestroySession(session *models.Session) {
 						os.Environ(),
 						command.Environment...,
 					)
-					cmd.Dir = sessionHandler.getWorkingDir(session.Folder, command.WorkingDir)
+					cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
 				}
 				err = utils.ExecCmds(func(sl *utils.StdLine) {
 					log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, sl.Line)
@@ -82,9 +107,8 @@ func (sessionHandler *SessionHandler) DestroySession(session *models.Session) {
 		done <- struct{}{}
 
 		// In the end
-		sessionHandler.CleanupSession(session, models.SessionStatusStopped)
+		w.mediator.CleanSession.Request(&pipe.SessionCleanupInput{session, models.SessionStatusStopped})
 
 		cancelSessionStop()
 	}()
-
 }

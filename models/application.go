@@ -15,31 +15,29 @@ import (
 )
 
 type Application struct {
-	Auth                    Auth                           `json:"-"`
-	Name                    string                         `json:"name"`
-	Remote                  string                         `json:"remote"`
-	Target                  string                         `json:"target"`
-	Host                    string                         `json:"host"`
-	IsDefault               bool                           `yaml:"is_default" json:"isDefault"`
-	Forwards                []Forward                      `json:"forwards"`
-	Headers                 Headers                        `json:"headers"`
-	Healthcheck             Healthcheck                    `json:"healthCheck"`
-	Recycle                 Recycle                        `json:"recycle"`
-	Commands                Commands                       `json:"commands"`
-	MaxConcurrentSessions   int                            `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
-	Port                    PortConfiguration              `yaml:"port" json:"port"`
-	UseGitCLI               bool                           `yaml:"use_git_cli" json:"useGitCLI"`
-	Folder                  string                         `yaml:"-" json:"folder"`
-	BaseFolder              string                         `yaml:"-" json:"baseFolder"`
-	CommandChan             chan *ApplicationCommand       `yaml:"-" json:"-"`
-	CommandResponseChan     chan *ApplicationCommandOutput `yaml:"-" json:"-"`
-	ObjectsToHashMap        map[string]string              `yaml:"-" json:"-"`
-	HashToObjectsMap        map[string]*RemoteObject       `yaml:"-" json:"-"`
-	Branches                map[string]*Branch             `yaml:"-" json:"branches"`
-	Tags                    []string                       `yaml:"-" json:"-"`
-	Commits                 []string                       `yaml:"-" json:"-"`
-	CommitMap               map[string]*object.Commit      `yaml:"-" json:"-"`
-	CompiledForwardPatterns []CompiledForwardPattern       `yaml:"-" json:"-"`
+	Auth                    Auth                      `json:"-"`
+	Name                    string                    `json:"name"`
+	Remote                  string                    `json:"remote"`
+	Target                  string                    `json:"target"`
+	Host                    string                    `json:"host"`
+	IsDefault               bool                      `yaml:"is_default" json:"isDefault"`
+	Forwards                []Forward                 `json:"forwards"`
+	Headers                 Headers                   `json:"headers"`
+	Healthcheck             Healthcheck               `json:"healthCheck"`
+	Recycle                 Recycle                   `json:"recycle"`
+	Commands                Commands                  `json:"commands"`
+	MaxConcurrentSessions   int                       `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
+	Port                    PortConfiguration         `yaml:"port" json:"port"`
+	UseGitCLI               bool                      `yaml:"use_git_cli" json:"useGitCLI"`
+	Folder                  string                    `yaml:"-" json:"folder"`
+	BaseFolder              string                    `yaml:"-" json:"baseFolder"`
+	ObjectsToHashMap        map[string]string         `yaml:"-" json:"-"`
+	HashToObjectsMap        map[string]*RemoteObject  `yaml:"-" json:"-"`
+	Branches                map[string]*Branch        `yaml:"-" json:"branches"`
+	Tags                    []string                  `yaml:"-" json:"-"`
+	Commits                 []string                  `yaml:"-" json:"-"`
+	CommitMap               map[string]*object.Commit `yaml:"-" json:"-"`
+	CompiledForwardPatterns []CompiledForwardPattern  `yaml:"-" json:"-"`
 }
 
 type Auth struct {
@@ -178,8 +176,6 @@ func NewApplication(application *Application) (*Application, error) {
 			application.Auth.SSH.User = "git"
 		}
 	}
-	application.CommandChan = make(chan *ApplicationCommand)
-	application.CommandResponseChan = make(chan *ApplicationCommandOutput)
 	application.ObjectsToHashMap = make(map[string]string)
 	application.HashToObjectsMap = make(map[string]*RemoteObject)
 	application.Branches = make(map[string]*Branch)

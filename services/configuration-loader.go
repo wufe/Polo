@@ -12,14 +12,14 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func LoadConfigurations() (*models.RootConfiguration, *ApplicationHandler) {
+func LoadConfigurations() *models.RootConfiguration {
 	dir := getExecutableFolder()
 
 	files := getYamlFiles(dir)
 
-	configurations, serviceHandler := unmarshalConfigurations(files)
+	configurations := unmarshalConfigurations(files)
 
-	return configurations, serviceHandler
+	return configurations
 
 }
 
@@ -52,7 +52,7 @@ func getYamlFiles(root string) []string {
 	return files
 }
 
-func unmarshalConfigurations(files []string) (*models.RootConfiguration, *ApplicationHandler) {
+func unmarshalConfigurations(files []string) *models.RootConfiguration {
 	rootConfiguration := &models.RootConfiguration{
 		Applications: []*models.Application{},
 	}
@@ -67,7 +67,7 @@ func unmarshalConfigurations(files []string) (*models.RootConfiguration, *Applic
 		if err != nil {
 			log.Errorln(fmt.Sprintf("Error in configuration file %s", file), err)
 		}
-		if root.Global != (models.Global{}) {
+		if root.Global != (models.GlobalConfiguration{}) {
 			rootConfiguration.Global = root.Global
 		}
 		if root.Applications != nil {
@@ -83,8 +83,6 @@ func unmarshalConfigurations(files []string) (*models.RootConfiguration, *Applic
 		}
 	}
 
-	applicationHandler := NewApplicationHandler(rootConfiguration)
-
 	// Default global configurations
 	if rootConfiguration.Global.Port == 0 {
 		rootConfiguration.Global.Port = 8888
@@ -98,13 +96,13 @@ func unmarshalConfigurations(files []string) (*models.RootConfiguration, *Applic
 		rootConfiguration.Global.MaxConcurrentSessions = 10
 	}
 
-	for _, application := range rootConfiguration.Applications {
-		err := applicationHandler.InitializeApplication(application)
-		if err != nil {
-			log.Fatalln(fmt.Sprintf("Could not provision application %s: %s", application.Name, err.Error()))
-			panic(err)
-		}
-	}
+	// for _, application := range rootConfiguration.Applications {
+	// 	err := applicationHandler.InitializeApplication(application)
+	// 	if err != nil {
+	// 		log.Fatalln(fmt.Sprintf("Could not provision application %s: %s", application.Name, err.Error()))
+	// 		panic(err)
+	// 	}
+	// }
 
-	return rootConfiguration, applicationHandler
+	return rootConfiguration
 }

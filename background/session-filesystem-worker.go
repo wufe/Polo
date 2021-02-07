@@ -1,4 +1,4 @@
-package services
+package background
 
 import (
 	"fmt"
@@ -8,11 +8,39 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/kennygrant/sanitize"
+	"github.com/wufe/polo/background/pipe"
 	"github.com/wufe/polo/models"
 	"github.com/wufe/polo/services/versioning"
 )
 
-func (sessionHandler *SessionHandler) buildSessionCommitStructure(session *models.Session) (string, error) {
+type SessionFilesystemWorker struct {
+	mediator *Mediator
+}
+
+func NewSessionFilesystemWorker(mediator *Mediator) *SessionFilesystemWorker {
+	worker := &SessionFilesystemWorker{
+		mediator: mediator,
+	}
+
+	worker.startAcceptingFSRequests()
+
+	return worker
+}
+
+func (w *SessionFilesystemWorker) startAcceptingFSRequests() {
+	go func() {
+		for {
+			session := <-w.mediator.SessionFileSystem.RequestChan
+			commitFolder, err := w.buildSessionCommitStructure(session)
+			w.mediator.SessionFileSystem.ResponseChan <- &pipe.SessionFilesystemResult{
+				CommitFolder: commitFolder,
+				Err:          err,
+			}
+		}
+	}()
+}
+
+func (w *SessionFilesystemWorker) buildSessionCommitStructure(session *models.Session) (string, error) {
 	session.LogInfo(fmt.Sprintf("Trying to build session commit structure in folder %s", session.Application.Folder))
 
 	checkout := sanitize.Name(session.CommitID)

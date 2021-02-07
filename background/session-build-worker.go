@@ -1,4 +1,4 @@
-package services
+package background
 
 import (
 	"context"
@@ -7,49 +7,100 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/phayes/freeport"
-	"github.com/wufe/polo/models"
-	"github.com/wufe/polo/utils"
-
 	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/background/pipe"
+	"github.com/wufe/polo/models"
+	"github.com/wufe/polo/storage"
+	"github.com/wufe/polo/utils"
 )
 
-const (
-	SessionBuildResultSucceeded SessionBuildResultType = "succeeded"
-	SessionBuildResultFailed    SessionBuildResultType = "failed"
-)
-
-type SessionBuildResultType string
-
-type SessionBuildInput struct {
-	Checkout    string
-	Application *models.Application
+type SessionBuildWorker struct {
+	global             *models.GlobalConfiguration
+	applicationStorage *storage.Application
+	sessionStorage     *storage.Session
+	mediator           *Mediator
 }
 
-type SessionBuildResult struct {
-	Result        SessionBuildResultType
-	Session       *models.Session
-	FailingReason string
+func NewSessionBuildWorker(
+	globalConfiguration *models.GlobalConfiguration,
+	applicationStorage *storage.Application,
+	sessionStorage *storage.Session,
+	mediator *Mediator,
+) *SessionBuildWorker {
+	worker := &SessionBuildWorker{
+		global:             globalConfiguration,
+		applicationStorage: applicationStorage,
+		sessionStorage:     sessionStorage,
+		mediator:           mediator,
+	}
+
+	worker.startAcceptingNewSessionRequests()
+
+	return worker
 }
 
-func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *SessionBuildResult {
+func (w *SessionBuildWorker) startAcceptingNewSessionRequests() {
+	go func() {
+		for {
+			// I'm trying to build my session.
+			// Wait here until someone requests some work
+			sessionBuildRequest := <-w.mediator.BuildSession.RequestChan
 
-	if sessionHandler.getTotalNumberOfSessions() >= sessionHandler.configuration.Global.MaxConcurrentSessions {
-		return &SessionBuildResult{
-			Result:        SessionBuildResultFailed,
+			sessionBuildResult := w.buildSession(sessionBuildRequest)
+
+			w.mediator.BuildSession.ResponseChan <- sessionBuildResult
+		}
+	}()
+}
+
+func (w *SessionBuildWorker) RequestNewSession(buildInput *pipe.SessionBuildInput) *pipe.SessionBuildResult {
+	return w.mediator.BuildSession.Request(buildInput)
+}
+
+func (w *SessionBuildWorker) MarkSessionAsStarted(session *models.Session) {
+	// TODO: Persist session
+	session.Status = models.SessionStatusStarted
+	session.MaxAge = session.Application.Recycle.InactivityTimeout
+	if session.MaxAge > 0 {
+		w.startSessionInactivityTimer(session)
+	}
+}
+
+func (w *SessionBuildWorker) startSessionInactivityTimer(session *models.Session) {
+	session.InactiveAt = time.Now().Add(time.Second * time.Duration(session.Application.Recycle.InactivityTimeout))
+	go func() {
+		for {
+			if session.Status != models.SessionStatusStarted {
+				return
+			}
+
+			if time.Now().After(session.InactiveAt) {
+				w.mediator.DestroySession.Request(session)
+				return
+			}
+			session.MaxAge--
+			time.Sleep(1 * time.Second)
+		}
+	}()
+}
+
+func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.SessionBuildResult {
+
+	aliveCount := len(w.sessionStorage.GetAllAliveSessions())
+	if aliveCount >= w.global.MaxConcurrentSessions {
+		return &pipe.SessionBuildResult{
+			Result:        pipe.SessionBuildResultFailed,
 			FailingReason: "Reached global maximum concurrent sessions",
 		}
 	}
 
-	if sessionHandler.getNumberOfSessionsByApplication(input.Application) >= input.Application.MaxConcurrentSessions {
-		return &SessionBuildResult{
-			Result:        SessionBuildResultFailed,
+	if w.sessionStorage.AliveByApplicationCount(input.Application) >= input.Application.MaxConcurrentSessions {
+		return &pipe.SessionBuildResult{
+			Result:        pipe.SessionBuildResultFailed,
 			FailingReason: "Reached maximum concurrent sessions for this application",
 		}
 	}
@@ -70,11 +121,11 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 	})
 	session.LogInfo(fmt.Sprintf("Creating session %s", session.UUID))
 
-	freePort, err := sessionHandler.getFreePort(&input.Application.Port)
+	freePort, err := getFreePort(&input.Application.Port)
 	if err != nil {
 		log.Errorln("Could not get a free port", err)
-		return &SessionBuildResult{
-			Result:        SessionBuildResultFailed,
+		return &pipe.SessionBuildResult{
+			Result:        pipe.SessionBuildResultFailed,
 			FailingReason: "Could not get a free port",
 		}
 	}
@@ -84,8 +135,8 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 	checkout, ok := input.Application.ObjectsToHashMap[input.Checkout]
 	if !ok {
 		log.Errorf("Could not find the hash of the selected checkout %s", input.Checkout)
-		return &SessionBuildResult{
-			Result:        SessionBuildResultFailed,
+		return &pipe.SessionBuildResult{
+			Result:        pipe.SessionBuildResultFailed,
 			FailingReason: fmt.Sprintf("Could not find the hash of the selected checkout %s", input.Checkout),
 		}
 	}
@@ -94,7 +145,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 
 	// Check if someone else just requested the same type of session
 	// looking through all open session and comparing applications and checkouts
-	sessionAlreadyBeingBuilt := sessionHandler.GetAliveApplicationSessionByCheckout(
+	sessionAlreadyBeingBuilt := w.sessionStorage.GetAliveApplicationSessionByCheckout(
 		checkout,
 		input.Application,
 	)
@@ -105,8 +156,8 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 			input.Checkout,
 		)
 		session.LogWarn(fmt.Sprintf("Another session with the UUID %s has already being requested for checkout %s", sessionAlreadyBeingBuilt.UUID, input.Checkout))
-		return &SessionBuildResult{
-			Result:  SessionBuildResultSucceeded,
+		return &pipe.SessionBuildResult{
+			Result:  pipe.SessionBuildResultSucceeded,
 			Session: sessionAlreadyBeingBuilt,
 		}
 	}
@@ -121,7 +172,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 	session.Variables["target"] = session.Target
 	session.Variables["commit"] = session.CommitID
 
-	sessionHandler.sessions = append(sessionHandler.sessions, session)
+	w.sessionStorage.Add(session)
 
 	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(session.Application.Healthcheck.RetryTimeout))
 	done := make(chan struct{})
@@ -130,12 +181,16 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 
 	go func() {
 
-		workingDir, err := sessionHandler.buildSessionCommitStructure(session)
+		fsResponse := w.mediator.SessionFileSystem.Request(session)
+		workingDir := fsResponse.CommitFolder
+		err := fsResponse.Err
 		session.Folder = workingDir
 		if err != nil {
 			log.Errorf("Could not build session commit structure: %s", err.Error())
 			cancelSessionStart()
-			sessionHandler.CleanupSession(session, models.SessionStatusStartFailed)
+			w.mediator.CleanSession.Request(&pipe.SessionCleanupInput{
+				session, models.SessionStatusStartFailed,
+			})
 			return
 		}
 
@@ -146,7 +201,9 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 				case <-sessionStartContext.Done():
 					log.Warnf("[SESSION:%s] Execution aborted", session.UUID)
 					session.LogError("Execution aborted (sessionStartContext ended)")
-					sessionHandler.CleanupSession(session, models.SessionStatusStartFailed)
+					w.mediator.CleanSession.Request(&pipe.SessionCleanupInput{
+						session, models.SessionStatusStartFailed,
+					})
 					return
 				case <-done:
 					done <- struct{}{}
@@ -167,7 +224,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 					return
 				}
 
-				builtCommand, err := sessionHandler.buildCommand(command.Command, session)
+				builtCommand, err := buildCommand(command.Command, session)
 				if err != nil {
 					session.LogError(err.Error())
 					log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
@@ -185,13 +242,13 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 						os.Environ(),
 						command.Environment...,
 					)
-					cmd.Dir = sessionHandler.getWorkingDir(workingDir, command.WorkingDir)
+					cmd.Dir = getWorkingDir(workingDir, command.WorkingDir)
 				}
 
 				err = utils.ExecCmds(func(line *utils.StdLine) {
 					session.LogStdout(line.Line)
 					log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line.Line)
-					sessionHandler.parseSessionCommandOuput(session, &command, line.Line)
+					parseSessionCommandOuput(session, &command, line.Line)
 				}, cmds...)
 
 				if err != nil {
@@ -207,7 +264,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 		}
 
 		if session.Application.Healthcheck == (models.Healthcheck{}) {
-			sessionHandler.MarkSessionAsStarted(session)
+			w.MarkSessionAsStarted(session)
 			log.Infof("[SESSION:%s] Session started", session.UUID)
 			done <- struct{}{}
 		} else {
@@ -259,7 +316,7 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 							log.Errorf("[SESSION:%s] Could not perform HTTP request", session.UUID, err.Error())
 						} else {
 							if response.StatusCode == input.Application.Healthcheck.Status {
-								sessionHandler.MarkSessionAsStarted(session)
+								w.MarkSessionAsStarted(session)
 								log.Infof("[SESSION:%s] Session started", session.UUID)
 								done <- struct{}{}
 								return
@@ -274,97 +331,8 @@ func (sessionHandler *SessionHandler) buildSession(input *SessionBuildInput) *Se
 
 	}()
 
-	return &SessionBuildResult{
-		Result:  SessionBuildResultSucceeded,
+	return &pipe.SessionBuildResult{
+		Result:  pipe.SessionBuildResultSucceeded,
 		Session: session,
 	}
-}
-
-func (sessionHandler *SessionHandler) getWorkingDir(baseDir string, commandWorkingDir string) string {
-	if commandWorkingDir == "" {
-		return baseDir
-	}
-	if strings.HasPrefix(commandWorkingDir, "./") || !strings.HasPrefix(commandWorkingDir, "/") {
-		return filepath.Join(baseDir, commandWorkingDir)
-	}
-	return commandWorkingDir
-}
-
-func (sessionHandler *SessionHandler) parseSessionCommandOuput(session *models.Session, command *models.Command, output string) {
-	session.CommandsLogs = append(session.CommandsLogs, output)
-	session.Variables["last_output"] = output
-	re := regexp.MustCompile(`polo\[([^\]]+?)=([^\]]+?)\]`)
-	matches := re.FindAllStringSubmatch(output, -1)
-	for _, variable := range matches {
-		key := variable[1]
-		value := variable[2]
-		session.Variables[key] = value
-		log.Warnf("[SESSION:%s] Setting variable %s=%s", session.UUID, key, value)
-	}
-
-	if command.OutputVariable != "" {
-		session.Variables[command.OutputVariable] = output
-	}
-}
-
-func (sessionHandler *SessionHandler) buildCommand(command string, session *models.Session) (string, error) {
-	sessionHandler.addPortsOnDemand(command, session)
-	for key, value := range session.Variables {
-		command = strings.ReplaceAll(command, fmt.Sprintf("{{%s}}", key), fmt.Sprintf("%v", value))
-	}
-	return strings.TrimSpace(command), nil
-}
-
-func (sessionHandler *SessionHandler) addPortsOnDemand(input string, session *models.Session) (string, error) {
-	re := regexp.MustCompile(`{{(port(.+?))}}`)
-	matches := re.FindAllStringSubmatch(input, -1)
-	for _, match := range matches {
-		portVariable := match[1]
-		if _, ok := session.Variables[portVariable]; !ok {
-			port, err := sessionHandler.getFreePort(&session.Application.Port)
-			if err != nil {
-				return "", err
-			}
-			session.Variables[portVariable] = fmt.Sprint(port)
-		}
-	}
-	return input, nil
-}
-
-func (sessionHandler *SessionHandler) getFreePort(portConfiguration *models.PortConfiguration) (int, error) {
-	foundPort := 0
-L:
-	for foundPort == 0 {
-		freePort, err := freeport.GetFreePort()
-		if err != nil {
-			return 0, err
-		}
-		for _, port := range portConfiguration.Except {
-			if freePort == port {
-				continue L
-			}
-		}
-		foundPort = freePort
-	}
-	return foundPort, nil
-}
-
-func (sessionHandler *SessionHandler) getTotalNumberOfSessions() int {
-	count := 0
-	for _, session := range sessionHandler.sessions {
-		if session.Status.IsAlive() {
-			count++
-		}
-	}
-	return count
-}
-
-func (sessionHandler *SessionHandler) getNumberOfSessionsByApplication(application *models.Application) int {
-	count := 0
-	for _, session := range sessionHandler.sessions {
-		if session.Application == application && session.Status.IsAlive() {
-			count++
-		}
-	}
-	return count
 }

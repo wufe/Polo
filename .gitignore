@@ -556,7 +556,7 @@ MigrationBackup/
 # End of https://www.toptal.com/developers/gitignore/api/macos,windows,visualstudio,visualstudiocode,go,node
 
 /main
-/static
+/public
 /.sessions
 *.yml
 /polo

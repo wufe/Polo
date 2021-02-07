@@ -5,11 +5,11 @@ import (
 )
 
 type RootConfiguration struct {
-	Global       Global
+	Global       GlobalConfiguration
 	Applications []*Application
 }
 
-type Global struct {
+type GlobalConfiguration struct {
 	Port                  int
 	TLSCertFile           string `yaml:"tls_cert,omitempty"`
 	TLSKeyFile            string `yaml:"tls_key,omitempty"`

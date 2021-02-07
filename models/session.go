@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+	"strings"
 	"time"
 )
 
@@ -26,21 +28,30 @@ func (status SessionStatus) IsAlive() bool {
 }
 
 type Session struct {
-	UUID         string            `json:"uuid"`
-	Name         string            `json:"name"`
-	Target       string            `json:"target"`
-	Port         int               `json:"port"`
-	Application  *Application      `json:"application"`
-	Status       SessionStatus     `json:"status"`
-	Logs         []Log             `json:"-"`
-	CommitID     string            `json:"commitID"` // The object to be checked out (branch/tag/commit id)
-	Checkout     string            `json:"checkout"`
-	Done         chan struct{}     `json:"-"`
-	MaxAge       int               `json:"maxAge"`
-	InactiveAt   time.Time         `json:"-"`
-	Folder       string            `json:"folder"`
-	CommandsLogs []string          `json:"commandsLogs"`
-	Variables    map[string]string `json:"variables"`
+	UUID         string        `json:"uuid"`
+	Name         string        `json:"name"`
+	Target       string        `json:"target"`
+	Port         int           `json:"port"`
+	Application  *Application  `json:"application"`
+	Status       SessionStatus `json:"status"`
+	Logs         []Log         `json:"-"`
+	CommitID     string        `json:"commitID"` // The object to be checked out (branch/tag/commit id)
+	Checkout     string        `json:"checkout"`
+	Done         chan struct{} `json:"-"`
+	MaxAge       int           `json:"maxAge"`
+	InactiveAt   time.Time     `json:"-"`
+	Folder       string        `json:"folder"`
+	CommandsLogs []string      `json:"commandsLogs"`
+	Variables    Variables     `json:"variables"`
+}
+
+type Variables map[string]string
+
+func (v Variables) ApplyTo(str string) string {
+	for key, value := range v {
+		str = strings.ReplaceAll(str, fmt.Sprintf("{{%s}}", key), value)
+	}
+	return str
 }
 
 func NewSession(
@@ -112,4 +123,10 @@ func (session *Session) LogStderr(message string) {
 		session.Logs,
 		NewLog(message, LogTypeStderr),
 	)
+}
+
+func (session *Session) MarkAsBeingRequested() {
+	// Refreshes the inactiveAt field every time someone makes a request to this session
+	session.InactiveAt = time.Now().Add(time.Second * time.Duration(session.Application.Recycle.InactivityTimeout))
+	session.MaxAge = session.Application.Recycle.InactivityTimeout
 }
