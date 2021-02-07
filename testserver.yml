@@ -9,6 +9,7 @@ applications:
         to: https://github.com/$2/$1
       - pattern: /testserver/(.+?)/(.+?)/?(\?(.+?))?$
         to: /$2/$1$3
+        host: test.bembi.dev
         headers:
           set:
             - Origin=test.bembi.dev
