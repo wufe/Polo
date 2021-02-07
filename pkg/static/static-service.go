@@ -31,7 +31,7 @@ func (s *Service) LoadSessionHelper() {
 		// If in dev mode, the content is available via webpack dev server
 		go func() {
 			for {
-				resp, err := http.Get(fmt.Sprintf("%s%s%s", s.devServer, "/_polo_/static", "/session-helper.html"))
+				resp, err := http.Get(fmt.Sprintf("%s%s%s", s.devServer, "/_polo_/public", "/session-helper.html"))
 				if err != nil {
 					log.Errorf("Error while getting session helper: %s", err.Error())
 				} else {
