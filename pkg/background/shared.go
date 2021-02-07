@@ -32,6 +32,10 @@ func parseSessionCommandOuput(session *models.Session, command *models.Command, 
 		session.Variables[key] = value
 		log.Warnf("[SESSION:%s] Setting variable %s=%s", session.UUID, key, value)
 	}
+
+	if command.OutputVariable != "" {
+		session.Variables[command.OutputVariable] = output
+	}
 }
 
 func buildCommand(command string, session *models.Session) (string, error) {
