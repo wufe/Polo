@@ -234,6 +234,7 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 						return
 					}
 				}
+				log.Infof("[SESSION:%s (stdin)> ] %s", session.UUID, builtCommand)
 				session.LogStdin(builtCommand)
 
 				cmds := utils.ParseCommandContext(sessionStartContext, builtCommand)
