@@ -28,7 +28,8 @@ You can find an example of a configuration file with all the options in the fold
 
 ## Known issues / missing features
 
-- Print git CLI errors
+- Add retries to startup
+- Print CLI errors on startup (cli & start commands)
 - Add support to command concatenations (; and &&)
 - Update session-helper design
 - Update session page design (estimated time required, progress bar)
