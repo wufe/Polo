@@ -8,7 +8,7 @@ import (
 	"github.com/kennygrant/sanitize"
 	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/models"
-	"github.com/wufe/polo/pkg/services/versioning"
+	"github.com/wufe/polo/pkg/versioning"
 )
 
 type ApplicationInitWorker struct {

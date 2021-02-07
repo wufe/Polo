@@ -8,7 +8,6 @@ import (
 	"github.com/wufe/polo/pkg/http/routing"
 	"github.com/wufe/polo/pkg/query"
 	"github.com/wufe/polo/pkg/request"
-	"github.com/wufe/polo/pkg/services"
 	"github.com/wufe/polo/pkg/startup"
 	"github.com/wufe/polo/pkg/static"
 	"github.com/wufe/polo/pkg/storage"
@@ -27,7 +26,7 @@ func main() {
 	// defer db.Close()
 
 	// OLD
-	configuration := services.LoadConfigurations()
+	configuration := storage.LoadConfigurations()
 	// // sessionHandler := services.NewSessionHandler(configuration, applicationHandler/*, db*/)
 	// sessionHandler := new(services.SessionHandler)
 

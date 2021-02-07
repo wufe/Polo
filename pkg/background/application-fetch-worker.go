@@ -10,7 +10,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/models"
-	"github.com/wufe/polo/pkg/services/versioning"
+	"github.com/wufe/polo/pkg/versioning"
 )
 
 type ApplicationFetchWorker struct {

@@ -10,7 +10,7 @@ import (
 	"github.com/kennygrant/sanitize"
 	"github.com/wufe/polo/pkg/background/pipe"
 	"github.com/wufe/polo/pkg/models"
-	"github.com/wufe/polo/pkg/services/versioning"
+	"github.com/wufe/polo/pkg/versioning"
 )
 
 type SessionFilesystemWorker struct {

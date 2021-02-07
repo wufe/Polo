@@ -1,19 +1,19 @@
-package services
+package storage
 
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/models"
+	"github.com/wufe/polo/pkg/utils"
 	"gopkg.in/yaml.v2"
 )
 
 func LoadConfigurations() *models.RootConfiguration {
-	dir := getExecutableFolder()
+	dir := utils.GetExecutableFolder()
 
 	files := getYamlFiles(dir)
 
@@ -21,15 +21,6 @@ func LoadConfigurations() *models.RootConfiguration {
 
 	return configurations
 
-}
-
-func getExecutableFolder() string {
-	executablePath, err := os.Executable()
-	if err != nil {
-		log.Fatalln("Error retrieving file path", err)
-	}
-	dir := filepath.Dir(executablePath)
-	return dir
 }
 
 func getYamlFiles(root string) []string {
@@ -95,14 +86,6 @@ func unmarshalConfigurations(files []string) *models.RootConfiguration {
 	if rootConfiguration.Global.MaxConcurrentSessions == 0 {
 		rootConfiguration.Global.MaxConcurrentSessions = 10
 	}
-
-	// for _, application := range rootConfiguration.Applications {
-	// 	err := applicationHandler.InitializeApplication(application)
-	// 	if err != nil {
-	// 		log.Fatalln(fmt.Sprintf("Could not provision application %s: %s", application.Name, err.Error()))
-	// 		panic(err)
-	// 	}
-	// }
 
 	return rootConfiguration
 }
