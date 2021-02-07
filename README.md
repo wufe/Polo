@@ -28,9 +28,10 @@ You can find an example of a configuration file with all the options in the fold
 
 ## Known issues / missing features
 
+- Print git CLI errors
 - Add support to command concatenations (; and &&)
 - Update session-helper design
-- Update session page design (fading terminal, better scrollbar, estimated time required, progress bar)
+- Update session page design (estimated time required, progress bar)
 - Add possibility to start healthchecking early
 - Ended sessions cleanup (folder structure)
 - Add optional "copy mode" opposed to standard "clone mode" to initialize a application: copies the directory instead of cloning again
