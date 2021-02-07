@@ -41,7 +41,7 @@ func buildCommand(command string, session *models.Session) (string, error) {
 }
 
 func addPortsOnDemand(input string, session *models.Session) (string, error) {
-	re := regexp.MustCompile(`{{(port(.+?))}}`)
+	re := regexp.MustCompile(`{{(port\d*)}}`)
 	matches := re.FindAllStringSubmatch(input, -1)
 	for _, match := range matches {
 		portVariable := match[1]
