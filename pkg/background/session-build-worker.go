@@ -299,9 +299,9 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 							nil,
 						)
 						req.WithContext(sessionStartContext)
-						for _, header := range input.Application.Headers.Add {
-							headerSegments := strings.Split(header, "=")
-							req.Header.Add(headerSegments[0], headerSegments[1])
+						err = input.Application.Headers.ApplyTo(req)
+						if err != nil {
+							log.Errorf("Error applying headers to the request: %s", err.Error())
 						}
 						if input.Application.Host != "" {
 							req.Header.Add("Host", input.Application.Host)

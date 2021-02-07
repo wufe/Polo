@@ -30,6 +30,12 @@ func BuildDefaultForwardRules(session *models.Session) (ForwardRules, error) {
 			r.Header.Add("Host", session.Application.Host)
 			r.Host = session.Application.Host
 		}
+
+		err := session.Application.Headers.ApplyTo(r)
+		if err != nil {
+			log.Errorf("Error applying headers to the request: %s", err.Error())
+		}
+
 		return w, r
 	}), nil
 }
@@ -79,6 +85,11 @@ func BuildForwardRules(r *http.Request, pattern models.CompiledForwardPattern, s
 		if pattern.Forward.Host != "" {
 			r.Header.Add("Host", pattern.Forward.Host)
 			r.Host = pattern.Forward.Host
+		}
+
+		err := pattern.Forward.Headers.ApplyTo(r)
+		if err != nil {
+			log.Errorf("Error applying headers to the request: %s", err.Error())
 		}
 
 		return w, r

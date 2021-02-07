@@ -125,7 +125,13 @@ func NewApplication(application *Application) (*Application, error) {
 		application.Target = "http://127.0.0.1:{{port}}"
 	}
 	if application.Headers.Add == nil {
-		application.Headers.Add = []string{}
+		application.Headers.Add = []Header{}
+	}
+	if application.Headers.Del == nil {
+		application.Headers.Del = []string{}
+	}
+	if application.Headers.Set == nil {
+		application.Headers.Set = []Header{}
 	}
 	if application.Healthcheck != (Healthcheck{}) {
 		if application.Healthcheck.URL == "" {

@@ -1,7 +1,16 @@
 package models
 
 import (
+	"errors"
+	"fmt"
+	"net/http"
+	"strings"
+
 	_ "github.com/sirupsen/logrus"
+)
+
+var (
+	ErrMalformedHeader error = errors.New("Malformed header; the format should be key=value")
 )
 
 type RootConfiguration struct {
@@ -17,9 +26,46 @@ type GlobalConfiguration struct {
 	MaxConcurrentSessions int    `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
 }
 
+type Header string
+
+func (h *Header) Parse() (string, string, error) {
+	kv := strings.Split(fmt.Sprint(h), "=")
+	if len(kv) != 2 {
+		return "", "", ErrMalformedHeader
+	}
+	return kv[0], kv[1], nil
+}
+
 type Headers struct {
-	Add    []string `json:"add"`
-	Remove []string `json:"remove"`
+	Add []Header `json:"add"`
+	Set []Header `json:"set"`
+	Del []string `json:"del"`
+}
+
+func (h *Headers) ApplyTo(r *http.Request) error {
+	var err error
+	var k string
+	var v string
+
+	for _, header := range h.Add {
+		k, v, err = header.Parse()
+		if err == nil {
+			r.Header.Add(k, v)
+		}
+	}
+
+	for _, header := range h.Set {
+		k, v, err = header.Parse()
+		if err == nil {
+			r.Header.Set(k, v)
+		}
+	}
+
+	for _, header := range h.Del {
+		r.Header.Del(header)
+	}
+
+	return err
 }
 
 type Healthcheck struct {

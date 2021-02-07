@@ -12,10 +12,11 @@ applications:
       - pattern: ^/path/(.+)$
         to: http://127.0.0.1:{{port2}}/$1
         host: host2.example.com  # Not implemented yet
-        headers:  # Not implemented yet
-          add:
+        headers:
+          add: []
+          set:
             - Origin=host2.example.com
-          remove:
+          del:
             - X-Powered-By
     auth:
       basic:
@@ -32,7 +33,8 @@ applications:
     headers:
       add:
         - X-Powered-By=Polo
-      remove: # Not implemented yet
+      set: []
+      del:
         - Origin
     healthcheck:
       method: GET
