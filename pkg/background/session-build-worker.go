@@ -180,8 +180,6 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 	session.Variables["target"] = session.Target
 	session.Variables["commit"] = session.CommitID
 
-	fmt.Println(session.Variables)
-
 	w.sessionStorage.Add(session)
 
 	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(session.Application.Healthcheck.RetryTimeout))
