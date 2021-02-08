@@ -4,6 +4,9 @@ global:
   max_concurrent_sessions: 10
 applications:
   - name: hello-world # Mandatory
+    watch: # Watch these branches / tags / commits and automatically start sessions. Not implemented yet
+      - dev
+      - main
     is_default: true # Useful for reaching it via /<branch-name>
     remote: https://github.com/nginxinc/NGINX-Demos # Mandatory
     use_git_cli: false
