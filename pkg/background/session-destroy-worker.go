@@ -52,7 +52,7 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session) {
 				case <-sessionStopContext.Done():
 					log.Warnf("[SESSION:%s] Destruction aborted", session.UUID)
 					w.mediator.CleanSession.Request(&pipe.SessionCleanupInput{
-						session, models.SessionStatusStopFailed,
+						Session: session, Status: models.SessionStatusStopFailed,
 					})
 					return
 				case <-done:

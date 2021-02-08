@@ -4,16 +4,24 @@ import (
 	"path/filepath"
 
 	"github.com/dgraph-io/badger/v3"
+	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/utils"
 )
 
-func StartDB() (*badger.DB, error) {
+type Database struct {
+	DB *badger.DB
+}
 
+func NewDB() *Database {
 	exeFolder := utils.GetExecutableFolder()
 
-	db, err := badger.Open(badger.DefaultOptions(filepath.Join(exeFolder, "./db")))
+	options := badger.DefaultOptions(filepath.Join(exeFolder, "./db"))
+	options.Logger = nil
+	db, err := badger.Open(options)
 	if err != nil {
-		return nil, err
+		log.Panicf("Error while opening database: %s", err.Error())
 	}
-	return db, nil
+	return &Database{
+		DB: db,
+	}
 }

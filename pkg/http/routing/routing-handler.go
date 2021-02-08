@@ -64,6 +64,7 @@ func (h *Handler) RouteReverseProxyRequests() http.Handler {
 				temporaryRedirect(w, "/_polo_/")
 			} else {
 				session.MarkAsBeingRequested()
+				h.sessionStorage.Update(session)
 				builder = h.buildSessionEnhancerProxy(session)
 
 				switch session.Status {

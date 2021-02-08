@@ -7,6 +7,7 @@ type Mediator struct {
 	DestroySession    pipe.SessionDestroyPipe
 	SessionFileSystem pipe.SessionFilesystemPipe
 	CleanSession      pipe.SessionCleanupPipe
+	StartSession      pipe.SessionStartPipe
 	ApplicationInit   pipe.ApplicationInitPipe
 	ApplicationFetch  pipe.ApplicationFetchPipe
 }
@@ -16,6 +17,7 @@ func NewMediator(
 	destroy pipe.SessionDestroyPipe,
 	fs pipe.SessionFilesystemPipe,
 	clean pipe.SessionCleanupPipe,
+	start pipe.SessionStartPipe,
 	init pipe.ApplicationInitPipe,
 	fetch pipe.ApplicationFetchPipe,
 ) *Mediator {
@@ -24,6 +26,7 @@ func NewMediator(
 		DestroySession:    destroy,
 		SessionFileSystem: fs,
 		CleanSession:      clean,
+		StartSession:      start,
 		ApplicationInit:   init,
 		ApplicationFetch:  fetch,
 	}

@@ -28,21 +28,21 @@ func (status SessionStatus) IsAlive() bool {
 }
 
 type Session struct {
-	UUID         string        `json:"uuid"`
-	Name         string        `json:"name"`
-	Target       string        `json:"target"`
-	Port         int           `json:"port"`
-	Application  *Application  `json:"application"`
-	Status       SessionStatus `json:"status"`
-	Logs         []Log         `json:"-"`
-	CommitID     string        `json:"commitID"` // The object to be checked out (branch/tag/commit id)
-	Checkout     string        `json:"checkout"`
-	Done         chan struct{} `json:"-"`
-	MaxAge       int           `json:"maxAge"`
-	InactiveAt   time.Time     `json:"-"`
-	Folder       string        `json:"folder"`
-	CommandsLogs []string      `json:"commandsLogs"`
-	Variables    Variables     `json:"variables"`
+	UUID            string        `json:"uuid"`
+	Name            string        `json:"name"`
+	Target          string        `json:"target"`
+	Port            int           `json:"port"`
+	ApplicationName string        `json:"applicationName"`
+	Application     *Application  `json:"application"`
+	Status          SessionStatus `json:"status"`
+	Logs            []Log         `json:"-"`
+	CommitID        string        `json:"commitID"` // The object to be checked out (branch/tag/commit id)
+	Checkout        string        `json:"checkout"`
+	MaxAge          int           `json:"maxAge"`
+	InactiveAt      time.Time     `json:"-"`
+	Folder          string        `json:"folder"`
+	CommandsLogs    []string      `json:"commandsLogs"`
+	Variables       Variables     `json:"variables"`
 }
 
 type Variables map[string]string
@@ -57,8 +57,16 @@ func (v Variables) ApplyTo(str string) string {
 func NewSession(
 	session *Session,
 ) *Session {
-	session.CommandsLogs = []string{}
-	session.Variables = make(map[string]string)
+	session.ApplicationName = session.Application.Name
+	if session.Logs == nil {
+		session.Logs = []Log{}
+	}
+	if session.CommandsLogs == nil {
+		session.CommandsLogs = []string{}
+	}
+	if len(session.Variables) == 0 {
+		session.Variables = make(map[string]string)
+	}
 	return session
 }
 

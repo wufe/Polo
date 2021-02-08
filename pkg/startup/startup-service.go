@@ -18,6 +18,7 @@ type Service struct {
 	handler       *rest.Handler
 	static        *static.Service
 	appStorage    *storage.Application
+	sesStorage    *storage.Session
 	mediator      *background.Mediator
 }
 
@@ -27,6 +28,7 @@ func NewService(
 	handler *rest.Handler,
 	static *static.Service,
 	appStorage *storage.Application,
+	sesStorage *storage.Session,
 	mediator *background.Mediator) *Service {
 	return &Service{
 		isDev:         isDev,
@@ -34,6 +36,7 @@ func NewService(
 		handler:       handler,
 		static:        static,
 		appStorage:    appStorage,
+		sesStorage:    sesStorage,
 		mediator:      mediator,
 	}
 }
@@ -41,6 +44,8 @@ func NewService(
 func (s *Service) Start() {
 	s.loadApplications()
 	s.storeApplications()
+	s.loadSessions()
+	s.startSessions()
 	s.static.LoadSessionHelper()
 	s.startServer()
 }
@@ -54,6 +59,16 @@ func (s *Service) loadApplications() {
 func (s *Service) storeApplications() {
 	for _, application := range s.configuration.Applications {
 		s.appStorage.Add(application)
+	}
+}
+
+func (s *Service) loadSessions() {
+	s.sesStorage.LoadSessions(s.appStorage)
+}
+
+func (s *Service) startSessions() {
+	for _, session := range s.sesStorage.GetAllAliveSessions() {
+		s.mediator.StartSession.Chan <- session
 	}
 }
 

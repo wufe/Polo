@@ -16,39 +16,30 @@ import (
 
 func main() {
 
-	// var wg sync.WaitGroup
-
-	// db, err := services.StartDB()
-	// if err != nil {
-	// 	log.Fatal("Cannot create database: " + err.Error())
-	// 	return
-	// }
-	// defer db.Close()
-
-	// OLD
-	configuration := storage.LoadConfigurations()
-	// // sessionHandler := services.NewSessionHandler(configuration, applicationHandler/*, db*/)
-	// sessionHandler := new(services.SessionHandler)
-
 	dev := utils.IsDev()
 	devServer := utils.DevServerURL()
 
+	// Configuration (.yml)
+	configuration := storage.LoadConfigurations()
+
 	// Storage
+	database := storage.NewDB()
 	appStorage := storage.NewApplication()
-	sesStorage := storage.NewSession()
+	sesStorage := storage.NewSession(database)
 
 	mediator := background.NewMediator(
 		pipe.NewSessionBuild(),
 		pipe.NewSessionDestroy(),
 		pipe.NewSessionFilesystem(),
 		pipe.NewSessionCleanup(),
+		pipe.NewSessionStart(),
 		pipe.NewApplicationInit(),
 		pipe.NewApplicationFetch(),
 	)
 
 	// Workers
 	background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator)
-	background.NewSessionCleanWorker(mediator)
+	background.NewSessionCleanWorker(sesStorage, mediator)
 	background.NewSessionFilesystemWorker(mediator)
 	background.NewSessionDestroyWorker(mediator)
 	background.NewApplicationInitWorker(&configuration.Global, mediator)
@@ -65,6 +56,6 @@ func main() {
 	rest := rest.NewHandler(dev, staticService, routing, proxy, queryService, requestService)
 
 	// Startup
-	startup.NewService(dev, configuration, rest, staticService, appStorage, mediator).Start()
+	startup.NewService(dev, configuration, rest, staticService, appStorage, sesStorage, mediator).Start()
 
 }

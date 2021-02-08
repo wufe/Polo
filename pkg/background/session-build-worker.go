@@ -39,6 +39,7 @@ func NewSessionBuildWorker(
 	}
 
 	worker.startAcceptingNewSessionRequests()
+	worker.startAcceptingSessionStartedRequests()
 
 	return worker
 }
@@ -61,13 +62,22 @@ func (w *SessionBuildWorker) RequestNewSession(buildInput *pipe.SessionBuildInpu
 	return w.mediator.BuildSession.Request(buildInput)
 }
 
+func (w *SessionBuildWorker) startAcceptingSessionStartedRequests() {
+	go func() {
+		for {
+			session := <-w.mediator.StartSession.Chan
+			w.MarkSessionAsStarted(session)
+		}
+	}()
+}
+
 func (w *SessionBuildWorker) MarkSessionAsStarted(session *models.Session) {
-	// TODO: Persist session
 	session.Status = models.SessionStatusStarted
 	session.MaxAge = session.Application.Recycle.InactivityTimeout
 	if session.MaxAge > 0 {
 		w.startSessionInactivityTimer(session)
 	}
+	w.sessionStorage.Update(session)
 }
 
 func (w *SessionBuildWorker) startSessionInactivityTimer(session *models.Session) {
@@ -113,9 +123,7 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 		Port:        0,
 		Target:      "",
 		Status:      models.SessionStatusStarting,
-		Done:        make(chan struct{}),
 		Application: input.Application,
-		Logs:        []models.Log{},
 		CommitID:    input.Checkout,
 		Checkout:    input.Checkout,
 	})
@@ -172,12 +180,12 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 	session.Variables["target"] = session.Target
 	session.Variables["commit"] = session.CommitID
 
+	fmt.Println(session.Variables)
+
 	w.sessionStorage.Add(session)
 
 	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(session.Application.Healthcheck.RetryTimeout))
 	done := make(chan struct{})
-
-	// TODO: Persist session
 
 	go func() {
 
@@ -189,7 +197,7 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 			log.Errorf("Could not build session commit structure: %s", err.Error())
 			cancelSessionStart()
 			w.mediator.CleanSession.Request(&pipe.SessionCleanupInput{
-				session, models.SessionStatusStartFailed,
+				Session: session, Status: models.SessionStatusStartFailed,
 			})
 			return
 		}
@@ -202,7 +210,7 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 					log.Warnf("[SESSION:%s] Execution aborted", session.UUID)
 					session.LogError("Execution aborted (sessionStartContext ended)")
 					w.mediator.CleanSession.Request(&pipe.SessionCleanupInput{
-						session, models.SessionStatusStartFailed,
+						Session: session, Status: models.SessionStatusStartFailed,
 					})
 					return
 				case <-done:
@@ -260,6 +268,8 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 						cancelSessionStart()
 						return
 					}
+				} else {
+					w.sessionStorage.Update(session)
 				}
 			}
 		}

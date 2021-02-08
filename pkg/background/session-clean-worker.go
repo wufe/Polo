@@ -2,15 +2,18 @@ package background
 
 import (
 	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/storage"
 )
 
 type SessionCleanWorker struct {
-	mediator *Mediator
+	sessionStorage *storage.Session
+	mediator       *Mediator
 }
 
-func NewSessionCleanWorker(mediator *Mediator) *SessionCleanWorker {
+func NewSessionCleanWorker(sessionStorage *storage.Session, mediator *Mediator) *SessionCleanWorker {
 	worker := &SessionCleanWorker{
-		mediator: mediator,
+		sessionStorage: sessionStorage,
+		mediator:       mediator,
 	}
 
 	worker.startAcceptingSessionCleanRequests()
@@ -24,6 +27,7 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 			sessionToClean := <-w.mediator.CleanSession.Chan
 			sessionToClean.Session.LogInfo("Cleaning up session")
 			sessionToClean.Session.Status = sessionToClean.Status
+			w.sessionStorage.Delete(sessionToClean.Session)
 			log.Warnf("[SESSION:%s] Session cleaned up.", sessionToClean.Session.UUID)
 		}
 	}()
