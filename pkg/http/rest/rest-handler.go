@@ -40,6 +40,7 @@ func NewHandler(isDev bool, static *static.Service, routing *routing.Handler, pr
 	router.POST("/_polo_/api/session/:uuid/track", h.trackSession(query))
 	router.DELETE("/_polo_/api/session/:uuid/track", h.untrackSession())
 	router.GET("/_polo_/api/session/:uuid/logs/:last_log", h.getSessionLogsAndStatus(query))
+	router.GET("/_polo_/api/ping", h.ping())
 	if !isDev {
 		router.GET("/_polo_/public/*filepath", h.serveStatic(static))
 	}
@@ -230,6 +231,14 @@ func (rest *Handler) deleteSession(req *request.Service) func(w http.ResponseWri
 		}
 
 		write(ok(nil))
+	}
+}
+
+func (h *Handler) ping() func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		w.Header().Add("Content-Type", "text/plain")
+		w.WriteHeader(200)
+		w.Write([]byte("pong"))
 	}
 }
 

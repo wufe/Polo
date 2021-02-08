@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+
+	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/background"
 	"github.com/wufe/polo/pkg/background/pipe"
 	"github.com/wufe/polo/pkg/http/proxy"
@@ -21,6 +24,15 @@ func main() {
 
 	// Configuration (.yml)
 	configuration := storage.LoadConfigurations()
+
+	// Instance
+	existingInstance, _ := storage.DetectInstance()
+	if existingInstance == nil {
+		storage.NewInstance(fmt.Sprint(configuration.Global.Port)).Persist()
+	} else {
+		log.Infof("Detected existing instance on host %s", existingInstance.Host)
+		return
+	}
 
 	// Storage
 	database := storage.NewDB()

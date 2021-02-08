@@ -565,3 +565,4 @@ MigrationBackup/
 !/examples/example-configuration.yml
 /db
 !/testserver.yml
+/.host
