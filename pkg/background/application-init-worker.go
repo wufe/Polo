@@ -38,7 +38,7 @@ func (w *ApplicationInitWorker) startAcceptingInitRequests() {
 }
 
 func (w *ApplicationInitWorker) InitApplication(application *models.Application) error {
-	log.Infof("[APPLICATION:%s] Initializing", application.Name)
+	log.Infof("[APP:%s] Initializing", application.Name)
 	sessionsFolder, err := filepath.Abs(w.global.SessionsFolder)
 	if err != nil {
 		return err
@@ -102,7 +102,7 @@ func defaultApplicationErrorLog(application *models.Application, err error, exce
 			}
 		}
 		if foundError == nil {
-			log.Errorf("[APPLICATION:%s] %s", application.Name, err.Error())
+			log.Errorf("[APP:%s] %s", application.Name, err.Error())
 		}
 	}
 }

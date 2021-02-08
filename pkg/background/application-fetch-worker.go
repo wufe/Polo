@@ -151,5 +151,5 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 		return nil
 	})
 
-	log.Infof("[APPLICATION:%s] Found %d commits", application.Name, len(application.Commits))
+	log.Infof("[APP:%s] Found %d commits", application.Name, len(application.Commits))
 }
