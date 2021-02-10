@@ -3,10 +3,7 @@ package background
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"net/url"
 	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -39,7 +36,7 @@ func NewSessionBuildWorker(
 	}
 
 	worker.startAcceptingNewSessionRequests()
-	worker.startAcceptingSessionStartedRequests()
+	worker.startAcceptingSessionStartRequests()
 
 	return worker
 }
@@ -62,7 +59,7 @@ func (w *SessionBuildWorker) RequestNewSession(buildInput *pipe.SessionBuildInpu
 	return w.mediator.BuildSession.Request(buildInput)
 }
 
-func (w *SessionBuildWorker) startAcceptingSessionStartedRequests() {
+func (w *SessionBuildWorker) startAcceptingSessionStartRequests() {
 	go func() {
 		for {
 			session := <-w.mediator.StartSession.Chan
@@ -182,7 +179,7 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 
 	w.sessionStorage.Add(session)
 
-	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(session.Application.Healthcheck.RetryTimeout))
+	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(session.Application.Startup.Timeout))
 	done := make(chan struct{})
 
 	go func() {
@@ -217,6 +214,8 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 				}
 			}
 		}()
+
+		healthcheckingStarted := false
 
 		// Build the session here
 		for _, command := range input.Application.Commands.Start {
@@ -268,75 +267,27 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 					}
 				} else {
 					w.sessionStorage.Update(session)
+					if command.StartHealthchecking && !healthcheckingStarted && session.Application.Healthcheck != (models.Healthcheck{}) {
+						w.mediator.HealthcheckSession.Request(session)
+						healthcheckingStarted = true
+					}
 				}
 			}
 		}
 
 		if session.Application.Healthcheck == (models.Healthcheck{}) {
-			w.MarkSessionAsStarted(session)
+			if session.Status != models.SessionStatusStarted {
+				w.mediator.StartSession.Chan <- session
+			}
 			log.Infof("[SESSION:%s] Session started", session.UUID)
-			done <- struct{}{}
 		} else {
-			// Start healthcheck routine
-			// TODO: Add option to start healthchecking after N seconds (sessionStartContext should be updated accordingly)
-			go func() {
-				time.Sleep(5 * time.Second)
-				for {
-					select {
-					case <-sessionStartContext.Done():
-						return
-					default:
-
-						if session.Status != models.SessionStatusStarting {
-							return
-						}
-
-						target, err := url.Parse(session.Target)
-						if err != nil {
-							session.LogError(fmt.Sprintf("Could not parse target URL: %s", err.Error()))
-							log.Errorln("Could not parse target URL", err)
-							cancelSessionStart()
-							return
-						}
-						target.Path = path.Join(target.Path, input.Application.Healthcheck.URL)
-						client := &http.Client{
-							Timeout: 120 * time.Second,
-						}
-						req, err := http.NewRequest(
-							input.Application.Healthcheck.Method,
-							target.String(),
-							nil,
-						)
-						req.WithContext(sessionStartContext)
-						err = input.Application.Headers.ApplyTo(req)
-						if err != nil {
-							log.Errorf("Error applying headers to the request: %s", err.Error())
-						}
-						if input.Application.Host != "" {
-							req.Header.Add("Host", input.Application.Host)
-							req.Host = input.Application.Host
-						}
-						if err != nil {
-							log.Errorln("Could not build HTTP request", req)
-						}
-						log.Infof("[SESSION:%s] Requesting URL %s", session.UUID, req.URL.String())
-						response, err := client.Do(req)
-						if err != nil {
-							log.Errorf("[SESSION:%s] Could not perform HTTP request", session.UUID, err.Error())
-						} else {
-							if response.StatusCode == input.Application.Healthcheck.Status {
-								w.MarkSessionAsStarted(session)
-								log.Infof("[SESSION:%s] Session started", session.UUID)
-								done <- struct{}{}
-								return
-							}
-						}
-						log.Infof("[SESSION:%s] Session not ready yet. Retrying in %d seconds", session.UUID, session.Application.Healthcheck.RetryInterval)
-						time.Sleep(time.Duration(session.Application.Healthcheck.RetryInterval) * time.Second)
-					}
-				}
-			}()
+			if !healthcheckingStarted {
+				w.mediator.HealthcheckSession.Request(session)
+				healthcheckingStarted = true
+			}
 		}
+
+		done <- struct{}{}
 
 	}()
 

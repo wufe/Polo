@@ -24,7 +24,10 @@ applications:
           output_variable: 'container_id'
       stop:
         - command: "docker kill {{container_id}}"
+          continue_on_error: true
     recycle:
       inactivity_timeout: 3000
     healthcheck:
+      max_retries: 3
       retry_interval: 5
+      retry_timeout: 10

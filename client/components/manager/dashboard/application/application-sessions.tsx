@@ -45,6 +45,7 @@ function colorByStatus(status: SessionStatus): string {
         case SessionStatus.STARTED:
             return '#a3be8c';
         case SessionStatus.STARTING:
+        case SessionStatus.DEGRADED:
             return '#ebcb8b';
         case SessionStatus.STOPPING:
             return '#d08770';

@@ -44,6 +44,7 @@ export enum SessionStatus {
     STARTED      = 'started',
     START_FAILED = 'start_failed',
     STOPPING     = 'stopping',
+    DEGRADED     = 'degraded',
 }
 
 export const SessionModel = types.model({

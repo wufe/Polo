@@ -68,7 +68,7 @@ func (s *Service) loadSessions() {
 
 func (s *Service) startSessions() {
 	for _, session := range s.sesStorage.GetAllAliveSessions() {
-		s.mediator.StartSession.Chan <- session
+		s.mediator.HealthcheckSession.Request(session)
 	}
 }
 

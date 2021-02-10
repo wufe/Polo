@@ -13,6 +13,7 @@ const (
 	SessionStatusStopFailed  SessionStatus = "stop_failed"
 	SessionStatusStopping    SessionStatus = "stopping"
 	SessionStatusStopped     SessionStatus = "stopped"
+	SessionStatusDegraded    SessionStatus = "degraded"
 
 	LogTypeStdin  LogType = "stdin"
 	LogTypeStdout LogType = "stdout"
@@ -58,6 +59,7 @@ func NewSession(
 	session *Session,
 ) *Session {
 	session.ApplicationName = session.Application.Name
+	session.Status = SessionStatusStarting
 	if session.Logs == nil {
 		session.Logs = []Log{}
 	}

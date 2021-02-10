@@ -72,6 +72,7 @@ type Healthcheck struct {
 	Method        string `json:"method"`
 	URL           string `yaml:"url" json:"url"`
 	Status        int    `json:"status"`
+	MaxRetries    int    `yaml:"max_retries" json:"maxRetries"`
 	RetryInterval int    `yaml:"retry_interval" json:"retryInterval"`
 	RetryTimeout  int    `yaml:"retry_timeout" json:"retryTimeout"`
 }

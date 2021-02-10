@@ -45,6 +45,7 @@ func main() {
 		pipe.NewSessionFilesystem(),
 		pipe.NewSessionCleanup(),
 		pipe.NewSessionStart(),
+		pipe.NewSessionHealthCheck(),
 		pipe.NewApplicationInit(),
 		pipe.NewApplicationFetch(),
 	)
@@ -54,6 +55,7 @@ func main() {
 	background.NewSessionCleanWorker(sesStorage, mediator)
 	background.NewSessionFilesystemWorker(mediator)
 	background.NewSessionDestroyWorker(mediator)
+	background.NewSessionHealthcheckWorker(mediator)
 	background.NewApplicationInitWorker(&configuration.Global, mediator)
 	background.NewApplicationFetchWorker(mediator)
 

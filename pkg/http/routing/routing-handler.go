@@ -78,6 +78,7 @@ func (h *Handler) RouteReverseProxyRequests() http.Handler {
 					}
 					break
 				case models.SessionStatusStarting:
+				case models.SessionStatusDegraded:
 					temporaryRedirect(w, fmt.Sprintf("/_polo_/session/%s/", session.UUID))
 					break
 				default:

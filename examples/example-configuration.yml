@@ -43,8 +43,11 @@ applications:
       method: GET
       url: /
       status: 200
-      retry_interval: 5 # in seconds
-      retry_timeout: 300 # in seconds
+      max_retries: 10
+      retry_interval: 30 # in seconds
+      retry_timeout: 20 # in seconds
+    startup:
+      timeout: 300
     recycle:
       inactivity_timeout: 120 # in seconds
     max_concurrent_sessions: 5
@@ -57,6 +60,7 @@ applications:
           continue_on_error: false
           working_dir: /nginx-hello
           start_healthchecking: true # Not implemented yet
+          timeout: 10 # Not implemented yet
         - command: 'docker run -p {{port2}}:80 -d nginxdemos/hello | xargs -I % echo "polo[container_id_2=%]"' # Pipe not working yet
       stop: # At least one stop command is mandatory
         - command: "docker kill {{container_id}}"

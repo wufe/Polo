@@ -24,6 +24,7 @@ type Application struct {
 	Forwards                []Forward                 `json:"forwards"`
 	Headers                 Headers                   `json:"headers"`
 	Healthcheck             Healthcheck               `json:"healthCheck"`
+	Startup                 Startup                   `json:"startup"`
 	Recycle                 Recycle                   `json:"recycle"`
 	Commands                Commands                  `json:"commands"`
 	MaxConcurrentSessions   int                       `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
@@ -49,6 +50,10 @@ type Auth struct {
 type BasicAuth struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type Startup struct {
+	Timeout int `json:"timeout"`
 }
 
 type SSHAuth struct {
@@ -133,24 +138,28 @@ func NewApplication(application *Application) (*Application, error) {
 	if application.Headers.Set == nil {
 		application.Headers.Set = []Header{}
 	}
-	if application.Healthcheck != (Healthcheck{}) {
-		if application.Healthcheck.URL == "" {
-			application.Healthcheck.Method = "GET"
-		} else {
-			application.Healthcheck.Method = strings.ToUpper(application.Healthcheck.Method)
-		}
-		if application.Healthcheck.URL == "" {
-			application.Healthcheck.URL = "/"
-		}
-		if application.Healthcheck.Status == 0 {
-			application.Healthcheck.Status = 200
-		}
-		if application.Healthcheck.RetryInterval == 0 {
-			application.Healthcheck.RetryInterval = 30
-		}
-		if application.Healthcheck.RetryTimeout == 0 {
-			application.Healthcheck.RetryTimeout = 300 // 10 minutes
-		}
+	if application.Healthcheck.URL == "" {
+		application.Healthcheck.Method = "GET"
+	} else {
+		application.Healthcheck.Method = strings.ToUpper(application.Healthcheck.Method)
+	}
+	if application.Healthcheck.URL == "" {
+		application.Healthcheck.URL = "/"
+	}
+	if application.Healthcheck.Status == 0 {
+		application.Healthcheck.Status = 200
+	}
+	if application.Healthcheck.MaxRetries <= 0 {
+		application.Healthcheck.MaxRetries = 10
+	}
+	if application.Healthcheck.RetryInterval == 0 {
+		application.Healthcheck.RetryInterval = 30
+	}
+	if application.Healthcheck.RetryTimeout <= 0 {
+		application.Healthcheck.RetryTimeout = 20 // seconds
+	}
+	if application.Startup.Timeout <= 0 {
+		application.Startup.Timeout = 300 // seconds
 	}
 	if application.Recycle.InactivityTimeout == 0 {
 		application.Recycle.InactivityTimeout = 3600 // 1 hour
