@@ -57,7 +57,7 @@ func main() {
 	background.NewSessionDestroyWorker(mediator)
 	background.NewSessionHealthcheckWorker(mediator)
 	background.NewApplicationInitWorker(&configuration.Global, mediator)
-	background.NewApplicationFetchWorker(mediator)
+	background.NewApplicationFetchWorker(sesStorage, mediator)
 
 	// Services
 	staticService := static.NewService(dev, devServer)

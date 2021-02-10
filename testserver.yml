@@ -3,6 +3,10 @@ applications:
     remote: "https://github.com/wufe/polo-testserver"
     target: "http://127.0.0.1:{{port}}"
     host: "my.app.host.dev"
+    fetch:
+      interval: 30
+    watch:
+      - dev
     is_default: true
     forwards:
       - pattern: /github/(.+?)/(.+?)/?$
@@ -20,9 +24,9 @@ applications:
     commands:
       start:
         - command: docker build -t polo-testserver:{{commit}} .
-          start_healthchecking: true
+          # start_healthchecking: true
         - command: 'docker run -p {{port}}:3000 -d polo-testserver:{{commit}}'
-          output_variable: 'container_id'
+          output_variable: container_id
       stop:
         - command: "docker kill {{container_id}}"
           continue_on_error: true

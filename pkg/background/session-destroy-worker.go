@@ -28,23 +28,23 @@ func (w *SessionDestroyWorker) startAcceptingDestroyRequests() {
 	go func() {
 		for {
 
-			session := <-w.mediator.DestroySession.Chan
-			w.DestroySession(session)
+			sessionDestroyInput := <-w.mediator.DestroySession.Chan
+			w.DestroySession(sessionDestroyInput.Session, sessionDestroyInput.Callback)
 		}
 	}()
 }
 
-func (w *SessionDestroyWorker) DestroySession(session *models.Session) {
+func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback func(*models.Session)) {
 	if !session.Status.IsAlive() {
 		return
 	}
 
 	session.Status = models.SessionStatusStopping
+	done := make(chan struct{})
 
-	go func() {
+	go func(done chan struct{}) {
 		// TODO: Move that "300" into configuration
 		sessionStopContext, cancelSessionStop := context.WithTimeout(context.Background(), time.Second*300)
-		done := make(chan struct{})
 
 		go func() {
 			for {
@@ -107,8 +107,13 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session) {
 		done <- struct{}{}
 
 		// In the end
-		w.mediator.CleanSession.Request(&pipe.SessionCleanupInput{session, models.SessionStatusStopped})
+		w.mediator.CleanSession.Request(&pipe.SessionCleanupInput{Session: session, Status: models.SessionStatusStopped})
 
 		cancelSessionStop()
-	}()
+
+		if callback != nil {
+			callback(session)
+		}
+
+	}(done)
 }

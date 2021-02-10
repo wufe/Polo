@@ -76,7 +76,7 @@ func (w *ApplicationInitWorker) InitApplication(application *models.Application)
 
 	}
 	application.BaseFolder = baseFolder
-	w.mediator.ApplicationFetch.Request(application)
+	w.mediator.ApplicationFetch.Request(application, false)
 	w.startApplicationFetchRoutine(application)
 
 	return nil
@@ -85,10 +85,9 @@ func (w *ApplicationInitWorker) InitApplication(application *models.Application)
 func (w *ApplicationInitWorker) startApplicationFetchRoutine(application *models.Application) {
 	go func() {
 		for {
-			// TODO: Make this parameter configurable
-			time.Sleep(5 * time.Minute)
+			time.Sleep(time.Duration(application.Fetch.Interval) * time.Second)
 
-			w.mediator.ApplicationFetch.Request(application)
+			w.mediator.ApplicationFetch.Request(application, true)
 		}
 	}()
 }

@@ -86,7 +86,7 @@ func (w *SessionBuildWorker) startSessionInactivityTimer(session *models.Session
 			}
 
 			if time.Now().After(session.InactiveAt) {
-				w.mediator.DestroySession.Request(session)
+				w.mediator.DestroySession.Request(session, nil)
 				return
 			}
 			session.MaxAge--

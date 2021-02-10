@@ -58,6 +58,6 @@ func (s *Service) SessionDeletion(uuid string) error {
 	if !session.Status.IsAlive() {
 		return ErrSessionIsNotAlive
 	}
-	s.mediator.DestroySession.Request(session)
+	s.mediator.DestroySession.Request(session, nil)
 	return nil
 }

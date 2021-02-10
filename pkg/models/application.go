@@ -20,6 +20,8 @@ type Application struct {
 	Remote                  string                    `json:"remote"`
 	Target                  string                    `json:"target"`
 	Host                    string                    `json:"host"`
+	Fetch                   Fetch                     `json:"fetch"`
+	Watch                   Watch                     `json:"watch"`
 	IsDefault               bool                      `yaml:"is_default" json:"isDefault"`
 	Forwards                []Forward                 `json:"forwards"`
 	Headers                 Headers                   `json:"headers"`
@@ -69,6 +71,21 @@ type Forward struct {
 	Headers Headers `json:"headers"`
 }
 
+type Watch []string
+
+func (w *Watch) Contains(obj string) bool {
+	for _, o := range *w {
+		if o == obj {
+			return true
+		}
+	}
+	return false
+}
+
+type Fetch struct {
+	Interval int `json:"interval"`
+}
+
 type CompiledForwardPattern struct {
 	Pattern *regexp.Regexp
 	Forward *Forward
@@ -101,6 +118,9 @@ func NewApplication(application *Application) (*Application, error) {
 	if application.Name == "" {
 		return nil, errors.New("application.name (required) not defined")
 	}
+	if application.Watch == nil {
+		application.Watch = []string{}
+	}
 	if application.Remote == "" {
 		return nil, errors.New("application.remote (required) not defined; put the git repository URL")
 	}
@@ -125,6 +145,9 @@ func NewApplication(application *Application) (*Application, error) {
 		if forward.To == "" {
 			return nil, fmt.Errorf("application.forwards[%d].to not defined", i)
 		}
+	}
+	if application.Fetch.Interval <= 0 {
+		application.Fetch.Interval = 60
 	}
 	if application.Target == "" {
 		application.Target = "http://127.0.0.1:{{port}}"

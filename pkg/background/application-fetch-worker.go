@@ -9,17 +9,21 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/background/pipe"
 	"github.com/wufe/polo/pkg/models"
+	"github.com/wufe/polo/pkg/storage"
 	"github.com/wufe/polo/pkg/versioning"
 )
 
 type ApplicationFetchWorker struct {
-	mediator *Mediator
+	sessionStorage *storage.Session
+	mediator       *Mediator
 }
 
-func NewApplicationFetchWorker(mediator *Mediator) *ApplicationFetchWorker {
+func NewApplicationFetchWorker(sessionStorage *storage.Session, mediator *Mediator) *ApplicationFetchWorker {
 	worker := &ApplicationFetchWorker{
-		mediator: mediator,
+		sessionStorage: sessionStorage,
+		mediator:       mediator,
 	}
 
 	worker.startAcceptingFetchRequests()
@@ -30,16 +34,18 @@ func NewApplicationFetchWorker(mediator *Mediator) *ApplicationFetchWorker {
 func (w *ApplicationFetchWorker) startAcceptingFetchRequests() {
 	go func() {
 		for {
-			application := <-w.mediator.ApplicationFetch.RequestChan
-			w.FetchApplicationRemote(application)
+			applicationFetchReq := <-w.mediator.ApplicationFetch.RequestChan
+			w.FetchApplicationRemote(applicationFetchReq.Application, applicationFetchReq.WatchObjects)
 			w.mediator.ApplicationFetch.ResponseChan <- nil
 		}
 	}()
 }
 
-func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Application) {
+func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Application, watchObjects bool) {
 
 	// TODO: Handle all these errors
+
+	registerHash, watchResults := w.registerObjectHash(application)
 
 	auth, err := application.GetAuth()
 	if err != nil {
@@ -71,9 +77,9 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 		}
 		branchName := refName[len(refPrefix):]
 
-		application.ObjectsToHashMap[branchName] = ref.Hash().String()
-		application.ObjectsToHashMap[fmt.Sprintf("origin/%s", branchName)] = ref.Hash().String()
-		application.ObjectsToHashMap[ref.Name().String()] = ref.Hash().String()
+		registerHash(branchName, ref.Hash().String())
+		registerHash(fmt.Sprintf("origin/%s", branchName), ref.Hash().String())
+		registerHash(ref.Name().String(), ref.Hash().String())
 
 		if application.HashToObjectsMap[ref.Hash().String()] == nil {
 			application.HashToObjectsMap[ref.Hash().String()] = &models.RemoteObject{
@@ -115,10 +121,10 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 			return nil
 		}
 		tagName := refName[len(tagPrefix):]
-		application.ObjectsToHashMap[tagName] = ref.Hash().String()
+		registerHash(tagName, ref.Hash().String())
 
 		application.Tags = appendWithoutDup(application.Tags, tagName)
-		application.ObjectsToHashMap[refName] = ref.Hash().String()
+		registerHash(refName, ref.Hash().String())
 
 		if application.HashToObjectsMap[ref.Hash().String()] == nil {
 			application.HashToObjectsMap[ref.Hash().String()] = &models.RemoteObject{
@@ -145,11 +151,60 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 	application.Commits = []string{}
 
 	err = logs.ForEach(func(commit *object.Commit) error {
-		application.ObjectsToHashMap[commit.Hash.String()] = commit.Hash.String()
+		registerHash(commit.Hash.String(), commit.Hash.String())
 		application.Commits = append(application.Commits, commit.Hash.String())
 		application.CommitMap[commit.Hash.String()] = commit
 		return nil
 	})
 
 	log.Infof("[APP:%s] Found %d commits", application.Name, len(application.Commits))
+
+	if !watchObjects {
+		return
+	}
+
+	for ref, hash := range *watchResults {
+		sessions := w.sessionStorage.GetAllAliveSessions()
+		var foundSession *models.Session
+		for _, session := range sessions {
+			if session.Application == application && (session.Checkout == ref) {
+				foundSession = session
+			}
+		}
+		buildSession := requestSessionBuilder(application, ref)
+		if foundSession != nil {
+			if foundSession.CommitID != hash {
+				log.Infof("[APP:%s][WATCH] Detected new commit on %s", application.Name, ref)
+				w.mediator.DestroySession.Request(foundSession, func(s *models.Session) {
+					buildSession(w.mediator)
+				})
+			}
+		} else {
+			log.Infof("[APP:%s][WATCH] Auto-start on %s", application.Name, ref)
+			buildSession(w.mediator)
+		}
+	}
+}
+
+func (w *ApplicationFetchWorker) registerObjectHash(a *models.Application) (func(refName string, hash string), *map[string]string) {
+	watchResults := make(map[string]string)
+	watchedHashes := make(map[string]bool)
+	return func(refName, hash string) {
+		a.ObjectsToHashMap[refName] = hash
+		if a.Watch.Contains(refName) {
+			if _, ok := watchedHashes[hash]; !ok {
+				watchResults[refName] = hash
+				watchedHashes[hash] = true
+			}
+		}
+	}, &watchResults
+}
+
+func requestSessionBuilder(a *models.Application, ref string) func(*Mediator) {
+	return func(mediator *Mediator) {
+		mediator.BuildSession.Request(&pipe.SessionBuildInput{
+			Application: a,
+			Checkout:    ref,
+		})
+	}
 }
