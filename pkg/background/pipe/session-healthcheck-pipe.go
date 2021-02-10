@@ -1,6 +1,8 @@
 package pipe
 
-import "github.com/wufe/polo/pkg/models"
+import (
+	"github.com/wufe/polo/pkg/models"
+)
 
 type SessionHealthcheckPipe struct {
 	RequestChan  chan *models.Session

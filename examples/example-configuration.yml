@@ -30,7 +30,7 @@ applications:
         user: ""
         private_key: ""
         password: ""
-    host: "hello-world.dev" # Not implemented yet
+    host: "hello-world.dev"
     port:
       except: [9876]
     headers:
@@ -59,7 +59,7 @@ applications:
             - ENV=development
           continue_on_error: false
           working_dir: /nginx-hello
-          start_healthchecking: true # Not implemented yet
+          start_healthchecking: true
           timeout: 10 # Not implemented yet
         - command: 'docker run -p {{port2}}:80 -d nginxdemos/hello | xargs -I % echo "polo[container_id_2=%]"' # Pipe not working yet
       stop: # At least one stop command is mandatory
