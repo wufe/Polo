@@ -56,6 +56,7 @@ type BasicAuth struct {
 
 type Startup struct {
 	Timeout int `json:"timeout"`
+	Retries int `json:"retries"`
 }
 
 type SSHAuth struct {

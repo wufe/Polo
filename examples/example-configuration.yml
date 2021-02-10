@@ -50,7 +50,7 @@ applications:
       retry_timeout: 20 # in seconds
     startup:
       timeout: 300
-      retry: 5 # Not implemented yet
+      retries: 5 # Not implemented yet
     recycle:
       inactivity_timeout: 120 # in seconds
     max_concurrent_sessions: 5
