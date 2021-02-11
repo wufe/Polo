@@ -61,6 +61,7 @@ func (v Variables) ApplyTo(str string) string {
 func NewSession(
 	session *Session,
 ) *Session {
+	session.Mutex = sync.Mutex{}
 	session.ApplicationName = session.Application.Name
 	session.Status = SessionStatusStarting
 	if session.Logs == nil {
@@ -171,4 +172,16 @@ func (session *Session) SetStatus(status SessionStatus) {
 	session.Lock()
 	defer session.Unlock()
 	session.Status = status
+}
+
+func (session *Session) GetStatus() SessionStatus {
+	session.Lock()
+	defer session.Unlock()
+	return session.Status
+}
+
+func (session *Session) DecreaseMaxAge() {
+	session.Lock()
+	defer session.Unlock()
+	session.MaxAge--
 }

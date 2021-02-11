@@ -56,7 +56,7 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 
 		for {
 			// Failed or destroyed
-			if !session.Status.IsAlive() {
+			if !session.GetStatus().IsAlive() {
 				w.sessions.Remove(session)
 				return
 			}

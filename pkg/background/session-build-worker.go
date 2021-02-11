@@ -89,7 +89,7 @@ func (w *SessionBuildWorker) startSessionInactivityTimer(session *models.Session
 				w.mediator.DestroySession.Request(session, nil)
 				return
 			}
-			session.MaxAge--
+			session.DecreaseMaxAge()
 			time.Sleep(1 * time.Second)
 		}
 	}()
