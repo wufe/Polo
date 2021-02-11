@@ -50,6 +50,8 @@ func (slice *ThreadSafeSlice) ToSlice() []interface{} {
 	slice.Lock()
 	defer slice.Unlock()
 	ret := []interface{}{}
-	copy(ret, slice.Elements)
+	for _, e := range slice.Elements {
+		ret = append(ret, e)
+	}
 	return ret
 }

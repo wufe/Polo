@@ -69,7 +69,7 @@ func (w *SessionBuildWorker) startAcceptingSessionStartRequests() {
 }
 
 func (w *SessionBuildWorker) MarkSessionAsStarted(session *models.Session) {
-	session.Status = models.SessionStatusStarted
+	session.SetStatus(models.SessionStatusStarted)
 	session.MaxAge = session.Application.Recycle.InactivityTimeout
 	if session.MaxAge > 0 {
 		w.startSessionInactivityTimer(session)
@@ -125,6 +125,8 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 		Checkout:    input.Checkout,
 	})
 	session.LogInfo(fmt.Sprintf("Creating session %s", session.UUID))
+
+	calcBuildMetrics := models.NewMetricsForSession(session)("Build")
 
 	freePort, err := getFreePort(&input.Application.Port)
 	if err != nil {
@@ -184,6 +186,7 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 
 	go func() {
 
+		calcFolderPrepareMetrics := models.NewMetricsForSession(session)("Prepare folder")
 		fsResponse := w.mediator.SessionFileSystem.Request(session)
 		workingDir := fsResponse.CommitFolder
 		err := fsResponse.Err
@@ -196,6 +199,8 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 			})
 			return
 		}
+		calcFolderPrepareMetrics()
+		w.sessionStorage.Update(session)
 
 		// Cleanup on context done
 		go func() {
@@ -217,6 +222,7 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 
 		healthcheckingStarted := false
 
+		calcCommandMetrics := models.NewMetricsForSession(session)("Startup commands")
 		// Build the session here
 		for _, command := range input.Application.Commands.Start {
 			select {
@@ -274,6 +280,9 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 				}
 			}
 		}
+		calcCommandMetrics()
+		calcBuildMetrics()
+		w.sessionStorage.Update(session)
 
 		if session.Application.Healthcheck == (models.Healthcheck{}) {
 			if session.Status != models.SessionStatusStarted {

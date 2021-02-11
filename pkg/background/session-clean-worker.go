@@ -26,7 +26,7 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 		for {
 			sessionToClean := <-w.mediator.CleanSession.Chan
 			sessionToClean.Session.LogInfo("Cleaning up session")
-			sessionToClean.Session.Status = sessionToClean.Status
+			sessionToClean.Session.SetStatus(sessionToClean.Status)
 			w.sessionStorage.Delete(sessionToClean.Session)
 			log.Warnf("[SESSION:%s] Session cleaned up.", sessionToClean.Session.UUID)
 		}

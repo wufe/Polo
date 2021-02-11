@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -29,6 +30,7 @@ func (status SessionStatus) IsAlive() bool {
 }
 
 type Session struct {
+	sync.Mutex
 	UUID            string        `json:"uuid"`
 	Name            string        `json:"name"`
 	Target          string        `json:"target"`
@@ -44,7 +46,7 @@ type Session struct {
 	Folder          string        `json:"folder"`
 	CommandsLogs    []string      `json:"commandsLogs"`
 	Variables       Variables     `json:"variables"`
-	Metrics         *Metrics      `json:"-"`
+	Metrics         []*Metric     `json:"metrics"`
 }
 
 type Variables map[string]string
@@ -70,11 +72,15 @@ func NewSession(
 	if len(session.Variables) == 0 {
 		session.Variables = make(map[string]string)
 	}
-	session.Metrics = NewMetrics()
+	if session.Metrics == nil {
+		session.Metrics = []*Metric{}
+	}
 	return session
 }
 
 func (session *Session) LogCritical(message string) {
+	session.Lock()
+	defer session.Unlock()
 	session.Logs = append(
 		session.Logs,
 		NewLog(message, LogTypeCritical),
@@ -82,6 +88,8 @@ func (session *Session) LogCritical(message string) {
 }
 
 func (session *Session) LogError(message string) {
+	session.Lock()
+	defer session.Unlock()
 	session.Logs = append(
 		session.Logs,
 		NewLog(message, LogTypeError),
@@ -89,6 +97,8 @@ func (session *Session) LogError(message string) {
 }
 
 func (session *Session) LogWarn(message string) {
+	session.Lock()
+	defer session.Unlock()
 	session.Logs = append(
 		session.Logs,
 		NewLog(message, LogTypeWarn),
@@ -96,6 +106,8 @@ func (session *Session) LogWarn(message string) {
 }
 
 func (session *Session) LogInfo(message string) {
+	session.Lock()
+	defer session.Unlock()
 	session.Logs = append(
 		session.Logs,
 		NewLog(message, LogTypeInfo),
@@ -103,6 +115,8 @@ func (session *Session) LogInfo(message string) {
 }
 
 func (session *Session) LogDebug(message string) {
+	session.Lock()
+	defer session.Unlock()
 	session.Logs = append(
 		session.Logs,
 		NewLog(message, LogTypeDebug),
@@ -110,6 +124,8 @@ func (session *Session) LogDebug(message string) {
 }
 
 func (session *Session) LogTrace(message string) {
+	session.Lock()
+	defer session.Unlock()
 	session.Logs = append(
 		session.Logs,
 		NewLog(message, LogTypeTrace),
@@ -117,6 +133,8 @@ func (session *Session) LogTrace(message string) {
 }
 
 func (session *Session) LogStdin(message string) {
+	session.Lock()
+	defer session.Unlock()
 	session.Logs = append(
 		session.Logs,
 		NewLog(message, LogTypeStdin),
@@ -124,6 +142,8 @@ func (session *Session) LogStdin(message string) {
 }
 
 func (session *Session) LogStdout(message string) {
+	session.Lock()
+	defer session.Unlock()
 	session.Logs = append(
 		session.Logs,
 		NewLog(message, LogTypeStdout),
@@ -131,6 +151,8 @@ func (session *Session) LogStdout(message string) {
 }
 
 func (session *Session) LogStderr(message string) {
+	session.Lock()
+	defer session.Unlock()
 	session.Logs = append(
 		session.Logs,
 		NewLog(message, LogTypeStderr),
@@ -138,7 +160,15 @@ func (session *Session) LogStderr(message string) {
 }
 
 func (session *Session) MarkAsBeingRequested() {
+	session.Lock()
+	defer session.Unlock()
 	// Refreshes the inactiveAt field every time someone makes a request to this session
 	session.InactiveAt = time.Now().Add(time.Second * time.Duration(session.Application.Recycle.InactivityTimeout))
 	session.MaxAge = session.Application.Recycle.InactivityTimeout
+}
+
+func (session *Session) SetStatus(status SessionStatus) {
+	session.Lock()
+	defer session.Unlock()
+	session.Status = status
 }

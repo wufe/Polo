@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
@@ -37,6 +38,7 @@ func NewHandler(isDev bool, static *static.Service, routing *routing.Handler, pr
 	router.GET("/_polo_/api/session/:uuid", h.getSession(query))
 	router.DELETE("/_polo_/api/session/:uuid", h.deleteSession(request))
 	router.GET("/_polo_/api/session/:uuid/age", h.getSessionAge(query))
+	router.GET("/_polo_/api/session/:uuid/metrics", h.getSessionMetrics(query))
 	router.POST("/_polo_/api/session/:uuid/track", h.trackSession(query))
 	router.DELETE("/_polo_/api/session/:uuid/track", h.untrackSession())
 	router.GET("/_polo_/api/session/:uuid/logs/:last_log", h.getSessionLogsAndStatus(query))
@@ -112,6 +114,37 @@ func (rest *Handler) getSessionAge(query *query.Service) func(w http.ResponseWri
 			c, s = notFound()
 		} else {
 			c, s = ok(age)
+		}
+
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(s)
+		w.Write(c)
+	}
+}
+
+func (rest *Handler) getSessionMetrics(query *query.Service) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		uuid := p.ByName("uuid")
+		metrics, err := query.GetSessionMetrics(uuid)
+
+		var c []byte
+		var s int
+
+		if err != nil {
+			c, s = notFound()
+		} else {
+			type m struct {
+				Object   string `json:"object"`
+				Duration int    `json:"duration"`
+			}
+			ret := []m{}
+			for _, metric := range metrics {
+				ret = append(ret, m{
+					Object:   metric.Object,
+					Duration: int(metric.Duration / time.Millisecond),
+				})
+			}
+			c, s = ok(ret)
 		}
 
 		w.Header().Add("Content-Type", "application/json")

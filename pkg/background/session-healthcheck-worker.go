@@ -98,7 +98,7 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 
 				if session.Status == models.SessionStatusStarted {
 					log.Errorf("[SESSION:%s] Session health degraded", session.UUID)
-					session.Status = models.SessionStatusDegraded
+					session.SetStatus(models.SessionStatusDegraded)
 				}
 				if retryCount >= maxRetries {
 					log.Errorf("[SESSION:%s] Session healthcheck failed. Destroying session", session.UUID)

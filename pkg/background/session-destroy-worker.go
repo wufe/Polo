@@ -39,7 +39,7 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 		return
 	}
 
-	session.Status = models.SessionStatusStopping
+	session.SetStatus(models.SessionStatusStopping)
 	done := make(chan struct{})
 
 	go func(done chan struct{}) {
