@@ -19,6 +19,13 @@ func DevServerURL() string {
 }
 
 func GetExecutableFolder() string {
+	if IsDev() {
+		path, err := os.Getwd()
+		if err != nil {
+			log.Fatalln("Error retrieving file path", err)
+		}
+		return path
+	}
 	executablePath, err := os.Executable()
 	if err != nil {
 		log.Fatalln("Error retrieving file path", err)

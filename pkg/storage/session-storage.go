@@ -73,7 +73,9 @@ func (s *Session) Update(session *models.Session) {
 
 func (s *Session) internalUpdate(session *models.Session) {
 	err := s.database.DB.Update(func(txn *badger.Txn) error {
+		session.Lock()
 		result, err := json.Marshal(session)
+		session.Unlock()
 		if err != nil {
 			return err
 		}
