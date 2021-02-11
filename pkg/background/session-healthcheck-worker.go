@@ -51,7 +51,6 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 	go func() {
 		time.Sleep(5 * time.Second)
 
-		// TODO: Use this
 		retryCount := 0
 		maxRetries := session.Application.Healthcheck.MaxRetries
 
