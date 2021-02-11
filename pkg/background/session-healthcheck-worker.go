@@ -6,66 +6,24 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/models"
+	"github.com/wufe/polo/pkg/utils"
 )
 
 type SessionHealthcheckWorker struct {
-	sessions *threadSafeSlice
+	sessions *utils.ThreadSafeSlice
 	mediator *Mediator
-}
-
-type threadSafeSlice struct {
-	sync.Mutex
-	elements []*models.Session
-}
-
-func (slice *threadSafeSlice) Push(s *models.Session) {
-	slice.Lock()
-	defer slice.Unlock()
-
-	slice.elements = append(slice.elements, s)
-}
-
-func (slice *threadSafeSlice) Find(s *models.Session) *models.Session {
-	slice.Lock()
-	defer slice.Unlock()
-
-	var foundSession *models.Session
-	for _, session := range slice.elements {
-		if s == session {
-			foundSession = s
-			break
-		}
-	}
-
-	return foundSession
-}
-
-func (slice *threadSafeSlice) Remove(s *models.Session) {
-	slice.Lock()
-	defer slice.Unlock()
-
-	index := -1
-	for i, session := range slice.elements {
-		if session == s {
-			index = i
-		}
-	}
-	if index > -1 {
-		slice.elements = append(slice.elements[:index], slice.elements[index+1:]...)
-	}
 }
 
 func NewSessionHealthcheckWorker(
 	mediator *Mediator,
 ) *SessionHealthcheckWorker {
 	worker := &SessionHealthcheckWorker{
-		sessions: &threadSafeSlice{
-			elements: []*models.Session{},
+		sessions: &utils.ThreadSafeSlice{
+			Elements: []interface{}{},
 		},
 		mediator: mediator,
 	}
@@ -89,6 +47,7 @@ func (w *SessionHealthcheckWorker) startAcceptingSessionHealthcheckingRequests()
 }
 
 func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) {
+	w.sessions.Push(session)
 	go func() {
 		time.Sleep(5 * time.Second)
 
