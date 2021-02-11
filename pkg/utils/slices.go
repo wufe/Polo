@@ -45,3 +45,11 @@ func (slice *ThreadSafeSlice) Remove(elem interface{}) {
 		slice.Elements = append(slice.Elements[:index], slice.Elements[index+1:]...)
 	}
 }
+
+func (slice *ThreadSafeSlice) ToSlice() []interface{} {
+	slice.Lock()
+	defer slice.Unlock()
+	ret := []interface{}{}
+	copy(ret, slice.Elements)
+	return ret
+}

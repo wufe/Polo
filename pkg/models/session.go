@@ -44,6 +44,7 @@ type Session struct {
 	Folder          string        `json:"folder"`
 	CommandsLogs    []string      `json:"commandsLogs"`
 	Variables       Variables     `json:"variables"`
+	Metrics         *Metrics      `json:"-"`
 }
 
 type Variables map[string]string
@@ -69,6 +70,7 @@ func NewSession(
 	if len(session.Variables) == 0 {
 		session.Variables = make(map[string]string)
 	}
+	session.Metrics = NewMetrics()
 	return session
 }
 
