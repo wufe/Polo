@@ -70,22 +70,22 @@ func (w *SessionBuildWorker) startAcceptingSessionStartRequests() {
 
 func (w *SessionBuildWorker) MarkSessionAsStarted(session *models.Session) {
 	session.SetStatus(models.SessionStatusStarted)
-	session.MaxAge = session.Application.Recycle.InactivityTimeout
-	if session.MaxAge > 0 {
+	session.SetMaxAge(session.Application.Recycle.InactivityTimeout)
+	if session.GetMaxAge() > 0 {
 		w.startSessionInactivityTimer(session)
 	}
 	w.sessionStorage.Update(session)
 }
 
 func (w *SessionBuildWorker) startSessionInactivityTimer(session *models.Session) {
-	session.InactiveAt = time.Now().Add(time.Second * time.Duration(session.Application.Recycle.InactivityTimeout))
+	session.SetInactiveAt(time.Now().Add(time.Second * time.Duration(session.Application.Recycle.InactivityTimeout)))
 	go func() {
 		for {
 			if session.Status != models.SessionStatusStarted {
 				return
 			}
 
-			if time.Now().After(session.InactiveAt) {
+			if time.Now().After(session.GetInactiveAt()) {
 				w.mediator.DestroySession.Request(session, nil)
 				return
 			}

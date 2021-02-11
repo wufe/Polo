@@ -79,10 +79,19 @@ func (rest *Handler) getApplications(query *query.Service) func(w http.ResponseW
 
 func (rest *Handler) getSessions(query *query.Service) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+		// for _, s := range query.GetAllAliveSessions() {
+		// 	s.Lock()
+		// }
+
 		content, status := buildResponse(ResponseObjectWithResult{
 			ResponseObject{"Ok"},
 			query.GetAllAliveSessions(),
 		}, 200)
+
+		// for _, s := range query.GetAllAliveSessions() {
+		// 	s.Unlock()
+		// }
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(status)
 		w.Write(content)
@@ -240,8 +249,9 @@ func (rest *Handler) addSession(req *request.Service) func(w http.ResponseWriter
 			write(serverError(err.Error()))
 			return
 		}
-
+		// response.Session.Lock()
 		write(ok(response.Session))
+		// response.Session.Unlock()
 	}
 }
 

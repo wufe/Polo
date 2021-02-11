@@ -164,8 +164,8 @@ func (session *Session) MarkAsBeingRequested() {
 	session.Lock()
 	defer session.Unlock()
 	// Refreshes the inactiveAt field every time someone makes a request to this session
-	session.InactiveAt = time.Now().Add(time.Second * time.Duration(session.Application.Recycle.InactivityTimeout))
-	session.MaxAge = session.Application.Recycle.InactivityTimeout
+	session.SetInactiveAt(time.Now().Add(time.Second * time.Duration(session.Application.Recycle.InactivityTimeout)))
+	session.SetMaxAge(session.Application.Recycle.InactivityTimeout)
 }
 
 func (session *Session) SetStatus(status SessionStatus) {
@@ -184,4 +184,28 @@ func (session *Session) DecreaseMaxAge() {
 	session.Lock()
 	defer session.Unlock()
 	session.MaxAge--
+}
+
+func (session *Session) GetMaxAge() int {
+	session.Lock()
+	defer session.Unlock()
+	return session.MaxAge
+}
+
+func (session *Session) SetMaxAge(age int) {
+	session.Lock()
+	defer session.Unlock()
+	session.MaxAge = age
+}
+
+func (session *Session) GetInactiveAt() time.Time {
+	session.Lock()
+	defer session.Unlock()
+	return session.InactiveAt
+}
+
+func (session *Session) SetInactiveAt(at time.Time) {
+	session.Lock()
+	defer session.Unlock()
+	session.InactiveAt = at
 }

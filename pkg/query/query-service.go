@@ -50,7 +50,7 @@ func (s *Service) GetSessionAge(uuid string) (int, error) {
 	if session == nil {
 		return 0, ErrSessionNotFound
 	}
-	return session.MaxAge, nil
+	return session.GetMaxAge(), nil
 }
 
 func (s *Service) GetSessionMetrics(uuid string) ([]*models.Metric, error) {
