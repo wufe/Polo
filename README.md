@@ -27,7 +27,6 @@ You can find an example of a configuration file with all the options in the fold
 ***
 
 ## Known issues / missing features
-- Add session metrics
 - Add command line interface (e.g. polo reload)
 - Add command to reload applications
 - Add retries to startup of an application
