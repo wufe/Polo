@@ -7,14 +7,16 @@ import (
 	"time"
 
 	"github.com/rakyll/statik/fs"
+	"github.com/sasha-s/go-deadlock"
 	log "github.com/sirupsen/logrus"
 )
 
 type Service struct {
+	deadlock.Mutex
 	isDev                bool
 	devServer            string
 	FileSystem           http.FileSystem
-	SessionHelperContent string
+	sessionHelperContent string
 }
 
 func NewService(isDev bool, devServer string) *Service {
@@ -24,6 +26,18 @@ func NewService(isDev bool, devServer string) *Service {
 	}
 	service.initStaticFileSystem()
 	return service
+}
+
+func (s *Service) SetSessionHelperContent(helper string) {
+	s.Lock()
+	defer s.Unlock()
+	s.sessionHelperContent = helper
+}
+
+func (s *Service) GetSessionHelperContent() string {
+	s.Lock()
+	defer s.Unlock()
+	return s.sessionHelperContent
 }
 
 func (s *Service) LoadSessionHelper() {
@@ -39,7 +53,7 @@ func (s *Service) LoadSessionHelper() {
 					if err != nil {
 						log.Errorf("Error while reading session helper response: %s", err.Error())
 					} else {
-						s.SessionHelperContent = string(body)
+						s.SetSessionHelperContent(string(body))
 					}
 					resp.Body.Close()
 				}
@@ -57,7 +71,7 @@ func (s *Service) LoadSessionHelper() {
 			if err != nil {
 				log.Errorf("Error while reading session helper content: %s", err.Error())
 			} else {
-				s.SessionHelperContent = string(content)
+				s.SetSessionHelperContent(string(content))
 			}
 		}
 	}

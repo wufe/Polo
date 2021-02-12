@@ -130,15 +130,15 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 				bodyIndexPattern := regexp.MustCompile(`<body([^>]*?)>`)
 
 				if bodyIndex := bodyIndexPattern.FindStringIndex(stringBody); len(bodyIndex) > 1 {
-					// session.Lock()
+					session.Lock()
 					serializedSession, err := json.Marshal(session)
-					// session.Unlock()
+					session.Unlock()
 					if err != nil {
 						serializedSession = []byte(`{}`)
 					}
 
 					serializedSession = []byte(strings.ReplaceAll(string(serializedSession), `\\`, `\\\\`))
-					sessionHelper := strings.ReplaceAll(h.static.SessionHelperContent, "%%currentSession%%", base64.StdEncoding.EncodeToString(serializedSession))
+					sessionHelper := strings.ReplaceAll(h.static.GetSessionHelperContent(), "%%currentSession%%", base64.StdEncoding.EncodeToString(serializedSession))
 
 					stringBody = stringBody[:bodyIndex[1]] + sessionHelper + stringBody[bodyIndex[1]:]
 

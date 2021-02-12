@@ -3,8 +3,9 @@ package models
 import (
 	"fmt"
 	"strings"
-	"sync"
 	"time"
+
+	"github.com/sasha-s/go-deadlock"
 )
 
 const (
@@ -30,7 +31,7 @@ func (status SessionStatus) IsAlive() bool {
 }
 
 type Session struct {
-	sync.Mutex
+	deadlock.Mutex
 	UUID            string        `json:"uuid"`
 	Name            string        `json:"name"`
 	Target          string        `json:"target"`
@@ -61,7 +62,7 @@ func (v Variables) ApplyTo(str string) string {
 func NewSession(
 	session *Session,
 ) *Session {
-	session.Mutex = sync.Mutex{}
+	session.Mutex = deadlock.Mutex{}
 	session.ApplicationName = session.Application.Name
 	session.Status = SessionStatusStarting
 	if session.Logs == nil {
@@ -161,8 +162,8 @@ func (session *Session) LogStderr(message string) {
 }
 
 func (session *Session) MarkAsBeingRequested() {
-	session.Lock()
-	defer session.Unlock()
+	// session.Lock()
+	// defer session.Unlock()
 	// Refreshes the inactiveAt field every time someone makes a request to this session
 	session.SetInactiveAt(time.Now().Add(time.Second * time.Duration(session.Application.Recycle.InactivityTimeout)))
 	session.SetMaxAge(session.Application.Recycle.InactivityTimeout)
