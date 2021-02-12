@@ -201,11 +201,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 	}
 
 	calcBuildMetrics := models.NewMetricsForSession(session)("Build")
-	calcFolderPrepareMetrics := models.NewMetricsForSession(session)("Prepare folder")
-	fsResponse := w.mediator.SessionFileSystem.Enqueue(session)
-	workingDir := fsResponse.CommitFolder
-	err := fsResponse.Err
-	session.Folder = workingDir
+	err := w.prepareFolders(session)
 	if err != nil {
 		log.Errorf("Could not build session commit structure: %s", err.Error())
 		abort()
@@ -214,7 +210,6 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 		})
 		return
 	}
-	calcFolderPrepareMetrics()
 	w.sessionStorage.Update(session)
 
 	// Cleanup on context done
@@ -268,7 +263,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 					os.Environ(),
 					command.Environment...,
 				)
-				cmd.Dir = getWorkingDir(workingDir, command.WorkingDir)
+				cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
 			}
 
 			err = utils.ExecCmds(func(line *utils.StdLine) {
@@ -311,4 +306,14 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 	}
 
 	confirm()
+}
+
+func (w *SessionBuildWorker) prepareFolders(session *models.Session) error {
+	calcFolderPrepareMetrics := models.NewMetricsForSession(session)("Prepare folder")
+	defer calcFolderPrepareMetrics()
+	fsResponse := w.mediator.SessionFileSystem.Enqueue(session)
+	workingDir := fsResponse.CommitFolder
+	err := fsResponse.Err
+	session.Folder = workingDir
+	return err
 }
