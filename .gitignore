@@ -561,7 +561,7 @@ MigrationBackup/
 *.yml
 /polo
 
-/pkg/static/statik.go
+/pkg/services/statik.go
 !/examples/example-configuration.yml
 /db
 !/testserver.yml

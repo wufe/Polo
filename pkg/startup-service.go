@@ -1,4 +1,4 @@
-package startup
+package pkg
 
 import (
 	"fmt"
@@ -8,29 +8,29 @@ import (
 	"github.com/wufe/polo/pkg/background"
 	"github.com/wufe/polo/pkg/http/rest"
 	"github.com/wufe/polo/pkg/models"
-	"github.com/wufe/polo/pkg/static"
+	"github.com/wufe/polo/pkg/services"
 	"github.com/wufe/polo/pkg/storage"
 )
 
-type Service struct {
+type Startup struct {
 	isDev         bool
 	configuration *models.RootConfiguration
 	handler       *rest.Handler
-	static        *static.Service
+	static        *services.StaticService
 	appStorage    *storage.Application
 	sesStorage    *storage.Session
 	mediator      *background.Mediator
 }
 
-func NewService(
+func NewStartup(
 	isDev bool,
 	configuration *models.RootConfiguration,
 	handler *rest.Handler,
-	static *static.Service,
+	static *services.StaticService,
 	appStorage *storage.Application,
 	sesStorage *storage.Session,
-	mediator *background.Mediator) *Service {
-	return &Service{
+	mediator *background.Mediator) *Startup {
+	return &Startup{
 		isDev:         isDev,
 		configuration: configuration,
 		handler:       handler,
@@ -41,7 +41,7 @@ func NewService(
 	}
 }
 
-func (s *Service) Start() {
+func (s *Startup) Start() {
 	s.loadApplications()
 	s.storeApplications()
 	s.loadSessions()
@@ -50,29 +50,29 @@ func (s *Service) Start() {
 	s.startServer()
 }
 
-func (s *Service) loadApplications() {
+func (s *Startup) loadApplications() {
 	for _, application := range s.configuration.Applications {
 		s.mediator.ApplicationInit.Request(application)
 	}
 }
 
-func (s *Service) storeApplications() {
+func (s *Startup) storeApplications() {
 	for _, application := range s.configuration.Applications {
 		s.appStorage.Add(application)
 	}
 }
 
-func (s *Service) loadSessions() {
+func (s *Startup) loadSessions() {
 	s.sesStorage.LoadSessions(s.appStorage)
 }
 
-func (s *Service) startSessions() {
+func (s *Startup) startSessions() {
 	for _, session := range s.sesStorage.GetAllAliveSessions() {
 		s.mediator.HealthcheckSession.Request(session)
 	}
 }
 
-func (s *Service) startServer() {
+func (s *Startup) startServer() {
 	port := fmt.Sprint(s.configuration.Global.Port)
 	server := &http.Server{
 		Addr:    ":" + port,

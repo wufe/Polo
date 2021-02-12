@@ -1,24 +1,18 @@
-package query
+package services
 
 import (
-	"errors"
-
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
 )
 
-type Service struct {
+type QueryService struct {
 	isDev              bool
 	sessionStorage     *storage.Session
 	applicationStorage *storage.Application
 }
 
-var (
-	ErrSessionNotFound error = errors.New("Session not found")
-)
-
-func NewService(isDev bool, storage *storage.Session, applicationStorage *storage.Application) *Service {
-	s := &Service{
+func NewQueryService(isDev bool, storage *storage.Session, applicationStorage *storage.Application) *QueryService {
+	s := &QueryService{
 		isDev:              isDev,
 		sessionStorage:     storage,
 		applicationStorage: applicationStorage,
@@ -26,15 +20,15 @@ func NewService(isDev bool, storage *storage.Session, applicationStorage *storag
 	return s
 }
 
-func (s *Service) GetAllApplications() []*models.Application {
+func (s *QueryService) GetAllApplications() []*models.Application {
 	return s.applicationStorage.GetAll()
 }
 
-func (s *Service) GetAllAliveSessions() []*models.Session {
+func (s *QueryService) GetAllAliveSessions() []*models.Session {
 	return s.sessionStorage.GetAllAliveSessions()
 }
 
-func (s *Service) GetSession(uuid string) *models.Session {
+func (s *QueryService) GetSession(uuid string) *models.Session {
 	var foundSession *models.Session
 	for _, session := range s.sessionStorage.GetAllAliveSessions() {
 		if session.UUID == uuid {
@@ -45,7 +39,7 @@ func (s *Service) GetSession(uuid string) *models.Session {
 	return foundSession
 }
 
-func (s *Service) GetSessionAge(uuid string) (int, error) {
+func (s *QueryService) GetSessionAge(uuid string) (int, error) {
 	session := s.GetSession(uuid)
 	if session == nil {
 		return 0, ErrSessionNotFound
@@ -53,7 +47,7 @@ func (s *Service) GetSessionAge(uuid string) (int, error) {
 	return session.GetMaxAge(), nil
 }
 
-func (s *Service) GetSessionMetrics(uuid string) ([]*models.Metric, error) {
+func (s *QueryService) GetSessionMetrics(uuid string) ([]*models.Metric, error) {
 	session := s.GetSession(uuid)
 	if session == nil {
 		return nil, ErrSessionNotFound
@@ -61,7 +55,7 @@ func (s *Service) GetSessionMetrics(uuid string) ([]*models.Metric, error) {
 	return session.Metrics, nil
 }
 
-func (s *Service) GetSessionLogsAndStatus(uuid string, lastLogUUID string) ([]models.Log, models.SessionStatus, error) {
+func (s *QueryService) GetSessionLogsAndStatus(uuid string, lastLogUUID string) ([]models.Log, models.SessionStatus, error) {
 	session := s.GetSession(uuid)
 	if session == nil {
 		return nil, models.SessionStatusStarting, ErrSessionNotFound

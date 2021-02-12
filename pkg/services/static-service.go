@@ -1,4 +1,4 @@
-package static
+package services
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 	"github.com/wufe/polo/pkg/utils"
 )
 
-type Service struct {
+type StaticService struct {
 	sync.Locker
 	isDev                bool
 	devServer            string
@@ -20,8 +20,8 @@ type Service struct {
 	sessionHelperContent string
 }
 
-func NewService(isDev bool, devServer string) *Service {
-	service := &Service{
+func NewStaticService(isDev bool, devServer string) *StaticService {
+	service := &StaticService{
 		Locker:    utils.GetMutex(),
 		isDev:     isDev,
 		devServer: devServer,
@@ -30,19 +30,19 @@ func NewService(isDev bool, devServer string) *Service {
 	return service
 }
 
-func (s *Service) SetSessionHelperContent(helper string) {
+func (s *StaticService) SetSessionHelperContent(helper string) {
 	s.Lock()
 	defer s.Unlock()
 	s.sessionHelperContent = helper
 }
 
-func (s *Service) GetSessionHelperContent() string {
+func (s *StaticService) GetSessionHelperContent() string {
 	s.Lock()
 	defer s.Unlock()
 	return s.sessionHelperContent
 }
 
-func (s *Service) LoadSessionHelper() {
+func (s *StaticService) LoadSessionHelper() {
 	if s.isDev {
 		// If in dev mode, the content is available via webpack dev server
 		go func() {
@@ -79,7 +79,7 @@ func (s *Service) LoadSessionHelper() {
 	}
 }
 
-func (s *Service) GetManager() []byte {
+func (s *StaticService) GetManager() []byte {
 	file, err := s.FileSystem.Open("/manager.html")
 	content, err := ioutil.ReadAll(file)
 	if err != nil {
@@ -89,7 +89,7 @@ func (s *Service) GetManager() []byte {
 	return content
 }
 
-func (s *Service) initStaticFileSystem() {
+func (s *StaticService) initStaticFileSystem() {
 	if !s.isDev {
 		fileSystem, err := fs.New()
 		if err != nil {

@@ -15,8 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/http/proxy"
 	"github.com/wufe/polo/pkg/models"
-	"github.com/wufe/polo/pkg/request"
-	"github.com/wufe/polo/pkg/static"
+	"github.com/wufe/polo/pkg/services"
 	"github.com/wufe/polo/pkg/storage"
 )
 
@@ -25,11 +24,11 @@ type Handler struct {
 	proxy              *proxy.Handler
 	sessionStorage     *storage.Session
 	applicationStorage *storage.Application
-	request            *request.Service
-	static             *static.Service
+	request            *services.RequestService
+	static             *services.StaticService
 }
 
-func NewHandler(isDev bool, proxy *proxy.Handler, sessionStorage *storage.Session, applicationStorage *storage.Application, request *request.Service, static *static.Service) *Handler {
+func NewHandler(isDev bool, proxy *proxy.Handler, sessionStorage *storage.Session, applicationStorage *storage.Application, request *services.RequestService, static *services.StaticService) *Handler {
 	return &Handler{
 		isDev:              isDev,
 		proxy:              proxy,

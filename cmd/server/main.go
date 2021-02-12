@@ -4,15 +4,13 @@ import (
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg"
 	"github.com/wufe/polo/pkg/background"
 	"github.com/wufe/polo/pkg/background/pipe"
 	"github.com/wufe/polo/pkg/http/proxy"
 	"github.com/wufe/polo/pkg/http/rest"
 	"github.com/wufe/polo/pkg/http/routing"
-	"github.com/wufe/polo/pkg/query"
-	"github.com/wufe/polo/pkg/request"
-	"github.com/wufe/polo/pkg/startup"
-	"github.com/wufe/polo/pkg/static"
+	"github.com/wufe/polo/pkg/services"
 	"github.com/wufe/polo/pkg/storage"
 	"github.com/wufe/polo/pkg/utils"
 )
@@ -60,9 +58,9 @@ func main() {
 	background.NewApplicationFetchWorker(sesStorage, mediator)
 
 	// Services
-	staticService := static.NewService(dev, devServer)
-	queryService := query.NewService(dev, sesStorage, appStorage)
-	requestService := request.NewRequestService(dev, sesStorage, appStorage, mediator)
+	staticService := services.NewStaticService(dev, devServer)
+	queryService := services.NewQueryService(dev, sesStorage, appStorage)
+	requestService := services.NewRequestService(dev, sesStorage, appStorage, mediator)
 
 	// HTTP
 	proxy := proxy.NewHandler(dev, devServer)
@@ -70,6 +68,6 @@ func main() {
 	rest := rest.NewHandler(dev, staticService, routing, proxy, queryService, requestService)
 
 	// Startup
-	startup.NewService(dev, configuration, rest, staticService, appStorage, sesStorage, mediator).Start()
+	pkg.NewStartup(dev, configuration, rest, staticService, appStorage, sesStorage, mediator).Start()
 
 }

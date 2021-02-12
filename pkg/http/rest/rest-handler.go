@@ -12,9 +12,7 @@ import (
 	"github.com/wufe/polo/pkg/http/proxy"
 	"github.com/wufe/polo/pkg/http/routing"
 	"github.com/wufe/polo/pkg/models"
-	"github.com/wufe/polo/pkg/query"
-	"github.com/wufe/polo/pkg/request"
-	"github.com/wufe/polo/pkg/static"
+	"github.com/wufe/polo/pkg/services"
 )
 
 type Handler struct {
@@ -22,7 +20,7 @@ type Handler struct {
 	Router *httprouter.Router
 }
 
-func NewHandler(isDev bool, static *static.Service, routing *routing.Handler, proxy *proxy.Handler, query *query.Service, request *request.Service) *Handler {
+func NewHandler(isDev bool, static *services.StaticService, routing *routing.Handler, proxy *proxy.Handler, query *services.QueryService, request *services.RequestService) *Handler {
 	router := httprouter.New()
 
 	h := &Handler{
@@ -52,7 +50,7 @@ func NewHandler(isDev bool, static *static.Service, routing *routing.Handler, pr
 	return h
 }
 
-func (rest *Handler) getManager(static *static.Service, proxy *proxy.Handler) func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func (rest *Handler) getManager(static *services.StaticService, proxy *proxy.Handler) func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		if rest.isDev {
 			r.URL.Path = "/_polo_/public/manager.html"
@@ -65,7 +63,7 @@ func (rest *Handler) getManager(static *static.Service, proxy *proxy.Handler) fu
 	}
 }
 
-func (rest *Handler) getApplications(query *query.Service) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (rest *Handler) getApplications(query *services.QueryService) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		content, status := buildResponse(ResponseObjectWithResult{
 			ResponseObject{"Ok"},
@@ -77,7 +75,7 @@ func (rest *Handler) getApplications(query *query.Service) func(w http.ResponseW
 	}
 }
 
-func (rest *Handler) getSessions(query *query.Service) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (rest *Handler) getSessions(query *services.QueryService) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 		for _, s := range query.GetAllAliveSessions() {
@@ -98,7 +96,7 @@ func (rest *Handler) getSessions(query *query.Service) func(w http.ResponseWrite
 	}
 }
 
-func (rest *Handler) getSession(query *query.Service) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (rest *Handler) getSession(query *services.QueryService) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		uuid := p.ByName("uuid")
 		session := query.GetSession(uuid)
@@ -111,7 +109,7 @@ func (rest *Handler) getSession(query *query.Service) func(w http.ResponseWriter
 	}
 }
 
-func (rest *Handler) getSessionAge(query *query.Service) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (rest *Handler) getSessionAge(query *services.QueryService) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		uuid := p.ByName("uuid")
 		age, err := query.GetSessionAge(uuid)
@@ -131,7 +129,7 @@ func (rest *Handler) getSessionAge(query *query.Service) func(w http.ResponseWri
 	}
 }
 
-func (rest *Handler) getSessionMetrics(query *query.Service) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (rest *Handler) getSessionMetrics(query *services.QueryService) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		uuid := p.ByName("uuid")
 		metrics, err := query.GetSessionMetrics(uuid)
@@ -162,7 +160,7 @@ func (rest *Handler) getSessionMetrics(query *query.Service) func(w http.Respons
 	}
 }
 
-func (rest *Handler) getSessionLogsAndStatus(query *query.Service) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (rest *Handler) getSessionLogsAndStatus(query *services.QueryService) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		uuid := p.ByName("uuid")
 		lastLogUUID := p.ByName("last_log")
@@ -189,7 +187,7 @@ func (rest *Handler) getSessionLogsAndStatus(query *query.Service) func(w http.R
 	}
 }
 
-func (rest *Handler) trackSession(query *query.Service) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (rest *Handler) trackSession(query *services.QueryService) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		uuid := p.ByName("uuid")
 		session := query.GetSession(uuid)
@@ -223,7 +221,7 @@ func (rest *Handler) untrackSession() func(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (rest *Handler) addSession(req *request.Service) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (rest *Handler) addSession(req *services.RequestService) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 		write := write(w)
@@ -241,7 +239,7 @@ func (rest *Handler) addSession(req *request.Service) func(w http.ResponseWriter
 
 		response, err := req.NewSession(input.Checkout, input.ApplicationName)
 		if err != nil {
-			if err == request.ErrApplicationNotFound {
+			if err == services.ErrApplicationNotFound {
 				write(notFound())
 				return
 			}
@@ -255,7 +253,7 @@ func (rest *Handler) addSession(req *request.Service) func(w http.ResponseWriter
 	}
 }
 
-func (rest *Handler) deleteSession(req *request.Service) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (rest *Handler) deleteSession(req *services.RequestService) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		uuid := p.ByName("uuid")
 
@@ -264,10 +262,10 @@ func (rest *Handler) deleteSession(req *request.Service) func(w http.ResponseWri
 		err := req.SessionDeletion(uuid)
 		if err != nil {
 			switch err {
-			case request.ErrSessionNotFound:
+			case services.ErrSessionNotFound:
 				write(notFound())
 				return
-			case request.ErrSessionIsNotAlive:
+			case services.ErrSessionIsNotAlive:
 				write(serverError(err.Error()))
 				return
 			}
@@ -285,7 +283,7 @@ func (h *Handler) ping() func(w http.ResponseWriter, r *http.Request, _ httprout
 	}
 }
 
-func (h *Handler) serveStatic(st *static.Service) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (h *Handler) serveStatic(st *services.StaticService) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		if !h.isDev {
 

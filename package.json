@@ -15,13 +15,13 @@
 		"build:prod": "run-s clean build:client:prod build:server:prod",
 		"build:server:prod": "run-s build:server:prod:restore build:server:prod:statik build:server:prod:application",
 		"build:server:prod:restore": "go mod download",
-		"build:server:prod:statik": "statik -p=static -dest=./pkg -src=./public",
+		"build:server:prod:statik": "statik -p=services -dest=./pkg -src=./public",
 		"build:server:prod:application": "go build -o dist/polo cmd/server/main.go",
 		"build:client:prod": "cross-env NODE_ENV=production webpack --config webpack.config.js",
 		"build:prod:windows": "run-s clean build:client:prod build:server:prod:windows",
 		"build:server:prod:windows": "run-s build:server:prod:restore build:server:prod:statik build:server:prod:application:windows",
 		"build:server:prod:application:windows": "cross-env GOOS=windows GOARCH=amd64 go build -o dist/polo.exe cmd/server/main.go",
-		"clean": "rimraf dist public pkg/statik/statik.go",
+		"clean": "rimraf dist public pkg/services/statik.go",
 		"serve": "webpack serve"
 	},
 	"devDependencies": {
