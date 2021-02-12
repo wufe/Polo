@@ -48,7 +48,7 @@ func (w *SessionBuildWorker) startAcceptingNewSessionRequests() {
 			// Wait here until someone requests some work
 			sessionBuildRequest := <-w.mediator.BuildSession.RequestChan
 
-			sessionBuildResult := w.buildSession(sessionBuildRequest)
+			sessionBuildResult := w.acceptSessionBuild(sessionBuildRequest)
 
 			w.mediator.BuildSession.ResponseChan <- sessionBuildResult
 		}
@@ -95,7 +95,7 @@ func (w *SessionBuildWorker) startSessionInactivityTimer(session *models.Session
 	}()
 }
 
-func (w *SessionBuildWorker) buildSession(input *queues.SessionBuildInput) *queues.SessionBuildResult {
+func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput) *queues.SessionBuildResult {
 
 	aliveCount := len(w.sessionStorage.GetAllAliveSessions())
 	if aliveCount >= w.global.MaxConcurrentSessions {
@@ -125,8 +125,6 @@ func (w *SessionBuildWorker) buildSession(input *queues.SessionBuildInput) *queu
 		Checkout:    input.Checkout,
 	})
 	session.LogInfo(fmt.Sprintf("Creating session %s", session.UUID))
-
-	calcBuildMetrics := models.NewMetricsForSession(session)("Build")
 
 	freePort, err := getFreePort(&input.Application.Port)
 	if err != nil {
@@ -181,127 +179,136 @@ func (w *SessionBuildWorker) buildSession(input *queues.SessionBuildInput) *queu
 
 	w.sessionStorage.Add(session)
 
-	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(session.Application.Startup.Timeout))
-	done := make(chan struct{})
-
-	go func() {
-
-		calcFolderPrepareMetrics := models.NewMetricsForSession(session)("Prepare folder")
-		fsResponse := w.mediator.SessionFileSystem.Enqueue(session)
-		workingDir := fsResponse.CommitFolder
-		err := fsResponse.Err
-		session.Folder = workingDir
-		if err != nil {
-			log.Errorf("Could not build session commit structure: %s", err.Error())
-			cancelSessionStart()
-			w.mediator.CleanSession.Enqueue(&queues.SessionCleanupInput{
-				Session: session, Status: models.SessionStatusStartFailed,
-			})
-			return
-		}
-		calcFolderPrepareMetrics()
-		w.sessionStorage.Update(session)
-
-		// Cleanup on context done
-		go func() {
-			for {
-				select {
-				case <-sessionStartContext.Done():
-					log.Warnf("[SESSION:%s] Execution aborted", session.UUID)
-					session.LogError("Execution aborted (sessionStartContext ended)")
-					w.mediator.CleanSession.Enqueue(&queues.SessionCleanupInput{
-						Session: session, Status: models.SessionStatusStartFailed,
-					})
-					return
-				case <-done:
-					done <- struct{}{}
-					return
-				}
-			}
-		}()
-
-		healthcheckingStarted := false
-
-		calcCommandMetrics := models.NewMetricsForSession(session)("Startup commands")
-		// Build the session here
-		for _, command := range input.Application.Commands.Start {
-			select {
-			case <-sessionStartContext.Done():
-				return
-			default:
-
-				if session.Status != models.SessionStatusStarting {
-					cancelSessionStart()
-					return
-				}
-
-				builtCommand, err := buildCommand(command.Command, session)
-				if err != nil {
-					session.LogError(err.Error())
-					log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
-					if !command.ContinueOnError {
-						session.LogError("Halting")
-						cancelSessionStart()
-						return
-					}
-				}
-				log.Infof("[SESSION:%s (stdin)> ] %s", session.UUID, builtCommand)
-				session.LogStdin(builtCommand)
-
-				cmds := utils.ParseCommandContext(sessionStartContext, builtCommand)
-				for _, cmd := range cmds {
-					cmd.Env = append(
-						os.Environ(),
-						command.Environment...,
-					)
-					cmd.Dir = getWorkingDir(workingDir, command.WorkingDir)
-				}
-
-				err = utils.ExecCmds(func(line *utils.StdLine) {
-					session.LogStdout(line.Line)
-					log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line.Line)
-					parseSessionCommandOuput(session, &command, line.Line)
-				}, cmds...)
-
-				if err != nil {
-					session.LogError(err.Error())
-					log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
-					if !command.ContinueOnError {
-						session.LogError("Halting")
-						cancelSessionStart()
-						return
-					}
-				} else {
-					w.sessionStorage.Update(session)
-					if command.StartHealthchecking && !healthcheckingStarted && session.Application.Healthcheck != (models.Healthcheck{}) {
-						w.mediator.HealthcheckSession.Enqueue(session)
-						healthcheckingStarted = true
-					}
-				}
-			}
-		}
-		calcCommandMetrics()
-		calcBuildMetrics()
-		w.sessionStorage.Update(session)
-
-		if session.Application.Healthcheck == (models.Healthcheck{}) {
-			if session.Status != models.SessionStatusStarted {
-				w.mediator.StartSession.Chan <- session
-			}
-			log.Infof("[SESSION:%s] Session started", session.UUID)
-		} else {
-			if !healthcheckingStarted {
-				w.mediator.HealthcheckSession.Enqueue(session)
-				healthcheckingStarted = true
-			}
-		}
-
-		done <- struct{}{}
-
-	}()
+	go w.buildSession(session)
 
 	return &queues.SessionBuildResult{
 		Result:  queues.SessionBuildResultSucceeded,
 		Session: session,
 	}
+}
+
+func (w *SessionBuildWorker) buildSession(session *models.Session) {
+	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(session.Application.Startup.Timeout))
+	defer cancelSessionStart()
+
+	done := make(chan struct{})
+	quit := make(chan struct{})
+	confirm := func() {
+		close(done)
+	}
+	abort := func() {
+		close(quit)
+	}
+
+	calcBuildMetrics := models.NewMetricsForSession(session)("Build")
+	calcFolderPrepareMetrics := models.NewMetricsForSession(session)("Prepare folder")
+	fsResponse := w.mediator.SessionFileSystem.Enqueue(session)
+	workingDir := fsResponse.CommitFolder
+	err := fsResponse.Err
+	session.Folder = workingDir
+	if err != nil {
+		log.Errorf("Could not build session commit structure: %s", err.Error())
+		abort()
+		w.mediator.CleanSession.Enqueue(&queues.SessionCleanupInput{
+			Session: session, Status: models.SessionStatusStartFailed,
+		})
+		return
+	}
+	calcFolderPrepareMetrics()
+	w.sessionStorage.Update(session)
+
+	// Cleanup on context done
+	go func() {
+		for {
+			select {
+			case <-quit:
+				log.Warnf("[SESSION:%s] Execution aborted", session.UUID)
+				session.LogError("Execution aborted (sessionStartContext ended)")
+				w.mediator.CleanSession.Enqueue(&queues.SessionCleanupInput{
+					Session: session, Status: models.SessionStatusStartFailed,
+				})
+				return
+			case <-done:
+				return
+			}
+		}
+	}()
+
+	healthcheckingStarted := false
+
+	calcCommandMetrics := models.NewMetricsForSession(session)("Startup commands")
+	// Build the session here
+	for _, command := range session.Application.Commands.Start {
+		select {
+		case <-sessionStartContext.Done():
+			return
+		default:
+
+			if session.Status != models.SessionStatusStarting {
+				abort()
+				return
+			}
+
+			builtCommand, err := buildCommand(command.Command, session)
+			if err != nil {
+				session.LogError(err.Error())
+				log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
+				if !command.ContinueOnError {
+					session.LogError("Halting")
+					abort()
+					return
+				}
+			}
+			log.Infof("[SESSION:%s (stdin)> ] %s", session.UUID, builtCommand)
+			session.LogStdin(builtCommand)
+
+			cmds := utils.ParseCommandContext(sessionStartContext, builtCommand)
+			for _, cmd := range cmds {
+				cmd.Env = append(
+					os.Environ(),
+					command.Environment...,
+				)
+				cmd.Dir = getWorkingDir(workingDir, command.WorkingDir)
+			}
+
+			err = utils.ExecCmds(func(line *utils.StdLine) {
+				session.LogStdout(line.Line)
+				log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line.Line)
+				parseSessionCommandOuput(session, &command, line.Line)
+			}, cmds...)
+
+			if err != nil {
+				session.LogError(err.Error())
+				log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
+				if !command.ContinueOnError {
+					session.LogError("Halting")
+					abort()
+					return
+				}
+			} else {
+				w.sessionStorage.Update(session)
+				if command.StartHealthchecking && !healthcheckingStarted && session.Application.Healthcheck != (models.Healthcheck{}) {
+					w.mediator.HealthcheckSession.Enqueue(session)
+					healthcheckingStarted = true
+				}
+			}
+		}
+	}
+	calcCommandMetrics()
+	calcBuildMetrics()
+	w.sessionStorage.Update(session)
+
+	if session.Application.Healthcheck == (models.Healthcheck{}) {
+		if session.Status != models.SessionStatusStarted {
+			w.mediator.StartSession.Enqueue(session)
+		}
+		log.Infof("[SESSION:%s] Session started", session.UUID)
+	} else {
+		if !healthcheckingStarted {
+			w.mediator.HealthcheckSession.Enqueue(session)
+			healthcheckingStarted = true
+		}
+	}
+
+	confirm()
 }
