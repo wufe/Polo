@@ -1,19 +1,19 @@
-package pipe
+package queues
 
 import "github.com/wufe/polo/pkg/models"
 
-type SessionCleanupPipe struct {
+type SessionCleanupQueue struct {
 	Chan chan *SessionCleanupInput
 }
 
-func NewSessionCleanup() SessionCleanupPipe {
-	return SessionCleanupPipe{
+func NewSessionCleanup() SessionCleanupQueue {
+	return SessionCleanupQueue{
 		Chan: make(chan *SessionCleanupInput),
 	}
 }
 
-func (p *SessionCleanupPipe) Request(input *SessionCleanupInput) {
-	p.Chan <- input
+func (q *SessionCleanupQueue) Enqueue(input *SessionCleanupInput) {
+	q.Chan <- input
 }
 
 type SessionCleanupInput struct {

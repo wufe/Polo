@@ -1,14 +1,14 @@
-package pipe
+package queues
 
 import "github.com/wufe/polo/pkg/models"
 
-type SessionFilesystemPipe struct {
+type SessionFilesystemQueue struct {
 	RequestChan  chan *models.Session
 	ResponseChan chan *SessionFilesystemResult
 }
 
-func NewSessionFilesystem() SessionFilesystemPipe {
-	return SessionFilesystemPipe{
+func NewSessionFilesystem() SessionFilesystemQueue {
+	return SessionFilesystemQueue{
 		RequestChan:  make(chan *models.Session),
 		ResponseChan: make(chan *SessionFilesystemResult),
 	}
@@ -19,7 +19,7 @@ type SessionFilesystemResult struct {
 	Err          error
 }
 
-func (p *SessionFilesystemPipe) Request(session *models.Session) *SessionFilesystemResult {
-	p.RequestChan <- session
-	return <-p.ResponseChan
+func (q *SessionFilesystemQueue) Enqueue(session *models.Session) *SessionFilesystemResult {
+	q.RequestChan <- session
+	return <-q.ResponseChan
 }

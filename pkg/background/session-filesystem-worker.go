@@ -9,7 +9,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/kennygrant/sanitize"
 	log "github.com/sirupsen/logrus"
-	"github.com/wufe/polo/pkg/background/pipe"
+	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/versioning"
 )
@@ -33,7 +33,7 @@ func (w *SessionFilesystemWorker) startAcceptingFSRequests() {
 		for {
 			session := <-w.mediator.SessionFileSystem.RequestChan
 			commitFolder, err := w.buildSessionCommitStructure(session)
-			w.mediator.SessionFileSystem.ResponseChan <- &pipe.SessionFilesystemResult{
+			w.mediator.SessionFileSystem.ResponseChan <- &queues.SessionFilesystemResult{
 				CommitFolder: commitFolder,
 				Err:          err,
 			}

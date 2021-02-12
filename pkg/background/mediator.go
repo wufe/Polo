@@ -1,27 +1,27 @@
 package background
 
-import "github.com/wufe/polo/pkg/background/pipe"
+import "github.com/wufe/polo/pkg/background/queues"
 
 type Mediator struct {
-	BuildSession       pipe.SessionBuildPipe
-	DestroySession     pipe.SessionDestroyPipe
-	SessionFileSystem  pipe.SessionFilesystemPipe
-	CleanSession       pipe.SessionCleanupPipe
-	StartSession       pipe.SessionStartPipe
-	HealthcheckSession pipe.SessionHealthcheckPipe
-	ApplicationInit    pipe.ApplicationInitPipe
-	ApplicationFetch   pipe.ApplicationFetchPipe
+	BuildSession       queues.SessionBuildQueue
+	DestroySession     queues.SessionDestroyQueue
+	SessionFileSystem  queues.SessionFilesystemQueue
+	CleanSession       queues.SessionCleanupQueue
+	StartSession       queues.SessionStartQueue
+	HealthcheckSession queues.SessionHealthcheckQueue
+	ApplicationInit    queues.ApplicationInitQueue
+	ApplicationFetch   queues.ApplicationFetchQueue
 }
 
 func NewMediator(
-	build pipe.SessionBuildPipe,
-	destroy pipe.SessionDestroyPipe,
-	fs pipe.SessionFilesystemPipe,
-	clean pipe.SessionCleanupPipe,
-	start pipe.SessionStartPipe,
-	healthcheck pipe.SessionHealthcheckPipe,
-	init pipe.ApplicationInitPipe,
-	fetch pipe.ApplicationFetchPipe,
+	build queues.SessionBuildQueue,
+	destroy queues.SessionDestroyQueue,
+	fs queues.SessionFilesystemQueue,
+	clean queues.SessionCleanupQueue,
+	start queues.SessionStartQueue,
+	healthcheck queues.SessionHealthcheckQueue,
+	init queues.ApplicationInitQueue,
+	fetch queues.ApplicationFetchQueue,
 ) *Mediator {
 	return &Mediator{
 		BuildSession:       build,

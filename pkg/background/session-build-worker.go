@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
-	"github.com/wufe/polo/pkg/background/pipe"
+	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
 	"github.com/wufe/polo/pkg/utils"
@@ -55,8 +55,8 @@ func (w *SessionBuildWorker) startAcceptingNewSessionRequests() {
 	}()
 }
 
-func (w *SessionBuildWorker) RequestNewSession(buildInput *pipe.SessionBuildInput) *pipe.SessionBuildResult {
-	return w.mediator.BuildSession.Request(buildInput)
+func (w *SessionBuildWorker) RequestNewSession(buildInput *queues.SessionBuildInput) *queues.SessionBuildResult {
+	return w.mediator.BuildSession.Enqueue(buildInput)
 }
 
 func (w *SessionBuildWorker) startAcceptingSessionStartRequests() {
@@ -86,7 +86,7 @@ func (w *SessionBuildWorker) startSessionInactivityTimer(session *models.Session
 			}
 
 			if time.Now().After(session.GetInactiveAt()) {
-				w.mediator.DestroySession.Request(session, nil)
+				w.mediator.DestroySession.Enqueue(session, nil)
 				return
 			}
 			session.DecreaseMaxAge()
@@ -95,19 +95,19 @@ func (w *SessionBuildWorker) startSessionInactivityTimer(session *models.Session
 	}()
 }
 
-func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.SessionBuildResult {
+func (w *SessionBuildWorker) buildSession(input *queues.SessionBuildInput) *queues.SessionBuildResult {
 
 	aliveCount := len(w.sessionStorage.GetAllAliveSessions())
 	if aliveCount >= w.global.MaxConcurrentSessions {
-		return &pipe.SessionBuildResult{
-			Result:        pipe.SessionBuildResultFailed,
+		return &queues.SessionBuildResult{
+			Result:        queues.SessionBuildResultFailed,
 			FailingReason: "Reached global maximum concurrent sessions",
 		}
 	}
 
 	if w.sessionStorage.AliveByApplicationCount(input.Application) >= input.Application.MaxConcurrentSessions {
-		return &pipe.SessionBuildResult{
-			Result:        pipe.SessionBuildResultFailed,
+		return &queues.SessionBuildResult{
+			Result:        queues.SessionBuildResultFailed,
 			FailingReason: "Reached maximum concurrent sessions for this application",
 		}
 	}
@@ -131,8 +131,8 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 	freePort, err := getFreePort(&input.Application.Port)
 	if err != nil {
 		log.Errorln("Could not get a free port", err)
-		return &pipe.SessionBuildResult{
-			Result:        pipe.SessionBuildResultFailed,
+		return &queues.SessionBuildResult{
+			Result:        queues.SessionBuildResultFailed,
 			FailingReason: "Could not get a free port",
 		}
 	}
@@ -142,8 +142,8 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 	checkout, ok := input.Application.ObjectsToHashMap[input.Checkout]
 	if !ok {
 		log.Errorf("Could not find the hash of the selected checkout %s", input.Checkout)
-		return &pipe.SessionBuildResult{
-			Result:        pipe.SessionBuildResultFailed,
+		return &queues.SessionBuildResult{
+			Result:        queues.SessionBuildResultFailed,
 			FailingReason: fmt.Sprintf("Could not find the hash of the selected checkout %s", input.Checkout),
 		}
 	}
@@ -163,8 +163,8 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 			input.Checkout,
 		)
 		session.LogWarn(fmt.Sprintf("Another session with the UUID %s has already being requested for checkout %s", sessionAlreadyBeingBuilt.UUID, input.Checkout))
-		return &pipe.SessionBuildResult{
-			Result:  pipe.SessionBuildResultSucceeded,
+		return &queues.SessionBuildResult{
+			Result:  queues.SessionBuildResultSucceeded,
 			Session: sessionAlreadyBeingBuilt,
 		}
 	}
@@ -187,14 +187,14 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 	go func() {
 
 		calcFolderPrepareMetrics := models.NewMetricsForSession(session)("Prepare folder")
-		fsResponse := w.mediator.SessionFileSystem.Request(session)
+		fsResponse := w.mediator.SessionFileSystem.Enqueue(session)
 		workingDir := fsResponse.CommitFolder
 		err := fsResponse.Err
 		session.Folder = workingDir
 		if err != nil {
 			log.Errorf("Could not build session commit structure: %s", err.Error())
 			cancelSessionStart()
-			w.mediator.CleanSession.Request(&pipe.SessionCleanupInput{
+			w.mediator.CleanSession.Enqueue(&queues.SessionCleanupInput{
 				Session: session, Status: models.SessionStatusStartFailed,
 			})
 			return
@@ -209,7 +209,7 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 				case <-sessionStartContext.Done():
 					log.Warnf("[SESSION:%s] Execution aborted", session.UUID)
 					session.LogError("Execution aborted (sessionStartContext ended)")
-					w.mediator.CleanSession.Request(&pipe.SessionCleanupInput{
+					w.mediator.CleanSession.Enqueue(&queues.SessionCleanupInput{
 						Session: session, Status: models.SessionStatusStartFailed,
 					})
 					return
@@ -274,7 +274,7 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 				} else {
 					w.sessionStorage.Update(session)
 					if command.StartHealthchecking && !healthcheckingStarted && session.Application.Healthcheck != (models.Healthcheck{}) {
-						w.mediator.HealthcheckSession.Request(session)
+						w.mediator.HealthcheckSession.Enqueue(session)
 						healthcheckingStarted = true
 					}
 				}
@@ -291,7 +291,7 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 			log.Infof("[SESSION:%s] Session started", session.UUID)
 		} else {
 			if !healthcheckingStarted {
-				w.mediator.HealthcheckSession.Request(session)
+				w.mediator.HealthcheckSession.Enqueue(session)
 				healthcheckingStarted = true
 			}
 		}
@@ -300,8 +300,8 @@ func (w *SessionBuildWorker) buildSession(input *pipe.SessionBuildInput) *pipe.S
 
 	}()
 
-	return &pipe.SessionBuildResult{
-		Result:  pipe.SessionBuildResultSucceeded,
+	return &queues.SessionBuildResult{
+		Result:  queues.SessionBuildResultSucceeded,
 		Session: session,
 	}
 }

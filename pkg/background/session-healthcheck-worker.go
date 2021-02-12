@@ -65,7 +65,7 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 			if err != nil {
 				session.LogError(fmt.Sprintf("Could not parse target URL: %s", err.Error()))
 				log.Errorln("Could not parse target URL", err)
-				w.mediator.DestroySession.Request(session, nil)
+				w.mediator.DestroySession.Enqueue(session, nil)
 				w.sessions.Remove(session)
 				return
 			}
@@ -102,7 +102,7 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 				}
 				if retryCount >= maxRetries {
 					log.Errorf("[SESSION:%s] Session healthcheck failed. Destroying session", session.UUID)
-					w.mediator.DestroySession.Request(session, nil)
+					w.mediator.DestroySession.Enqueue(session, nil)
 					w.sessions.Remove(session)
 					return
 				}

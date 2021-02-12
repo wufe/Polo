@@ -1,8 +1,8 @@
-package pipe
+package queues
 
 import "github.com/wufe/polo/pkg/models"
 
-type ApplicationFetchPipe struct {
+type ApplicationFetchQueue struct {
 	RequestChan  chan ApplicationFetchInput
 	ResponseChan chan error
 }
@@ -12,17 +12,17 @@ type ApplicationFetchInput struct {
 	WatchObjects bool
 }
 
-func NewApplicationFetch() ApplicationFetchPipe {
-	return ApplicationFetchPipe{
+func NewApplicationFetch() ApplicationFetchQueue {
+	return ApplicationFetchQueue{
 		RequestChan:  make(chan ApplicationFetchInput),
 		ResponseChan: make(chan error),
 	}
 }
 
-func (p *ApplicationFetchPipe) Request(app *models.Application, watchObjects bool) error {
-	p.RequestChan <- ApplicationFetchInput{
+func (q *ApplicationFetchQueue) Enqueue(app *models.Application, watchObjects bool) error {
+	q.RequestChan <- ApplicationFetchInput{
 		Application:  app,
 		WatchObjects: watchObjects,
 	}
-	return <-p.ResponseChan
+	return <-q.ResponseChan
 }

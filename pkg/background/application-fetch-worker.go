@@ -9,7 +9,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	log "github.com/sirupsen/logrus"
-	"github.com/wufe/polo/pkg/background/pipe"
+	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
 	"github.com/wufe/polo/pkg/versioning"
@@ -175,7 +175,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 		if foundSession != nil {
 			if foundSession.CommitID != hash {
 				log.Infof("[APP:%s][WATCH] Detected new commit on %s", application.Name, ref)
-				w.mediator.DestroySession.Request(foundSession, func(s *models.Session) {
+				w.mediator.DestroySession.Enqueue(foundSession, func(s *models.Session) {
 					buildSession(w.mediator)
 				})
 			}
@@ -202,7 +202,7 @@ func (w *ApplicationFetchWorker) registerObjectHash(a *models.Application) (func
 
 func requestSessionBuilder(a *models.Application, ref string) func(*Mediator) {
 	return func(mediator *Mediator) {
-		mediator.BuildSession.Request(&pipe.SessionBuildInput{
+		mediator.BuildSession.Enqueue(&queues.SessionBuildInput{
 			Application: a,
 			Checkout:    ref,
 		})

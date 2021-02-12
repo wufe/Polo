@@ -52,7 +52,7 @@ func (s *Startup) Start() {
 
 func (s *Startup) loadApplications() {
 	for _, application := range s.configuration.Applications {
-		s.mediator.ApplicationInit.Request(application)
+		s.mediator.ApplicationInit.Enqueue(application)
 	}
 }
 
@@ -68,7 +68,7 @@ func (s *Startup) loadSessions() {
 
 func (s *Startup) startSessions() {
 	for _, session := range s.sesStorage.GetAllAliveSessions() {
-		s.mediator.HealthcheckSession.Request(session)
+		s.mediator.HealthcheckSession.Enqueue(session)
 	}
 }
 

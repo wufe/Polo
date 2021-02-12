@@ -76,7 +76,7 @@ func (w *ApplicationInitWorker) InitApplication(application *models.Application)
 
 	}
 	application.BaseFolder = baseFolder
-	w.mediator.ApplicationFetch.Request(application, false)
+	w.mediator.ApplicationFetch.Enqueue(application, false)
 	w.startApplicationFetchRoutine(application)
 
 	return nil
@@ -87,7 +87,7 @@ func (w *ApplicationInitWorker) startApplicationFetchRoutine(application *models
 		for {
 			time.Sleep(time.Duration(application.Fetch.Interval) * time.Second)
 
-			w.mediator.ApplicationFetch.Request(application, true)
+			w.mediator.ApplicationFetch.Enqueue(application, true)
 		}
 	}()
 }

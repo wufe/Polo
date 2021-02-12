@@ -6,7 +6,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/wufe/polo/pkg/background/pipe"
+	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/utils"
 )
@@ -51,7 +51,7 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 				select {
 				case <-sessionStopContext.Done():
 					log.Warnf("[SESSION:%s] Destruction aborted", session.UUID)
-					w.mediator.CleanSession.Request(&pipe.SessionCleanupInput{
+					w.mediator.CleanSession.Enqueue(&queues.SessionCleanupInput{
 						Session: session, Status: models.SessionStatusStopFailed,
 					})
 					return
@@ -107,7 +107,7 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 		done <- struct{}{}
 
 		// In the end
-		w.mediator.CleanSession.Request(&pipe.SessionCleanupInput{Session: session, Status: models.SessionStatusStopped})
+		w.mediator.CleanSession.Enqueue(&queues.SessionCleanupInput{Session: session, Status: models.SessionStatusStopped})
 
 		cancelSessionStop()
 

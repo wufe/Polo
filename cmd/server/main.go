@@ -6,7 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg"
 	"github.com/wufe/polo/pkg/background"
-	"github.com/wufe/polo/pkg/background/pipe"
+	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/http/proxy"
 	"github.com/wufe/polo/pkg/http/rest"
 	"github.com/wufe/polo/pkg/http/routing"
@@ -38,14 +38,14 @@ func main() {
 	sesStorage := storage.NewSession(database)
 
 	mediator := background.NewMediator(
-		pipe.NewSessionBuild(),
-		pipe.NewSessionDestroy(),
-		pipe.NewSessionFilesystem(),
-		pipe.NewSessionCleanup(),
-		pipe.NewSessionStart(),
-		pipe.NewSessionHealthCheck(),
-		pipe.NewApplicationInit(),
-		pipe.NewApplicationFetch(),
+		queues.NewSessionBuild(),
+		queues.NewSessionDestroy(),
+		queues.NewSessionFilesystem(),
+		queues.NewSessionCleanup(),
+		queues.NewSessionStart(),
+		queues.NewSessionHealthCheck(),
+		queues.NewApplicationInit(),
+		queues.NewApplicationFetch(),
 	)
 
 	// Workers

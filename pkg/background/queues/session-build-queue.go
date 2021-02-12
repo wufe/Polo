@@ -1,4 +1,4 @@
-package pipe
+package queues
 
 import "github.com/wufe/polo/pkg/models"
 
@@ -7,13 +7,13 @@ const (
 	SessionBuildResultFailed    SessionBuildResultType = "failed"
 )
 
-type SessionBuildPipe struct {
+type SessionBuildQueue struct {
 	RequestChan  chan *SessionBuildInput
 	ResponseChan chan *SessionBuildResult
 }
 
-func NewSessionBuild() SessionBuildPipe {
-	return SessionBuildPipe{
+func NewSessionBuild() SessionBuildQueue {
+	return SessionBuildQueue{
 		RequestChan:  make(chan *SessionBuildInput),
 		ResponseChan: make(chan *SessionBuildResult),
 	}
@@ -31,7 +31,7 @@ type SessionBuildResult struct {
 	FailingReason string
 }
 
-func (p *SessionBuildPipe) Request(input *SessionBuildInput) *SessionBuildResult {
-	p.RequestChan <- input
-	return <-p.ResponseChan
+func (q *SessionBuildQueue) Enqueue(input *SessionBuildInput) *SessionBuildResult {
+	q.RequestChan <- input
+	return <-q.ResponseChan
 }
