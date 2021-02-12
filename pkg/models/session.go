@@ -53,7 +53,7 @@ type Session struct {
 	Folder          string        `json:"folder"`
 	CommandsLogs    []string      `json:"commandsLogs"`
 	Variables       Variables     `json:"variables"`
-	Metrics         []*Metric     `json:"metrics"`
+	Metrics         []Metric      `json:"metrics"`
 	startupRetries  int
 	killReason      KillReason `json:"-"`
 }
@@ -85,7 +85,7 @@ func NewSession(
 		session.Variables = make(map[string]string)
 	}
 	if session.Metrics == nil {
-		session.Metrics = []*Metric{}
+		session.Metrics = []Metric{}
 	}
 	session.killReason = KillReasonNone
 	return session

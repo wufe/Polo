@@ -52,7 +52,7 @@ export const SessionModel = types.model({
     name       : types.string,
     target     : types.string,
     port       : types.number,
-    application: ApplicationModel,
+    applicationName: types.string,
     status     : types.enumeration<SessionStatus>(Object.values(SessionStatus)),
     logs       : types.map(SessionLogModel),
     checkout   : types.string,

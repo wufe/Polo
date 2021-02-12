@@ -13,6 +13,7 @@ import (
 	"github.com/wufe/polo/pkg/http/routing"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/services"
+	"github.com/wufe/polo/pkg/services/mappers"
 )
 
 type Handler struct {
@@ -101,7 +102,7 @@ func (rest *Handler) getSession(query *services.QueryService) func(w http.Respon
 		uuid := p.ByName("uuid")
 		session := query.GetSession(uuid)
 
-		content, status := okOrNotFound(session, 200)
+		content, status := okOrNotFound(mappers.MapSession(session), 200)
 
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(status)

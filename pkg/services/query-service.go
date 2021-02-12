@@ -47,7 +47,7 @@ func (s *QueryService) GetSessionAge(uuid string) (int, error) {
 	return session.GetMaxAge(), nil
 }
 
-func (s *QueryService) GetSessionMetrics(uuid string) ([]*models.Metric, error) {
+func (s *QueryService) GetSessionMetrics(uuid string) ([]models.Metric, error) {
 	session := s.GetSession(uuid)
 	if session == nil {
 		return nil, ErrSessionNotFound

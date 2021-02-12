@@ -47,7 +47,7 @@ func NewMetricsForSession(session *Session) func(string) func() {
 				end := time.Since(start)
 				session.Lock()
 				defer session.Unlock()
-				session.Metrics = append(session.Metrics, &Metric{Object: object, Duration: end})
+				session.Metrics = append(session.Metrics, Metric{Object: object, Duration: end})
 				stopped = true
 			}
 

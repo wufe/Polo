@@ -52,7 +52,7 @@ export const AppModel = types.model({
     get sessionsByApplicationName() {
         return (values(self.sessions) as any as ISession[])
             .reduce<{ [name: string]: ISession[] }>((accumulator, session: ISession) => {
-                const applicationName = session.application.name;
+                const applicationName = session.applicationName;
                 if (!accumulator[applicationName]) accumulator[applicationName] = [];
                 accumulator[applicationName].push(session);
                 return accumulator
