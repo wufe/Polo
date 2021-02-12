@@ -93,6 +93,7 @@ type Command struct {
 	ContinueOnError     bool     `yaml:"continue_on_error" json:"continueOnError"`
 	WorkingDir          string   `yaml:"working_dir" json:"workingDir"`
 	StartHealthchecking bool     `yaml:"start_healthchecking" json:"startHealthchecking"`
+	Timeout             int      `json:"timeout"`
 }
 
 type PortConfiguration struct {

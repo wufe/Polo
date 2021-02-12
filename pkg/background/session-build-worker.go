@@ -205,9 +205,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 	if err != nil {
 		log.Errorf("Could not build session commit structure: %s", err.Error())
 		abort()
-		w.mediator.CleanSession.Enqueue(&queues.SessionCleanupInput{
-			Session: session, Status: models.SessionStatusStartFailed,
-		})
+		w.mediator.CleanSession.Enqueue(session, models.SessionStatusStartFailed)
 		return
 	}
 	w.sessionStorage.Update(session)
@@ -219,9 +217,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 			case <-quit:
 				log.Warnf("[SESSION:%s] Execution aborted", session.UUID)
 				session.LogError("Execution aborted (sessionStartContext ended)")
-				w.mediator.CleanSession.Enqueue(&queues.SessionCleanupInput{
-					Session: session, Status: models.SessionStatusStartFailed,
-				})
+				w.mediator.CleanSession.Enqueue(session, models.SessionStatusStartFailed)
 				return
 			case <-done:
 				return
@@ -244,33 +240,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 				return
 			}
 
-			builtCommand, err := buildCommand(command.Command, session)
-			if err != nil {
-				session.LogError(err.Error())
-				log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
-				if !command.ContinueOnError {
-					session.LogError("Halting")
-					abort()
-					return
-				}
-			}
-			log.Infof("[SESSION:%s (stdin)> ] %s", session.UUID, builtCommand)
-			session.LogStdin(builtCommand)
-
-			cmds := utils.ParseCommandContext(sessionStartContext, builtCommand)
-			for _, cmd := range cmds {
-				cmd.Env = append(
-					os.Environ(),
-					command.Environment...,
-				)
-				cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
-			}
-
-			err = utils.ExecCmds(func(line *utils.StdLine) {
-				session.LogStdout(line.Line)
-				log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line.Line)
-				parseSessionCommandOuput(session, &command, line.Line)
-			}, cmds...)
+			err := w.execCommand(sessionStartContext, &command, session)
 
 			if err != nil {
 				session.LogError(err.Error())
@@ -315,5 +285,42 @@ func (w *SessionBuildWorker) prepareFolders(session *models.Session) error {
 	workingDir := fsResponse.CommitFolder
 	err := fsResponse.Err
 	session.Folder = workingDir
+	return err
+}
+
+func (w *SessionBuildWorker) execCommand(ctx context.Context, command *models.Command, session *models.Session) error {
+	builtCommand, err := buildCommand(command.Command, session)
+	if err != nil {
+		return err
+	}
+	log.Infof("[SESSION:%s (stdin)> ] %s", session.UUID, builtCommand)
+	session.LogStdin(builtCommand)
+
+	cmdCtx := ctx
+	if command.Timeout > 0 {
+		timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(command.Timeout)*time.Second)
+		defer cancel()
+		cmdCtx = timeoutCtx
+	}
+	cmds := utils.ParseCommandContext(cmdCtx, builtCommand)
+	for _, cmd := range cmds {
+		cmd.Env = append(
+			os.Environ(),
+			command.Environment...,
+		)
+		cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
+	}
+
+	err = utils.ExecCmds(func(line *utils.StdLine) {
+		if line.Type == utils.StdTypeOut {
+			session.LogStdout(line.Line)
+			log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, line.Line)
+		} else {
+			session.LogStderr(line.Line)
+			log.Errorf("[SESSION:%s (stderr)> ] %s", session.UUID, line.Line)
+		}
+		parseSessionCommandOuput(session, command, line.Line)
+	}, cmds...)
+
 	return err
 }

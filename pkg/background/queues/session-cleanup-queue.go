@@ -12,8 +12,8 @@ func NewSessionCleanup() SessionCleanupQueue {
 	}
 }
 
-func (q *SessionCleanupQueue) Enqueue(input *SessionCleanupInput) {
-	q.Chan <- input
+func (q *SessionCleanupQueue) Enqueue(session *models.Session, status models.SessionStatus) {
+	q.Chan <- &SessionCleanupInput{session, status}
 }
 
 type SessionCleanupInput struct {

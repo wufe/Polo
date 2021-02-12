@@ -77,6 +77,8 @@ func execCmd(ctx context.Context, cmd *exec.Cmd, callback func(*StdLine)) error 
 
 	cmd.Start()
 
+	var err error = nil
+
 	done := make(chan struct{})
 	go func(callback func(*StdLine), done chan struct{}) {
 		var wg sync.WaitGroup
@@ -137,14 +139,18 @@ func execCmd(ctx context.Context, cmd *exec.Cmd, callback func(*StdLine)) error 
 	}(callback, done)
 	<-done
 
-	cmd.Wait()
+	err = cmd.Wait()
 
 	exitCode := cmd.ProcessState.ExitCode()
 	if exitCode > 0 {
 		return fmt.Errorf("Command exit with code %d", exitCode)
 	}
 
-	return nil
+	if err != nil && err.Error() == "signal: killed" {
+		return context.Canceled
+	}
+
+	return err
 }
 
 type StdLine struct {

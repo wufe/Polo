@@ -16,7 +16,7 @@ applications:
     forwards:
       - pattern: ^/path/(.+)$
         to: http://127.0.0.1:{{port2}}/$1
-        host: host2.example.com  # Not implemented yet
+        host: host2.example.com 
         headers:
           add: []
           set:
@@ -63,7 +63,7 @@ applications:
           continue_on_error: false
           working_dir: /nginx-hello
           start_healthchecking: true
-          timeout: 10 # Not implemented yet
+          timeout: 10
         - command: 'docker run -p {{port2}}:80 -d nginxdemos/hello | xargs -I % echo "polo[container_id_2=%]"' # Pipe not working yet
       stop: # At least one stop command is mandatory
         - command: "docker kill {{container_id}}"
