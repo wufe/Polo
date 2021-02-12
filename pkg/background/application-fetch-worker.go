@@ -9,7 +9,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	log "github.com/sirupsen/logrus"
-	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
 	"github.com/wufe/polo/pkg/versioning"
@@ -202,9 +201,6 @@ func (w *ApplicationFetchWorker) registerObjectHash(a *models.Application) (func
 
 func requestSessionBuilder(a *models.Application, ref string) func(*Mediator) {
 	return func(mediator *Mediator) {
-		mediator.BuildSession.Enqueue(&queues.SessionBuildInput{
-			Application: a,
-			Checkout:    ref,
-		})
+		mediator.BuildSession.Enqueue(ref, a, nil)
 	}
 }

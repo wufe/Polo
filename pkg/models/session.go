@@ -21,6 +21,11 @@ const (
 	LogTypeStdin  LogType = "stdin"
 	LogTypeStdout LogType = "stdout"
 	LogTypeStderr LogType = "stderr"
+
+	KillReasonNone              KillReason = ""
+	KillReasonStopped           KillReason = "stopped"
+	KillReasonBuildFailed       KillReason = "build_failed"
+	KillReasonHealthcheckFailed KillReason = "healthcheck_failed"
 )
 
 type SessionStatus string
@@ -49,7 +54,11 @@ type Session struct {
 	CommandsLogs    []string      `json:"commandsLogs"`
 	Variables       Variables     `json:"variables"`
 	Metrics         []*Metric     `json:"metrics"`
+	startupRetries  int
+	killReason      KillReason `json:"-"`
 }
+
+type KillReason string
 
 type Variables map[string]string
 
@@ -78,6 +87,7 @@ func NewSession(
 	if session.Metrics == nil {
 		session.Metrics = []*Metric{}
 	}
+	session.killReason = KillReasonNone
 	return session
 }
 
@@ -210,4 +220,46 @@ func (session *Session) SetInactiveAt(at time.Time) {
 	session.Lock()
 	defer session.Unlock()
 	session.InactiveAt = at
+}
+
+func (session *Session) GetStartupRetriesCount() int {
+	session.Lock()
+	defer session.Unlock()
+	return session.startupRetries
+}
+
+func (session *Session) SetStartupRetriesCount(retries int) {
+	session.Lock()
+	defer session.Unlock()
+	session.startupRetries = retries
+}
+
+func (session *Session) IncStartupRetriesCount() {
+	session.Lock()
+	defer session.Unlock()
+	session.startupRetries++
+}
+
+func (session *Session) ResetStartupRetriesCount() {
+	session.Lock()
+	defer session.Unlock()
+	session.startupRetries = 0
+}
+
+func (session *Session) GetKillReason() KillReason {
+	session.Lock()
+	defer session.Unlock()
+	return session.killReason
+}
+
+func (session *Session) SetKillReason(reason KillReason) {
+	session.Lock()
+	defer session.Unlock()
+	session.killReason = reason
+}
+
+func (session *Session) ResetVariables() {
+	session.Lock()
+	defer session.Unlock()
+	session.Variables = make(map[string]string)
 }

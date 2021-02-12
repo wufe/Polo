@@ -8,6 +8,8 @@ applications:
     watch:
       - 
     is_default: true
+    startup:
+      retries: 3
     forwards:
       - pattern: /github/(.+?)/(.+?)/?$
         to: https://github.com/$2/$1
@@ -32,6 +34,6 @@ applications:
     recycle:
       inactivity_timeout: 3000
     healthcheck:
-      max_retries: 3
+      max_retries: 1
       retry_interval: 5
       retry_timeout: 10

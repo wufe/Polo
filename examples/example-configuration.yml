@@ -45,12 +45,12 @@ applications:
       method: GET
       url: /
       status: 200
-      max_retries: 10
+      max_retries: 5
       retry_interval: 30 # in seconds
       retry_timeout: 20 # in seconds
     startup:
       timeout: 300
-      retries: 5 # Not implemented yet
+      retries: 5
     recycle:
       inactivity_timeout: 120 # in seconds
     max_concurrent_sessions: 5

@@ -20,8 +20,9 @@ func NewSessionBuild() SessionBuildQueue {
 }
 
 type SessionBuildInput struct {
-	Checkout    string
-	Application *models.Application
+	Checkout        string
+	Application     *models.Application
+	PreviousSession *models.Session
 }
 type SessionBuildResultType string
 
@@ -31,7 +32,11 @@ type SessionBuildResult struct {
 	FailingReason string
 }
 
-func (q *SessionBuildQueue) Enqueue(input *SessionBuildInput) *SessionBuildResult {
-	q.RequestChan <- input
+func (q *SessionBuildQueue) Enqueue(checkout string, app *models.Application, prevSession *models.Session) *SessionBuildResult {
+	q.RequestChan <- &SessionBuildInput{
+		Checkout:        checkout,
+		Application:     app,
+		PreviousSession: prevSession,
+	}
 	return <-q.ResponseChan
 }

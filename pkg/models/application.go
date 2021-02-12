@@ -174,7 +174,7 @@ func NewApplication(application *Application) (*Application, error) {
 		application.Healthcheck.Status = 200
 	}
 	if application.Healthcheck.MaxRetries <= 0 {
-		application.Healthcheck.MaxRetries = 10
+		application.Healthcheck.MaxRetries = 5
 	}
 	if application.Healthcheck.RetryInterval == 0 {
 		application.Healthcheck.RetryInterval = 30

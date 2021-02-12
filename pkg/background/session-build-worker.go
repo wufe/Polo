@@ -62,7 +62,7 @@ func (w *SessionBuildWorker) startAcceptingNewSessionRequests() {
 }
 
 func (w *SessionBuildWorker) RequestNewSession(buildInput *queues.SessionBuildInput) *queues.SessionBuildResult {
-	return w.mediator.BuildSession.Enqueue(buildInput)
+	return w.mediator.BuildSession.Enqueue(buildInput.Checkout, buildInput.Application, buildInput.PreviousSession)
 }
 
 func (w *SessionBuildWorker) startAcceptingSessionStartRequests() {
@@ -76,6 +76,7 @@ func (w *SessionBuildWorker) startAcceptingSessionStartRequests() {
 
 func (w *SessionBuildWorker) MarkSessionAsStarted(session *models.Session) {
 	session.SetStatus(models.SessionStatusStarted)
+	session.ResetStartupRetriesCount()
 	session.SetMaxAge(session.Application.Recycle.InactivityTimeout)
 	if session.GetMaxAge() > 0 {
 		w.startSessionInactivityTimer(session)
@@ -118,18 +119,26 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 		}
 	}
 
-	sessionUUID := uuid.NewString()
-	log.Infof("[SESSION:%s] Building session.", sessionUUID)
-	session := models.NewSession(&models.Session{
-		UUID:        sessionUUID,
-		Name:        input.Application.Name,
-		Port:        0,
-		Target:      "",
-		Status:      models.SessionStatusStarting,
-		Application: input.Application,
-		CommitID:    input.Checkout,
-		Checkout:    input.Checkout,
-	})
+	var session *models.Session
+	if input.PreviousSession == nil {
+		sessionUUID := uuid.NewString()
+		log.Infof("[SESSION:%s] Building session.", sessionUUID)
+		session = models.NewSession(&models.Session{
+			UUID:        sessionUUID,
+			Name:        input.Application.Name,
+			Port:        0,
+			Target:      "",
+			Status:      models.SessionStatusStarting,
+			Application: input.Application,
+			CommitID:    input.Checkout,
+			Checkout:    input.Checkout,
+		})
+	} else {
+		session = models.NewSession(input.PreviousSession)
+		session.ResetVariables()
+		session.IncStartupRetriesCount()
+	}
+
 	session.LogInfo(fmt.Sprintf("Creating session %s", session.UUID))
 
 	freePort, err := getFreePort(&input.Application.Port)
@@ -154,22 +163,25 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 	session.CommitID = checkout
 	session.LogInfo(fmt.Sprintf("Requested checkout to %s (%s)", input.Checkout, session.CommitID))
 
-	// Check if someone else just requested the same type of session
-	// looking through all open session and comparing applications and checkouts
-	sessionAlreadyBeingBuilt := w.sessionStorage.GetAliveApplicationSessionByCheckout(
-		checkout,
-		input.Application,
-	)
-	if sessionAlreadyBeingBuilt != nil {
-		log.Warnf(
-			"Another session with the UUID %s has already being requested for checkout %s",
-			sessionAlreadyBeingBuilt.UUID,
-			input.Checkout,
+	recyclingPreviousSession := input.PreviousSession != nil
+	if !recyclingPreviousSession {
+		// Check if someone else just requested the same type of session
+		// looking through all open session and comparing applications and checkouts
+		sessionAlreadyBeingBuilt := w.sessionStorage.GetAliveApplicationSessionByCheckout(
+			checkout,
+			input.Application,
 		)
-		session.LogWarn(fmt.Sprintf("Another session with the UUID %s has already being requested for checkout %s", sessionAlreadyBeingBuilt.UUID, input.Checkout))
-		return &queues.SessionBuildResult{
-			Result:  queues.SessionBuildResultSucceeded,
-			Session: sessionAlreadyBeingBuilt,
+		if sessionAlreadyBeingBuilt != nil {
+			log.Warnf(
+				"Another session with the UUID %s has already being requested for checkout %s",
+				sessionAlreadyBeingBuilt.UUID,
+				input.Checkout,
+			)
+			session.LogWarn(fmt.Sprintf("Another session with the UUID %s has already being requested for checkout %s", sessionAlreadyBeingBuilt.UUID, input.Checkout))
+			return &queues.SessionBuildResult{
+				Result:  queues.SessionBuildResultSucceeded,
+				Session: sessionAlreadyBeingBuilt,
+			}
 		}
 	}
 
@@ -211,6 +223,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 	if err != nil {
 		log.Errorf("Could not build session commit structure: %s", err.Error())
 		abort()
+		session.SetKillReason(models.KillReasonBuildFailed)
 		w.mediator.CleanSession.Enqueue(session, models.SessionStatusStartFailed)
 		return
 	}
@@ -223,6 +236,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 			case <-quit:
 				log.Warnf("[SESSION:%s] Execution aborted", session.UUID)
 				session.LogError("Execution aborted (sessionStartContext ended)")
+				session.SetKillReason(models.KillReasonBuildFailed)
 				w.mediator.CleanSession.Enqueue(session, models.SessionStatusStartFailed)
 				return
 			case <-done:

@@ -5,6 +5,7 @@ import (
 
 	"github.com/wufe/polo/pkg/background"
 	"github.com/wufe/polo/pkg/background/queues"
+	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
 )
 
@@ -33,10 +34,7 @@ func (s *RequestService) NewSession(checkout string, app string) (*queues.Sessio
 	if a == nil {
 		return nil, ErrApplicationNotFound
 	}
-	response := s.mediator.BuildSession.Enqueue(&queues.SessionBuildInput{
-		Checkout:    checkout,
-		Application: a,
-	})
+	response := s.mediator.BuildSession.Enqueue(checkout, a, nil)
 	if response.Result == queues.SessionBuildResultFailed {
 		return nil, fmt.Errorf("Error requesting new session: %s", response.FailingReason)
 	}
@@ -51,6 +49,7 @@ func (s *RequestService) SessionDeletion(uuid string) error {
 	if !session.Status.IsAlive() {
 		return ErrSessionIsNotAlive
 	}
+	session.SetKillReason(models.KillReasonStopped)
 	s.mediator.DestroySession.Enqueue(session, nil)
 	return nil
 }

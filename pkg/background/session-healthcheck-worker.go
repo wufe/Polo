@@ -40,6 +40,8 @@ func (w *SessionHealthcheckWorker) startAcceptingSessionHealthcheckingRequests()
 			foundSession := w.sessions.Find(session)
 			if foundSession == nil {
 				w.startHealthchecking(session)
+			} else {
+				log.Errorln("ALREADY THERE")
 			}
 			w.mediator.HealthcheckSession.ResponseChan <- struct{}{}
 		}
@@ -101,6 +103,11 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 					session.SetStatus(models.SessionStatusDegraded)
 				}
 				if retryCount >= maxRetries {
+
+					if session.GetStatus() == models.SessionStatusStarting {
+						session.SetKillReason(models.KillReasonHealthcheckFailed)
+					}
+
 					log.Errorf("[SESSION:%s] Session healthcheck failed. Destroying session", session.UUID)
 					w.mediator.DestroySession.Enqueue(session, nil)
 					w.sessions.Remove(session)
