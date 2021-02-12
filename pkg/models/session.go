@@ -173,8 +173,6 @@ func (session *Session) LogStderr(message string) {
 }
 
 func (session *Session) MarkAsBeingRequested() {
-	// session.Lock()
-	// defer session.Unlock()
 	// Refreshes the inactiveAt field every time someone makes a request to this session
 	session.SetInactiveAt(time.Now().Add(time.Second * time.Duration(session.Application.Recycle.InactivityTimeout)))
 	session.SetMaxAge(session.Application.Recycle.InactivityTimeout)

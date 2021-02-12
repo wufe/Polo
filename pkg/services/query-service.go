@@ -61,6 +61,9 @@ func (s *QueryService) GetSessionLogsAndStatus(uuid string, lastLogUUID string) 
 		return nil, models.SessionStatusStarting, ErrSessionNotFound
 	}
 
+	session.Lock()
+	defer session.Unlock()
+
 	logs := session.Logs
 	if lastLogUUID != "" && lastLogUUID != "<none>" {
 		logs = []models.Log{}

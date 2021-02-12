@@ -28,3 +28,11 @@ func MapSession(model *models.Session) *output.Session {
 		Metrics:         MapMetrics(model.Metrics),
 	}
 }
+
+func MapSessions(models []*models.Session) []output.Session {
+	ret := []output.Session{}
+	for _, s := range models {
+		ret = append(ret, *MapSession(s))
+	}
+	return ret
+}
