@@ -6,7 +6,7 @@ applications:
     fetch:
       interval: 30
     watch:
-      - dev
+      - 
     is_default: true
     forwards:
       - pattern: /github/(.+?)/(.+?)/?$

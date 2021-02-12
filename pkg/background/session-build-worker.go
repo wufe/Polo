@@ -2,6 +2,7 @@ package background
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -13,6 +14,11 @@ import (
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
 	"github.com/wufe/polo/pkg/utils"
+)
+
+var (
+	ErrWrongSessionState error = errors.New("Wrong session state")
+	ErrCommandFailed     error = errors.New("Command failed")
 )
 
 type SessionBuildWorker struct {
@@ -224,42 +230,13 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 			}
 		}
 	}()
-
-	healthcheckingStarted := false
-
-	calcCommandMetrics := models.NewMetricsForSession(session)("Startup commands")
-	// Build the session here
-	for _, command := range session.Application.Commands.Start {
-		select {
-		case <-sessionStartContext.Done():
-			return
-		default:
-
-			if session.Status != models.SessionStatusStarting {
-				abort()
-				return
-			}
-
-			err := w.execCommand(sessionStartContext, &command, session)
-
-			if err != nil {
-				session.LogError(err.Error())
-				log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
-				if !command.ContinueOnError {
-					session.LogError("Halting")
-					abort()
-					return
-				}
-			} else {
-				w.sessionStorage.Update(session)
-				if command.StartHealthchecking && !healthcheckingStarted && session.Application.Healthcheck != (models.Healthcheck{}) {
-					w.mediator.HealthcheckSession.Enqueue(session)
-					healthcheckingStarted = true
-				}
-			}
-		}
+	healthcheckingStarted, err := w.execCommands(sessionStartContext, session, session.Application.Commands.Start)
+	if err != nil {
+		log.Errorf("[SESSION:%s] %s", session.UUID, err.Error())
+		abort()
+		return
 	}
-	calcCommandMetrics()
+
 	calcBuildMetrics()
 	w.sessionStorage.Update(session)
 
@@ -286,6 +263,41 @@ func (w *SessionBuildWorker) prepareFolders(session *models.Session) error {
 	err := fsResponse.Err
 	session.Folder = workingDir
 	return err
+}
+
+func (w *SessionBuildWorker) execCommands(ctx context.Context, session *models.Session, commands []models.Command) (healthcheckingStarted bool, err error) {
+	calcCommandMetrics := models.NewMetricsForSession(session)("Startup commands")
+	defer calcCommandMetrics()
+	for _, command := range session.Application.Commands.Start {
+		select {
+		case <-ctx.Done():
+			return healthcheckingStarted, context.Canceled
+		default:
+
+			if session.Status != models.SessionStatusStarting {
+				return healthcheckingStarted, ErrWrongSessionState
+			}
+
+			err := w.execCommand(ctx, &command, session)
+
+			if err != nil {
+				session.LogError(err.Error())
+
+				if !command.ContinueOnError {
+					return healthcheckingStarted, err
+				} else {
+					log.Errorf("[SESSION:%s] %s", session.UUID, err.Error())
+				}
+			} else {
+				w.sessionStorage.Update(session)
+				if command.StartHealthchecking && !healthcheckingStarted && session.Application.Healthcheck != (models.Healthcheck{}) {
+					w.mediator.HealthcheckSession.Enqueue(session)
+					healthcheckingStarted = true
+				}
+			}
+		}
+	}
+	return healthcheckingStarted, nil
 }
 
 func (w *SessionBuildWorker) execCommand(ctx context.Context, command *models.Command, session *models.Session) error {
