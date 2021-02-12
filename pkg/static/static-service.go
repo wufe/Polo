@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/rakyll/statik/fs"
-	"github.com/sasha-s/go-deadlock"
 	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/utils"
 )
 
 type Service struct {
-	deadlock.Mutex
+	sync.Locker
 	isDev                bool
 	devServer            string
 	FileSystem           http.FileSystem
@@ -21,6 +22,7 @@ type Service struct {
 
 func NewService(isDev bool, devServer string) *Service {
 	service := &Service{
+		Locker:    utils.GetMutex(),
 		isDev:     isDev,
 		devServer: devServer,
 	}

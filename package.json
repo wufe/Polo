@@ -5,7 +5,7 @@
 	"author": "Simone Bembi <simone.bembi@gmail.com>",
 	"license": "MIT",
 	"scripts": {
-		"start:race": "GO_ENV=development go run -race cmd/server/main.go",
+		"start:race": "GO_DEBUG=race GO_ENV=development go run -race cmd/server/main.go",
 		"start": "run-s build:server:application start:proxy",
 		"build:server:application": "go build -o polo cmd/server/main.go",
 		"start:proxy": "cross-env GO_ENV=development ./polo",

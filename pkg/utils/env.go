@@ -10,6 +10,10 @@ func IsDev() bool {
 	return os.Getenv("GO_ENV") == "development"
 }
 
+func IsDebugRace() bool {
+	return os.Getenv("GO_DEBUG") == "race"
+}
+
 func DevServerURL() string {
 	url := os.Getenv("WDS_URL")
 	if url == "" {

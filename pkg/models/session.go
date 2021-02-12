@@ -3,9 +3,10 @@ package models
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/sasha-s/go-deadlock"
+	"github.com/wufe/polo/pkg/utils"
 )
 
 const (
@@ -31,7 +32,7 @@ func (status SessionStatus) IsAlive() bool {
 }
 
 type Session struct {
-	deadlock.Mutex
+	sync.Locker     `json:"-"`
 	UUID            string        `json:"uuid"`
 	Name            string        `json:"name"`
 	Target          string        `json:"target"`
@@ -62,7 +63,7 @@ func (v Variables) ApplyTo(str string) string {
 func NewSession(
 	session *Session,
 ) *Session {
-	session.Mutex = deadlock.Mutex{}
+	session.Locker = utils.GetMutex()
 	session.ApplicationName = session.Application.Name
 	session.Status = SessionStatusStarting
 	if session.Logs == nil {
