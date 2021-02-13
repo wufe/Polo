@@ -1,10 +1,5 @@
 import { IStore } from "./state/models/index";
 
-declare module '*.jpg';
-declare module '*.png';
-declare module '*.svg';
-declare module '*.webp';
-
 export { }
 declare global {
     interface Window {

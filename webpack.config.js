@@ -61,7 +61,8 @@ module.exports = env => ({
                     'sass-loader'
                 ]
             },
-            { test: /\.hbs$/, loader: "handlebars-loader" }
+            { test: /\.hbs$/, loader: 'handlebars-loader' },
+            { test: /\.png$/, loader: 'file-loader' },
 
         ]
     },

@@ -41,7 +41,7 @@ export const Application = observer((props: TProps) => {
     return <div className={`
         px-0
         divide-y
-        divide-gray-400
+        divide-gray-200
         dark:divide-gray-600
         mx-auto
         my-5 rounded-md shadow-lg

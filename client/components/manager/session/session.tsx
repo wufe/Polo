@@ -50,7 +50,7 @@ export const SessionLogs = observer((props: { logs: ISessionLog[], onLogsProport
 
     return <div
         ref={logsContainerDiv}
-        className="m-2 text-nord-3 dark:text-nord4 py-5 rounded-md flex-grow mt-16 mb-36 flex flex-col min-w-0 min-h-0 overflow-x-hidden no-horizontal-scrollbar">
+        className="m-2 text-nord-3 dark:text-nord4 py-5 rounded-md flex-grow mt-12 mb-36 flex flex-col min-w-0 min-h-0 overflow-x-hidden no-horizontal-scrollbar">
         {props.logs.map((log: ISessionLog, key) => {
             const color = colorsByLogType[log.type];
             return <p className="mx-10 leading-relaxed text-sm whitespace-nowrap max-w-full min-w-0 flex items-center" key={key}>
@@ -106,10 +106,10 @@ export const Session = observer((props: TProps) => {
     }
 
     return <div className="
-        mx-auto w-10/12 max-w-full flex flex-col pt-3 min-w-0 min-h-0 max-h-screen">
+        mx-auto w-10/12 max-w-full flex flex-col min-w-0 min-h-0 flex-1 pt-3" style={{height:'calc(100vh - 120px)'}}>
         <div className="main-gradient-faded absolute left-0 right-0 top-0 pointer-events-none" style={{ bottom: `${overlayBottom}%`}}></div>
-        <h1 className="text-4xl mt-10 mb-3 text-nord1 dark:text-nord5 z-10">Session</h1>
-        <div className="text-lg text-gray-500 mb-7 z-10">Id: {props.session.uuid}</div>
+        <h1 className="text-4xl mb-3 font-quicksand font-light text-nord1 dark:text-nord5 z-10">Session</h1>
+        <div className="text-lg text-gray-500 mb-7 font-quicksand z-10">Id: {props.session.uuid}</div>
         <SessionLogs
             logs={values(props.session.logs) as any as ISessionLog[]}
             onLogsProportionChanged={setOverlayProportions} />

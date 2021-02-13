@@ -24,9 +24,9 @@ export const Dashboard = observer((props: TProps) => {
         return () => clearInterval(interval);
     }, [])
 
-    return <div className="font-quicksand w-full p-20 bg-gradient-to-br ">
+    return <div className="font-quicksand w-full py-8">
         <div className="w-10/12 mx-auto">
-            <h1 className="text-4xl mb-3 text-nord1 dark:text-nord5">Applications</h1>
+            <h1 className="text-4xl mb-10 font-light text-nord1 dark:text-nord5">Applications</h1>
             {(values(props.app.applications) as any as IApplication[]).map((application, index) =>
                 <Application
                     key={index}
