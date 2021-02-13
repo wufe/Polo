@@ -68,7 +68,7 @@ func (rest *Handler) getApplications(query *services.QueryService) func(w http.R
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		content, status := buildResponse(ResponseObjectWithResult{
 			ResponseObject{"Ok"},
-			query.GetAllApplications(),
+			mappers.MapApplications(query.GetAllApplications()),
 		}, 200)
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(status)

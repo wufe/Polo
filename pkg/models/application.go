@@ -6,15 +6,24 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
+	"github.com/wufe/polo/pkg/utils"
+)
+
+var (
+	ApplicationStatusLoading ApplicationStatus = "loading"
+	ApplicationStatusReady   ApplicationStatus = "ready"
 )
 
 type Application struct {
+	sync.Locker             `json:"-"`
+	Status                  ApplicationStatus         `json:"status" yaml:"-"`
 	Auth                    Auth                      `json:"-"`
 	Name                    string                    `json:"name"`
 	Remote                  string                    `json:"remote"`
@@ -42,6 +51,8 @@ type Application struct {
 	CommitMap               map[string]*object.Commit `yaml:"-" json:"-"`
 	CompiledForwardPatterns []CompiledForwardPattern  `yaml:"-" json:"-"`
 }
+
+type ApplicationStatus string
 
 type Auth struct {
 	Basic BasicAuth `json:"basic"`
@@ -116,6 +127,8 @@ type Branch struct {
 }
 
 func NewApplication(application *Application) (*Application, error) {
+	application.Locker = utils.GetMutex()
+	application.Status = ApplicationStatusLoading
 	if application.Name == "" {
 		return nil, errors.New("application.name (required) not defined")
 	}
