@@ -39,46 +39,51 @@ export const Application = observer((props: TProps) => {
     const branches: IApplicationBranchModel[] = values(props.application.branches) as any;
 
     return <div className={`
-        px-6
-        divide-y dark:divide-gray-500
+        px-0
+        divide-y
+        divide-gray-400
+        dark:divide-gray-600
         mx-auto
         my-5 rounded-md shadow-lg
         bg-gray-50
         dark:bg-nord0
         font-quicksand
-        ${!open ? ' max-h-14 overflow-hidden dark:hover:bg-nord3' : ''}`}
+        ${!open ? ' max-h-20 overflow-hidden dark:hover:bg-nord3' : ''}`}
         >
-        <div className="h-14 grid items-center grid-cols-7 grid-rows-1 gap-2 relative cursor-pointer -mx-6 px-6 pr-12" onClick={() => setOpen(open => !open)}>
-                <h3 className="text-mg font-normal leading-10 uppercase col-span-3 overflow-hidden overflow-ellipsis whitespace-nowrap" title={props.application.name}>{props.application.name}</h3>
-                <div className="col-span-2">
-                    <div className="text-xs text-gray-500 uppercase">Remote:</div>
-                    <div
-                        className="text-sm overflow-hidden overflow-ellipsis whitespace-nowrap"
-                        title={props.application.remote}>{props.application.remote}</div>
-                </div>
-                <div className="col-span-2">
-                    <div className="text-xs text-gray-500 uppercase">Target:</div>
-                    <div
-                        className="text-sm overflow-hidden overflow-ellipsis whitespace-nowrap"
-                        title={props.application.target}>{props.application.target}</div>
-                </div>
-                {open && <svg className="absolute right-4 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>}
-                {!open && <svg className="absolute right-4 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>}
+        <div className=" h-20 grid items-center grid-cols-7 grid-rows-1 gap-2 relative cursor-pointer -mx-6 px-12 pr-12" onClick={() => setOpen(open => !open)}>
+            <h3 className="text-mg font-normal leading-10 uppercase col-span-3 overflow-hidden overflow-ellipsis whitespace-nowrap" title={props.application.name}>{props.application.name}</h3>
+            <div className="col-span-4">
+                <div className="text-xs text-gray-500 uppercase">Remote:</div>
+                <div
+                    className="text-sm overflow-hidden overflow-ellipsis whitespace-nowrap"
+                    title={props.application.remote}>{props.application.remote}</div>
             </div>
+            {open && <svg className="absolute right-10 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>}
+            {!open && <svg className="absolute right-10 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>}
+        </div>
+
+        <div className="py-4 px-6">
+            <div className="col-span-2">
+                <h4 className="my-1 text-xs text-gray-500 uppercase">Target:</h4>
+                <div
+                    className="text-sm overflow-hidden overflow-ellipsis whitespace-nowrap"
+                    title={props.application.target}>{props.application.target}</div>
+            </div>
+        </div>
         
-        {props.sessions && props.sessions.length > 0 && <div className="my-4">
+        {props.sessions && props.sessions.length > 0 && <div className="py-4 px-6 dark:bg-nord-1">
             <ApplicationSessions sessions={props.sessions} />
         </div>}
 
-        {branches && branches.length > 0 && <div className="my-4">
+        {branches && branches.length > 0 && <div className="py-4 px-6">
             <ApplicationBranches branches={branches} onSessionCreationSubmission={submitSessionCreation} />
         </div>}
         
-        <div className="flex my-4 py-4">
+        <div className="flex my-4 py-4 px-6">
             <input
                 className="flex-grow px-3 py-1 mx-3 text-sm border rounded-sm dark:bg-gray-300 dark:text-gray-700 dark:placeholder-gray-500"
                 type="text"

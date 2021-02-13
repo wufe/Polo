@@ -22,7 +22,7 @@ export const ApplicationSessions = observer((props: TProps) => {
     }
 
     return <>
-        <h4 className="mt-2 mb-1 text-sm text-gray-500 uppercase">Sessions:</h4>
+        <h4 className="my-1 text-xs text-gray-500 uppercase">Sessions:</h4>
         {props.sessions.map((session, key) =>
             <div
                 key={key}
