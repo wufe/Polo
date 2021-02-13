@@ -566,3 +566,4 @@ MigrationBackup/
 /db
 !/testserver.yml
 /.host
+/release
