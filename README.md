@@ -1,5 +1,9 @@
 # Polo
 
+<p style="text-align: center">
+    <img src="./.assets/logo.svg" width="50%" />
+</p>
+
 ## Git based proxy
 
 Polo allows you to create a web server which provides the ability to serve your web application in a specific time/branch/tag in history, using git.  
