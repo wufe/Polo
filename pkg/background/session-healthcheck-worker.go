@@ -80,6 +80,9 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 				target.String(),
 				nil,
 			)
+			if err != nil {
+				log.Errorln("Could not build HTTP request", req)
+			}
 			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(session.Application.Healthcheck.RetryTimeout)*time.Second)
 			req.WithContext(ctx)
 			err = session.Application.Headers.ApplyTo(req)
@@ -89,9 +92,6 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 			if session.Application.Host != "" {
 				req.Header.Add("Host", session.Application.Host)
 				req.Host = session.Application.Host
-			}
-			if err != nil {
-				log.Errorln("Could not build HTTP request", req)
 			}
 			response, err := client.Do(req)
 			cancel()
