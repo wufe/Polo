@@ -31,9 +31,13 @@ Polo will then start the application and provide a reverse proxy feature for nav
 
 ## Getting started
 
-- Download Polo from the release page
-- Create one or more configuration files for your application
-- Start Polo
+- Download Polo from the release page  
+
+- Create one or more configuration files for your application  
+    There's a minimal example configuration file called [testserver.yml](./testserver.yml) which contains instructions to start a little demo project.
+
+- Start Polo from command line
+
 
 ***
 
