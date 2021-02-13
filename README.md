@@ -1,16 +1,31 @@
-# Polo
-
-<p style="text-align: center">
+<p align="center">
     <img src="./.assets/logo.svg" width="50%" />
+    <br />
+    <br />
+    <h1 align="center">Polo</h1>
+    <p align="center">Serve your application development branches</p>
+    <br /><br />
 </p>
 
-## Git based proxy
+## What is Polo  
 
-Polo allows you to create a web server which provides the ability to serve your web application in a specific time/branch/tag in history, using git.  
+Polo is a **git-based reverse proxy**.
+
+Allows you to create a web server which provides the ability to serve your web application in a specific time/branch/tag in history, using git.  
 
 You just need to specify the git commit or the branch. A new session will be created for you to navigate into.
 
 Although it provides HTTPS support, it is not intended to be used in production.  
+
+***
+
+## Use cases
+
+It can be used for serving your staging / QA environment.  
+
+Instead of having one application on a single host, you can let the user select which git branch to serve.  
+
+Polo will then start the application and provide a reverse proxy feature for navigation.
 
 ***
 
