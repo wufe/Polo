@@ -266,3 +266,33 @@ func (application *Application) GetAuth() (transport.AuthMethod, error) {
 	}
 	return nil, nil
 }
+
+func (a *Application) WithLock(f func(*Application)) {
+	a.Lock()
+	defer a.Unlock()
+	f(a)
+}
+
+func (a *Application) SetFolder(folder string) {
+	a.Lock()
+	defer a.Unlock()
+	a.Folder = folder
+}
+
+func (a *Application) SetBaseFolder(baseFolder string) {
+	a.Lock()
+	defer a.Unlock()
+	a.BaseFolder = baseFolder
+}
+
+func (a *Application) GetStatus() ApplicationStatus {
+	a.Lock()
+	defer a.Unlock()
+	return a.Status
+}
+
+func (a *Application) SetStatus(status ApplicationStatus) {
+	a.Lock()
+	defer a.Unlock()
+	a.Status = status
+}

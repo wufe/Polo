@@ -38,7 +38,12 @@ func (w *ApplicationInitWorker) startAcceptingInitRequests() {
 }
 
 func (w *ApplicationInitWorker) InitApplication(application *models.Application) error {
-	log.Infof("[APP:%s] Initializing", application.Name)
+	var name string
+	application.WithLock(func(a *models.Application) {
+		name = a.Name
+	})
+
+	log.Infof("[APP:%s] Initializing", name)
 	sessionsFolder, err := filepath.Abs(w.global.SessionsFolder)
 	if err != nil {
 		return err
@@ -49,7 +54,7 @@ func (w *ApplicationInitWorker) InitApplication(application *models.Application)
 			return err
 		}
 	}
-	applicationName := sanitize.Name(application.Name)
+	applicationName := sanitize.Name(name)
 	applicationFolder := filepath.Join(sessionsFolder, applicationName)
 	if _, err := os.Stat(applicationFolder); os.IsNotExist(err) { // Application folder does not exist
 		err := os.Mkdir(applicationFolder, 0755)
@@ -57,7 +62,7 @@ func (w *ApplicationInitWorker) InitApplication(application *models.Application)
 			return err
 		}
 	}
-	application.Folder = applicationFolder
+	application.SetFolder(applicationFolder)
 
 	baseFolder := filepath.Join(applicationFolder, "_base") // Folder used for performing periodic git fetch --all and/or git log
 	if _, err := os.Stat(baseFolder); os.IsNotExist(err) {  // Application folder does not exist
@@ -75,9 +80,11 @@ func (w *ApplicationInitWorker) InitApplication(application *models.Application)
 		}
 
 	}
-	application.BaseFolder = baseFolder
+	application.SetBaseFolder(baseFolder)
 	w.mediator.ApplicationFetch.Enqueue(application, false)
 	w.startApplicationFetchRoutine(application)
+
+	application.SetStatus(models.ApplicationStatusReady)
 
 	return nil
 }

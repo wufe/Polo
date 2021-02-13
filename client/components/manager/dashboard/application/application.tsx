@@ -70,11 +70,11 @@ export const Application = observer((props: TProps) => {
                 </svg>}
             </div>
         
-        {props.sessions && props.sessions.length && <div className="my-4">
+        {props.sessions && props.sessions.length > 0 && <div className="my-4">
             <ApplicationSessions sessions={props.sessions} />
         </div>}
 
-        {branches && branches.length && <div className="my-4">
+        {branches && branches.length > 0 && <div className="my-4">
             <ApplicationBranches branches={branches} onSessionCreationSubmission={submitSessionCreation} />
         </div>}
         

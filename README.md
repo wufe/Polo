@@ -45,7 +45,6 @@ This diagram represents the states walked since the request of a session to its 
 - Add "warmup" endpoints
 - Ended sessions cleanup (folder structure)
 - Add optional "copy mode" opposed to standard "clone mode" to initialize a application: copies the directory instead of cloning again
-- Add "initializing" status to a application, in order to allow the server to start asap
 - Pruning branches does not work with embedded git client (prune is not supported)
 - Add possibility to manually trigger a fetch in a git application folder
 - Configuration reload

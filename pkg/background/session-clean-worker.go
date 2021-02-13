@@ -32,7 +32,7 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 			session.LogInfo("Cleaning up session")
 			session.SetStatus(sessionToClean.Status)
 			w.sessionStorage.Delete(session)
-			log.Warnf("[SESSION:%s] Session cleaned up.", session.UUID)
+			log.Warnf("\t[S:%s] Session cleaned up.", session.UUID)
 
 			killReason := session.GetKillReason()
 
@@ -43,11 +43,11 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 					if retriesCount < maxRetries {
 						retriesCount++
 						session.LogWarn(fmt.Sprintf("[%d/%d] Retrying session startup.", retriesCount, maxRetries))
-						log.Warnf("[SESSION:%s][%d/%d] Retrying session startup.", session.UUID, retriesCount, maxRetries)
+						log.Warnf("\t[S:%s][%d/%d] Retrying session startup.", session.UUID, retriesCount, maxRetries)
 						w.mediator.BuildSession.Enqueue(session.Checkout, session.Application, session)
 					} else {
 						session.LogError("Max startup retries exceeded.")
-						log.Warnf("[SESSION:%s] Session's max startup retries exceeded.", session.UUID)
+						log.Warnf("\t[S:%s] Session's max startup retries exceeded.", session.UUID)
 					}
 				}
 			}

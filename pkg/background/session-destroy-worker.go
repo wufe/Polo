@@ -49,7 +49,7 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 			for {
 				select {
 				case <-sessionStopContext.Done():
-					log.Warnf("[SESSION:%s] Destruction aborted", session.UUID)
+					log.Warnf("\t[S:%s] Destruction aborted", session.UUID)
 					w.mediator.CleanSession.Enqueue(session, models.SessionStatusStopFailed)
 					return
 				case <-done:
@@ -69,7 +69,7 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 				builtCommand, err := buildCommand(command.Command, session)
 				if err != nil {
 					session.LogError(err.Error())
-					log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
+					log.Errorf("[S:%s] %s", session.UUID, err.Error())
 					if !command.ContinueOnError {
 						session.LogError("Halting")
 						cancelSessionStop()
@@ -86,13 +86,13 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 					cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
 				}
 				err = utils.ExecCmds(func(sl *utils.StdLine) {
-					log.Infof("[SESSION:%s (stdout)> ] %s", session.UUID, sl.Line)
+					log.Infof("\t\t[S:%s (stdout)> ] %s", session.UUID, sl.Line)
 					session.LogStdout(sl.Line)
 				}, cmds...)
 
 				if err != nil {
 					session.LogError(err.Error())
-					log.Errorf("SESSION:%s] %s", session.UUID, err.Error())
+					log.Errorf("[S:%s] %s", session.UUID, err.Error())
 					if !command.ContinueOnError {
 						session.LogError("Halting")
 						cancelSessionStop()

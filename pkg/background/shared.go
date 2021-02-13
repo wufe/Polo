@@ -30,7 +30,7 @@ func parseSessionCommandOuput(session *models.Session, command *models.Command, 
 		key := variable[1]
 		value := variable[2]
 		session.Variables[key] = value
-		log.Warnf("[SESSION:%s] Setting variable %s=%s", session.UUID, key, value)
+		log.Warnf("\t[S:%s] Setting variable %s=%s", session.UUID, key, value)
 	}
 
 	if command.OutputVariable != "" {

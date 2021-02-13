@@ -52,7 +52,7 @@ func (s *Startup) Start() {
 
 func (s *Startup) loadApplications() {
 	for _, application := range s.configuration.Applications {
-		s.mediator.ApplicationInit.Enqueue(application)
+		go s.mediator.ApplicationInit.Enqueue(application)
 	}
 }
 
