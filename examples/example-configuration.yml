@@ -64,7 +64,7 @@ applications:
           working_dir: /nginx-hello
           start_healthchecking: true
           timeout: 10
-        - command: 'docker run -p {{port2}}:80 -d nginxdemos/hello | xargs -I % echo "polo[container_id_2=%]"' # Pipe not working yet
+        - command: 'docker run -p {{port2}}:80 -d nginxdemos/hello | xargs -I % echo "polo[container_id_2=%]"'
       stop: # At least one stop command is mandatory
         - command: "docker kill {{container_id}}"
         - command: "docker kill {{container_id_2}}"
