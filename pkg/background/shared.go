@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/phayes/freeport"
-	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/models"
 )
 
@@ -30,7 +29,7 @@ func parseSessionCommandOuput(session *models.Session, command *models.Command, 
 		key := variable[1]
 		value := variable[2]
 		session.Variables[key] = value
-		log.Warnf("\t[S:%s] Setting variable %s=%s", session.UUID, key, value)
+		session.LogWarn(fmt.Sprintf("Setting variable %s=%s", key, value))
 	}
 
 	if command.OutputVariable != "" {

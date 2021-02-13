@@ -5,7 +5,6 @@ import (
 	"os"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/utils"
 )
@@ -49,7 +48,7 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 			for {
 				select {
 				case <-sessionStopContext.Done():
-					log.Warnf("\t[S:%s] Destruction aborted", session.UUID)
+					session.LogWarn("Destruction aborted")
 					w.mediator.CleanSession.Enqueue(session, models.SessionStatusStopFailed)
 					return
 				case <-done:
@@ -69,7 +68,6 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 				builtCommand, err := buildCommand(command.Command, session)
 				if err != nil {
 					session.LogError(err.Error())
-					log.Errorf("[S:%s] %s", session.UUID, err.Error())
 					if !command.ContinueOnError {
 						session.LogError("Halting")
 						cancelSessionStop()
@@ -86,13 +84,11 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 					cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
 				}
 				err = utils.ExecCmds(func(sl *utils.StdLine) {
-					log.Infof("\t\t[S:%s (stdout)> ] %s", session.UUID, sl.Line)
 					session.LogStdout(sl.Line)
 				}, cmds...)
 
 				if err != nil {
 					session.LogError(err.Error())
-					log.Errorf("[S:%s] %s", session.UUID, err.Error())
 					if !command.ContinueOnError {
 						session.LogError("Halting")
 						cancelSessionStop()

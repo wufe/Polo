@@ -123,7 +123,8 @@ func (s *Session) GetByUUID(uuid string) *models.Session {
 func (s *Session) GetAllAliveSessions() []*models.Session {
 	filteredSessions := []*models.Session{}
 	for _, session := range s.sessions {
-		if session.Status.IsAlive() {
+		status := session.GetStatus()
+		if status.IsAlive() {
 			filteredSessions = append(filteredSessions, session)
 		}
 	}

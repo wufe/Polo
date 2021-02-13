@@ -122,7 +122,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 	var session *models.Session
 	if input.PreviousSession == nil {
 		sessionUUID := uuid.NewString()
-		log.Infof("\t[S:%s] Building session.", sessionUUID)
+
 		session = models.NewSession(&models.Session{
 			UUID:        sessionUUID,
 			Name:        input.Application.Name,
@@ -172,11 +172,6 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 			input.Application,
 		)
 		if sessionAlreadyBeingBuilt != nil {
-			log.Warnf(
-				"Another session with the UUID %s has already being requested for checkout %s",
-				sessionAlreadyBeingBuilt.UUID,
-				input.Checkout,
-			)
 			session.LogWarn(fmt.Sprintf("Another session with the UUID %s has already being requested for checkout %s", sessionAlreadyBeingBuilt.UUID, input.Checkout))
 			return &queues.SessionBuildResult{
 				Result:  queues.SessionBuildResultSucceeded,
@@ -221,7 +216,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 	calcBuildMetrics := models.NewMetricsForSession(session)("Build")
 	err := w.prepareFolders(session)
 	if err != nil {
-		log.Errorf("Could not build session commit structure: %s", err.Error())
+		session.LogError(fmt.Sprintf("Could not build session commit structure: %s", err.Error()))
 		abort()
 		session.SetKillReason(models.KillReasonBuildFailed)
 		w.mediator.CleanSession.Enqueue(session, models.SessionStatusStartFailed)
@@ -234,8 +229,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 		for {
 			select {
 			case <-quit:
-				log.Warnf("\t[S:%s] Execution aborted", session.UUID)
-				session.LogError("Execution aborted (sessionStartContext ended)")
+				session.LogError("Execution aborted")
 				session.SetKillReason(models.KillReasonBuildFailed)
 				w.mediator.CleanSession.Enqueue(session, models.SessionStatusStartFailed)
 				return
@@ -246,7 +240,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 	}()
 	healthcheckingStarted, err := w.execCommands(sessionStartContext, session, session.Application.Commands.Start)
 	if err != nil {
-		log.Errorf("\t[S:%s] %s", session.UUID, err.Error())
+		session.LogError(err.Error())
 		abort()
 		return
 	}
@@ -258,7 +252,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 		if session.Status != models.SessionStatusStarted {
 			w.mediator.StartSession.Enqueue(session)
 		}
-		log.Infof("\t[S:%s] Session started", session.UUID)
+		session.LogInfo("Session started")
 	} else {
 		if !healthcheckingStarted {
 			w.mediator.HealthcheckSession.Enqueue(session)
@@ -295,12 +289,10 @@ func (w *SessionBuildWorker) execCommands(ctx context.Context, session *models.S
 			err := w.execCommand(ctx, &command, session)
 
 			if err != nil {
-				session.LogError(err.Error())
-
 				if !command.ContinueOnError {
 					return healthcheckingStarted, err
 				} else {
-					log.Errorf("\t[S:%s] %s", session.UUID, err.Error())
+					session.LogError(err.Error())
 				}
 			} else {
 				w.sessionStorage.Update(session)
@@ -319,7 +311,6 @@ func (w *SessionBuildWorker) execCommand(ctx context.Context, command *models.Co
 	if err != nil {
 		return err
 	}
-	log.Infof("\t[S:%s (stdin)> ] %s", session.UUID, builtCommand)
 	session.LogStdin(builtCommand)
 
 	cmdCtx := ctx
@@ -340,10 +331,8 @@ func (w *SessionBuildWorker) execCommand(ctx context.Context, command *models.Co
 	err = utils.ExecCmds(func(line *utils.StdLine) {
 		if line.Type == utils.StdTypeOut {
 			session.LogStdout(line.Line)
-			log.Infof("\t\t[S:%s (stdout)> ] %s", session.UUID, line.Line)
 		} else {
 			session.LogStderr(line.Line)
-			log.Errorf("\t[S:%s (stderr)> ] %s", session.UUID, line.Line)
 		}
 		parseSessionCommandOuput(session, command, line.Line)
 	}, cmds...)

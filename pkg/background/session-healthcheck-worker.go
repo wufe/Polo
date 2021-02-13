@@ -99,7 +99,7 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 				retryCount++
 
 				if session.Status == models.SessionStatusStarted {
-					log.Errorf("\t[S:%s] Session health degraded", session.UUID)
+					session.LogWarn("Session health degraded")
 					session.SetStatus(models.SessionStatusDegraded)
 				}
 				if retryCount >= maxRetries {
@@ -108,16 +108,16 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 						session.SetKillReason(models.KillReasonHealthcheckFailed)
 					}
 
-					log.Errorf("\t[S:%s] Session healthcheck failed. Destroying session", session.UUID)
+					session.LogError("Session healthcheck failed. Destroying session")
 					w.mediator.DestroySession.Enqueue(session, nil)
 					w.sessions.Remove(session)
 					return
 				}
 
-				log.Errorf("\t[S:%s][%d/%d] Session healthcheck failed. Retrying in %d seconds", session.UUID, retryCount, maxRetries, session.Application.Healthcheck.RetryInterval)
+				session.LogError(fmt.Sprintf("[%d/%d] Session healthcheck failed. Retrying in %d seconds", retryCount, maxRetries, session.Application.Healthcheck.RetryInterval))
 			} else {
-				if session.Status == models.SessionStatusStarting {
-					log.Infof("\t[S:%s] Session available", session.UUID)
+				if session.GetStatus() == models.SessionStatusStarting {
+					session.LogInfo("Session available")
 				}
 				if session.Status != models.SessionStatusStarted {
 					w.mediator.StartSession.Chan <- session

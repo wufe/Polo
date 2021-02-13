@@ -3,7 +3,6 @@ package background
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
 )
@@ -32,7 +31,7 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 			session.LogInfo("Cleaning up session")
 			session.SetStatus(sessionToClean.Status)
 			w.sessionStorage.Delete(session)
-			log.Warnf("\t[S:%s] Session cleaned up.", session.UUID)
+			session.LogInfo("Session cleaned up")
 
 			killReason := session.GetKillReason()
 
@@ -43,11 +42,9 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 					if retriesCount < maxRetries {
 						retriesCount++
 						session.LogWarn(fmt.Sprintf("[%d/%d] Retrying session startup.", retriesCount, maxRetries))
-						log.Warnf("\t[S:%s][%d/%d] Retrying session startup.", session.UUID, retriesCount, maxRetries)
 						w.mediator.BuildSession.Enqueue(session.Checkout, session.Application, session)
 					} else {
-						session.LogError("Max startup retries exceeded.")
-						log.Warnf("\t[S:%s] Session's max startup retries exceeded.", session.UUID)
+						session.LogWarn("Max startup retries exceeded.")
 					}
 				}
 			}

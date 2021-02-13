@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/utils"
 )
 
@@ -39,6 +40,7 @@ func (status SessionStatus) IsAlive() bool {
 type Session struct {
 	sync.Locker     `json:"-"`
 	UUID            string        `json:"uuid"`
+	ShortUUID       string        `json:"-"`
 	Name            string        `json:"name"`
 	Target          string        `json:"target"`
 	Port            int           `json:"port"`
@@ -72,6 +74,7 @@ func (v Variables) ApplyTo(str string) string {
 func NewSession(
 	session *Session,
 ) *Session {
+	session.ShortUUID = strings.Split(session.UUID, "-")[0]
 	session.Locker = utils.GetMutex()
 	session.ApplicationName = session.Application.Name
 	session.Status = SessionStatusStarting
@@ -93,6 +96,7 @@ func NewSession(
 
 func (session *Session) LogCritical(message string) {
 	session.Lock()
+	log.Errorf(fmt.Sprintf("\t[%s]: %s", session.ShortUUID, message))
 	defer session.Unlock()
 	session.Logs = append(
 		session.Logs,
@@ -102,6 +106,7 @@ func (session *Session) LogCritical(message string) {
 
 func (session *Session) LogError(message string) {
 	session.Lock()
+	log.Errorf(fmt.Sprintf("\t[%s]: %s", session.ShortUUID, message))
 	defer session.Unlock()
 	session.Logs = append(
 		session.Logs,
@@ -111,6 +116,7 @@ func (session *Session) LogError(message string) {
 
 func (session *Session) LogWarn(message string) {
 	session.Lock()
+	log.Warnf(fmt.Sprintf("\t[%s]: %s", session.ShortUUID, message))
 	defer session.Unlock()
 	session.Logs = append(
 		session.Logs,
@@ -120,6 +126,7 @@ func (session *Session) LogWarn(message string) {
 
 func (session *Session) LogInfo(message string) {
 	session.Lock()
+	log.Infof(fmt.Sprintf("\t[%s]: %s", session.ShortUUID, message))
 	defer session.Unlock()
 	session.Logs = append(
 		session.Logs,
@@ -129,6 +136,7 @@ func (session *Session) LogInfo(message string) {
 
 func (session *Session) LogDebug(message string) {
 	session.Lock()
+	log.Debugf(fmt.Sprintf("\t[%s]: %s", session.ShortUUID, message))
 	defer session.Unlock()
 	session.Logs = append(
 		session.Logs,
@@ -138,6 +146,7 @@ func (session *Session) LogDebug(message string) {
 
 func (session *Session) LogTrace(message string) {
 	session.Lock()
+	log.Tracef(fmt.Sprintf("\t[%s]: %s", session.ShortUUID, message))
 	defer session.Unlock()
 	session.Logs = append(
 		session.Logs,
@@ -147,6 +156,7 @@ func (session *Session) LogTrace(message string) {
 
 func (session *Session) LogStdin(message string) {
 	session.Lock()
+	log.Infof(fmt.Sprintf("\t\t[%s (stdin)>]: %s", session.ShortUUID, message))
 	defer session.Unlock()
 	session.Logs = append(
 		session.Logs,
@@ -156,6 +166,7 @@ func (session *Session) LogStdin(message string) {
 
 func (session *Session) LogStdout(message string) {
 	session.Lock()
+	log.Infof(fmt.Sprintf("\t\t[%s (stdout)>]: %s", session.ShortUUID, message))
 	defer session.Unlock()
 	session.Logs = append(
 		session.Logs,
@@ -165,6 +176,7 @@ func (session *Session) LogStdout(message string) {
 
 func (session *Session) LogStderr(message string) {
 	session.Lock()
+	log.Infof(fmt.Sprintf("\t\t[%s (stderr)>]: %s", session.ShortUUID, message))
 	defer session.Unlock()
 	session.Logs = append(
 		session.Logs,
