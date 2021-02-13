@@ -116,10 +116,11 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 
 				session.LogError(fmt.Sprintf("[%d/%d] Session healthcheck failed. Retrying in %d seconds", retryCount, maxRetries, session.Application.Healthcheck.RetryInterval))
 			} else {
-				if session.GetStatus() == models.SessionStatusStarting {
+				status := session.GetStatus()
+				if status == models.SessionStatusStarting {
 					session.LogInfo("Session available")
 				}
-				if session.Status != models.SessionStatusStarted {
+				if status != models.SessionStatusStarted {
 					w.mediator.StartSession.Chan <- session
 				}
 				retryCount = 0
