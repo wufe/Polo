@@ -6,10 +6,17 @@ import (
 	"github.com/sasha-s/go-deadlock"
 )
 
-func GetMutex() sync.Locker {
+type RWLocker interface {
+	Lock()
+	Unlock()
+	RLock()
+	RUnlock()
+}
+
+func GetMutex() RWLocker {
 	if IsDev() && IsDebugRace() {
-		return &deadlock.Mutex{}
+		return &deadlock.RWMutex{}
 	} else {
-		return &sync.Mutex{}
+		return &sync.RWMutex{}
 	}
 }

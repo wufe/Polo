@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -22,7 +21,7 @@ var (
 )
 
 type Application struct {
-	sync.Locker             `json:"-"`
+	utils.RWLocker          `json:"-"`
 	Status                  ApplicationStatus         `json:"status" yaml:"-"`
 	Auth                    Auth                      `json:"-"`
 	Name                    string                    `json:"name"`
@@ -127,7 +126,7 @@ type Branch struct {
 }
 
 func NewApplication(application *Application) (*Application, error) {
-	application.Locker = utils.GetMutex()
+	application.RWLocker = utils.GetMutex()
 	application.Status = ApplicationStatusLoading
 	if application.Name == "" {
 		return nil, errors.New("application.name (required) not defined")
@@ -238,6 +237,8 @@ func NewApplication(application *Application) (*Application, error) {
 }
 
 func (application *Application) GetAuth() (transport.AuthMethod, error) {
+	application.RLock()
+	defer application.RUnlock()
 	if application.Auth == (Auth{}) {
 		return nil, nil
 	}
@@ -273,6 +274,12 @@ func (a *Application) WithLock(f func(*Application)) {
 	f(a)
 }
 
+func (a *Application) WithRLock(f func(*Application)) {
+	a.RLock()
+	defer a.RUnlock()
+	f(a)
+}
+
 func (a *Application) SetFolder(folder string) {
 	a.Lock()
 	defer a.Unlock()
@@ -286,8 +293,8 @@ func (a *Application) SetBaseFolder(baseFolder string) {
 }
 
 func (a *Application) GetStatus() ApplicationStatus {
-	a.Lock()
-	defer a.Unlock()
+	a.RLock()
+	defer a.RUnlock()
 	return a.Status
 }
 

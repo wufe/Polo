@@ -88,7 +88,8 @@ func (w *SessionBuildWorker) startSessionInactivityTimer(session *models.Session
 	session.SetInactiveAt(time.Now().Add(time.Second * time.Duration(session.Application.Recycle.InactivityTimeout)))
 	go func() {
 		for {
-			if session.Status != models.SessionStatusStarted {
+			status := session.GetStatus()
+			if status != models.SessionStatusStarted {
 				return
 			}
 

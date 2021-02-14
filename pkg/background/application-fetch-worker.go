@@ -44,59 +44,83 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 
 	// TODO: Handle all these errors
 
-	registerHash, watchResults := w.registerObjectHash(application)
-
 	auth, err := application.GetAuth()
 	if err != nil {
 		return
 	}
 
+	var appName string
+	var baseFolder string
+	var watch models.Watch
+
+	application.WithRLock(func(a *models.Application) {
+		appName = a.Name
+		baseFolder = a.BaseFolder
+		watch = a.Watch
+	})
+
+	objectsToHashMap := make(map[string]string)
+	hashToObjectsMap := make(map[string]*models.RemoteObject)
+	appBranches := make(map[string]*models.Branch)
+	appTags := []string{}
+	appCommits := []string{}
+	appCommitMap := make(map[string]*object.Commit)
+
+	checkObjectExists := func(hashToObjectsMap map[string]*models.RemoteObject) func(hash string) {
+		return func(hash string) {
+			if _, exists := hashToObjectsMap[hash]; !exists {
+				hashToObjectsMap[hash] = &models.RemoteObject{
+					Branches: []string{},
+					Tags:     []string{},
+				}
+			}
+		}
+	}(hashToObjectsMap)
+
+	registerHash, watchResults := w.registerObjectHash(objectsToHashMap, watch)
+
 	gitClient := versioning.GetGitClient(application, auth)
 
 	// Open repository
-	repo, err := git.PlainOpen(application.BaseFolder)
+	repo, err := git.PlainOpen(baseFolder)
 	defaultApplicationErrorLog(application, err)
 	if err != nil {
 		return
 	}
 
 	// Fetch
-	err = gitClient.FetchAll(application.BaseFolder)
+	err = gitClient.FetchAll(baseFolder)
 	defaultApplicationErrorLog(application, err, git.NoErrAlreadyUpToDate)
 
 	// Branches
 	branches, err := repo.Branches()
 	defaultApplicationErrorLog(application, err)
 	refPrefix := "refs/heads/"
-	application.Branches = make(map[string]*models.Branch)
 	branches.ForEach(func(ref *plumbing.Reference) error {
 		refName := ref.Name().String()
+		refHash := ref.Hash().String()
+
 		if !strings.HasPrefix(refName, refPrefix) {
 			return nil
 		}
 		branchName := refName[len(refPrefix):]
 
-		registerHash(branchName, ref.Hash().String())
-		registerHash(fmt.Sprintf("origin/%s", branchName), ref.Hash().String())
-		registerHash(ref.Name().String(), ref.Hash().String())
+		registerHash(branchName, refHash)
+		registerHash(fmt.Sprintf("origin/%s", branchName), refHash)
+		registerHash(ref.Name().String(), refHash)
 
-		if application.HashToObjectsMap[ref.Hash().String()] == nil {
-			application.HashToObjectsMap[ref.Hash().String()] = &models.RemoteObject{
-				Branches: []string{},
-				Tags:     []string{},
-			}
-		}
+		checkObjectExists(refHash)
 
-		application.HashToObjectsMap[ref.Hash().String()].Branches = appendWithoutDup(application.HashToObjectsMap[ref.Hash().String()].Branches, branchName)
+		hashToObjectsMap[refHash].Branches = appendWithoutDup(hashToObjectsMap[refHash].Branches, branchName)
 
 		commit, err := repo.CommitObject(ref.Hash())
 		if err != nil {
 			return err
 		}
 
-		application.Branches[branchName] = &models.Branch{
+		appBranches[branchName] = &models.Branch{
 			Name:    branchName,
-			Hash:    ref.Hash().String(),
+			Hash:    refHash,
 			Author:  commit.Author.Email,
 			Date:    commit.Author.When,
 			Message: commit.Message,
@@ -116,23 +140,20 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 	tagPrefix := "refs/tags/"
 	err = tags.ForEach(func(ref *plumbing.Reference) error {
 		refName := ref.Name().String()
+		refHash := ref.Hash().String()
+
 		if !strings.HasPrefix(refName, tagPrefix) {
 			return nil
 		}
+
 		tagName := refName[len(tagPrefix):]
-		registerHash(tagName, ref.Hash().String())
+		registerHash(tagName, refHash)
 
-		application.Tags = appendWithoutDup(application.Tags, tagName)
-		registerHash(refName, ref.Hash().String())
+		appTags = appendWithoutDup(appTags, tagName)
+		registerHash(refName, refHash)
+		checkObjectExists(refHash)
 
-		if application.HashToObjectsMap[ref.Hash().String()] == nil {
-			application.HashToObjectsMap[ref.Hash().String()] = &models.RemoteObject{
-				Branches: []string{},
-				Tags:     []string{},
-			}
-		}
-
-		application.HashToObjectsMap[ref.Hash().String()].Tags = appendWithoutDup(application.HashToObjectsMap[ref.Hash().String()].Tags, tagName)
+		hashToObjectsMap[refHash].Tags = appendWithoutDup(hashToObjectsMap[refHash].Tags, tagName)
 
 		return nil
 	})
@@ -147,16 +168,24 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 		return
 	}
 
-	application.Commits = []string{}
-
 	err = logs.ForEach(func(commit *object.Commit) error {
-		registerHash(commit.Hash.String(), commit.Hash.String())
-		application.Commits = append(application.Commits, commit.Hash.String())
-		application.CommitMap[commit.Hash.String()] = commit
+		commitHash := commit.Hash.String()
+		registerHash(commitHash, commitHash)
+		appCommits = append(appCommits, commitHash)
+		appCommitMap[commitHash] = commit
 		return nil
 	})
 
-	log.Infof("[APP:%s] Found %d commits", application.Name, len(application.Commits))
+	log.Infof("[APP:%s] Found %d commits", appName, len(appCommits))
+
+	application.WithLock(func(a *models.Application) {
+		a.ObjectsToHashMap = objectsToHashMap
+		a.HashToObjectsMap = hashToObjectsMap
+		a.Branches = appBranches
+		a.Tags = appTags
+		a.Commits = appCommits
+		a.CommitMap = appCommitMap
+	})
 
 	if !watchObjects {
 		return
@@ -166,31 +195,36 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 		sessions := w.sessionStorage.GetAllAliveSessions()
 		var foundSession *models.Session
 		for _, session := range sessions {
-			if session.Application == application && (session.Checkout == ref) {
+
+			sessionAppName := session.ApplicationName
+			sessionCheckout := session.Checkout
+
+			if sessionAppName == appName && (sessionCheckout == ref) {
 				foundSession = session
 			}
 		}
 		buildSession := requestSessionBuilder(application, ref)
 		if foundSession != nil {
-			if foundSession.CommitID != hash {
-				log.Infof("[APP:%s][WATCH] Detected new commit on %s", application.Name, ref)
+			sessionCommitID := foundSession.CommitID
+			if sessionCommitID != hash {
+				log.Infof("[APP:%s][WATCH] Detected new commit on %s", appName, ref)
 				w.mediator.DestroySession.Enqueue(foundSession, func(s *models.Session) {
 					buildSession(w.mediator)
 				})
 			}
 		} else {
-			log.Infof("[APP:%s][WATCH] Auto-start on %s", application.Name, ref)
+			log.Infof("[APP:%s][WATCH] Auto-start on %s", appName, ref)
 			buildSession(w.mediator)
 		}
 	}
 }
 
-func (w *ApplicationFetchWorker) registerObjectHash(a *models.Application) (func(refName string, hash string), *map[string]string) {
+func (w *ApplicationFetchWorker) registerObjectHash(objectsToHashMap map[string]string, watch models.Watch) (func(refName string, hash string), *map[string]string) {
 	watchResults := make(map[string]string)
 	watchedHashes := make(map[string]bool)
 	return func(refName, hash string) {
-		a.ObjectsToHashMap[refName] = hash
-		if a.Watch.Contains(refName) {
+		objectsToHashMap[refName] = hash
+		if watch.Contains(refName) {
 			if _, ok := watchedHashes[hash]; !ok {
 				watchResults[refName] = hash
 				watchedHashes[hash] = true
