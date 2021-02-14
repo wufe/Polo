@@ -58,14 +58,11 @@ This diagram represents the states walked since the request of a session to its 
 ***
 
 ## Known issues / missing features
-- Add command line interface (e.g. polo reload)
-- Add command to reload applications
 - Add support to command concatenations (; and &&)
 - Update session-helper design
 - Update session page design (estimated time required, progress bar)
 - Add "warmup" endpoints
 - Ended sessions cleanup (folder structure)
 - Add possibility to manually trigger a fetch in a git application folder
-- Configuration reload
 - Configuration reload via watching files
 - Configuration CRUD via UI
