@@ -18,6 +18,7 @@ export const ManagerApp = () => {
         justify-stretch
         min-w-0
         min-h-0
+        relative
         text-black
         bg-gradient-to-br
         from-gray-50
@@ -47,5 +48,10 @@ export const ManagerApp = () => {
                 </Switch>
             </React.Suspense>
         </BrowserRouter>
+        <div className="absolute right-5 bottom-5 z-10 uppercase text-xs tracking-widest flex items-center">
+            <a className="" target="_blank" href="https://github.com/wufe/polo">
+                Powered by <b>@wufe/polo</b>
+            </a>
+        </div>
     </div>;
 }

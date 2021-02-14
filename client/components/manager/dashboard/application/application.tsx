@@ -58,10 +58,10 @@ export const Application = observer((props: TProps) => {
                     className="text-sm overflow-hidden overflow-ellipsis whitespace-nowrap"
                     title={props.application.remote}>{props.application.remote}</div>
             </div>
-            {open && <svg className="absolute right-10 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {open && <svg width={16} height={16} className="absolute right-10 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>}
-            {!open && <svg className="absolute right-10 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {!open && <svg width={16} height={16} className="absolute right-10 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>}
         </div>

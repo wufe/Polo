@@ -62,7 +62,7 @@ module.exports = env => ({
                 ]
             },
             { test: /\.hbs$/, loader: 'handlebars-loader' },
-            { test: /\.png$/, loader: 'file-loader' },
+            { test: /\.(png|svg)$/, loader: 'file-loader' },
 
         ]
     },
