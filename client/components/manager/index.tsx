@@ -30,7 +30,7 @@ export const ManagerApp = () => {
                 <a href="/_polo_/">
                     <picture>
                         <source srcSet={whiteLogo} media="(prefers-color-scheme: dark)" />
-                        <img src={blackLogo} width="200" className="cursor-pointer" />
+                        <img src={blackLogo} width="200" className="cursor-pointer inline-block" />
                     </picture>
                 </a>
             </div>
