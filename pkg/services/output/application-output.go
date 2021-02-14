@@ -20,6 +20,7 @@ type Application struct {
 	MaxConcurrentSessions int               `json:"maxConcurrentSessions"`
 	Port                  PortConfiguration `json:"port"`
 	UseFolderCopy         bool              `json:"useFolderCopy"`
+	CleanOnExit           bool              `json:"cleanOnExit"`
 	Folder                string            `json:"folder"`
 	BaseFolder            string            `json:"baseFolder"`
 	Branches              map[string]Branch `json:"branches"`

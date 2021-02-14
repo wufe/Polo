@@ -40,6 +40,7 @@ type Application struct {
 	MaxConcurrentSessions   int                       `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
 	Port                    PortConfiguration         `yaml:"port" json:"port"`
 	UseFolderCopy           bool                      `yaml:"use_folder_copy" json:"useFolderCopy"`
+	CleanOnExit             *bool                     `yaml:"clean_on_exit" json:"cleanOnExit" default:"true"`
 	Folder                  string                    `yaml:"-" json:"folder"`
 	BaseFolder              string                    `yaml:"-" json:"baseFolder"`
 	ObjectsToHashMap        map[string]string         `yaml:"-" json:"-"`
@@ -130,6 +131,10 @@ func NewApplication(application *Application) (*Application, error) {
 	application.Status = ApplicationStatusLoading
 	if application.Name == "" {
 		return nil, errors.New("application.name (required) not defined")
+	}
+	if application.CleanOnExit == nil {
+		cleanOnExit := true
+		application.CleanOnExit = &cleanOnExit
 	}
 	if application.Watch == nil {
 		application.Watch = []string{}

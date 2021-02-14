@@ -29,6 +29,7 @@ func MapApplication(model *models.Application) *output.Application {
 		MaxConcurrentSessions: model.MaxConcurrentSessions,
 		Port:                  MapPort(model.Port),
 		UseFolderCopy:         model.UseFolderCopy,
+		CleanOnExit:           *model.CleanOnExit,
 		Folder:                model.Folder,
 		BaseFolder:            model.BaseFolder,
 		Branches:              MapBranches(model.Branches),
