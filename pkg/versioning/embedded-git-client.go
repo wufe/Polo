@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 )
 
@@ -24,6 +25,21 @@ func (client *EmbeddedGitClient) Clone(baseFolder string, outFolder string, remo
 		Auth: client.Auth,
 	})
 	return err
+}
+
+func (client *EmbeddedGitClient) HardReset(repoFolder string, commit string) error {
+	repo, err := git.PlainOpen(repoFolder)
+	if err != nil {
+		return err
+	}
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+	return worktree.Reset(&git.ResetOptions{
+		Mode:   git.HardReset,
+		Commit: plumbing.NewHash(commit),
+	})
 }
 
 func (client *EmbeddedGitClient) FetchAll(repoFolder string) error {

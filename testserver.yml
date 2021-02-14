@@ -3,7 +3,6 @@ applications:
     remote: "https://github.com/wufe/polo-testserver"
     target: "http://127.0.0.1:{{port}}"
     host: "my.app.host.dev"
-    use_git_cli: true
     fetch:
       interval: 30
     watch:

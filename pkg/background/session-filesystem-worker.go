@@ -5,11 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/kennygrant/sanitize"
 	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/models"
+	"github.com/wufe/polo/pkg/utils"
 	"github.com/wufe/polo/pkg/versioning"
 )
 
@@ -43,8 +42,16 @@ func (w *SessionFilesystemWorker) startAcceptingFSRequests() {
 func (w *SessionFilesystemWorker) buildSessionCommitStructure(session *models.Session) (string, error) {
 
 	session.LogInfo(fmt.Sprintf("Trying to build session commit structure in folder %s", session.Application.Folder))
-
 	checkout := sanitize.Name(session.CommitID)
+	useFolderCopy := session.Application.UseFolderCopy
+
+	if useFolderCopy {
+		return buildStructureCopying(session, checkout)
+	}
+	return buildStructureCloning(session, checkout)
+}
+
+func buildStructureCopying(session *models.Session, checkout string) (string, error) {
 
 	auth, err := session.Application.GetAuth()
 	if err != nil {
@@ -54,19 +61,62 @@ func (w *SessionFilesystemWorker) buildSessionCommitStructure(session *models.Se
 
 	gitClient := versioning.GetGitClient(session.Application, auth)
 
+	applicationBaseFolder := session.Application.BaseFolder
 	sessionCommitFolder := filepath.Join(session.Application.Folder, checkout)
+	sessionCommit := session.CommitID
+
+	// If the folder exists delete it
+	if _, err := os.Stat(sessionCommitFolder); err != nil {
+		session.LogInfo(fmt.Sprintf("Removing folder %s", sessionCommitFolder))
+		err := os.RemoveAll(sessionCommitFolder)
+		if err != nil {
+			session.LogError(fmt.Sprintf("Error while deleting commit folder: %s", err.Error()))
+			return "", err
+		}
+	}
+
+	session.LogInfo("Performing an hard reset to the selected commit")
+	err = gitClient.HardReset(applicationBaseFolder, sessionCommit)
+	if err != nil {
+		session.LogError(fmt.Sprintf("Error while performing hard reset: %s", err.Error()))
+		return "", err
+	}
+
+	// Copy directories except .git folder
+	session.LogInfo(fmt.Sprintf("Copying files from %s to %s", applicationBaseFolder, sessionCommitFolder))
+	err = utils.CopyDir(applicationBaseFolder, sessionCommitFolder, func(fi os.FileInfo) bool {
+		return fi.Name() != ".git"
+	})
+
+	if err != nil {
+		session.LogError(fmt.Sprintf("Error while copying source directory: %s", err.Error()))
+		return "", err
+	}
+
+	return sessionCommitFolder, err
+}
+
+func buildStructureCloning(session *models.Session, checkout string) (string, error) {
+	auth, err := session.Application.GetAuth()
+	if err != nil {
+		session.LogError(fmt.Sprintf("Error while providing authentication: %s", err.Error()))
+		return "", err
+	}
+
+	gitClient := versioning.GetGitClient(session.Application, auth)
+
+	applicationRemote := session.Application.Remote
+	applicationBaseFolder := session.Application.BaseFolder
+	sessionCommitFolder := filepath.Join(session.Application.Folder, checkout)
+	sessionCommit := session.CommitID
+
 	if _, err := os.Stat(sessionCommitFolder); os.IsNotExist(err) {
-		session.LogInfo(fmt.Sprintf("Cloning from remote %s into %s", session.Application.Remote, sessionCommitFolder))
-		err := gitClient.Clone(session.Application.Folder, checkout, session.Application.Remote)
+		session.LogInfo(fmt.Sprintf("Cloning from remote %s into %s", applicationRemote, sessionCommitFolder))
+		err := gitClient.Clone(session.Application.Folder, checkout, applicationRemote)
 		if err != nil {
 			session.LogError(fmt.Sprintf("Error while cloning: %s", err.Error()))
 			return "", err
 		}
-	}
-	repo, err := git.PlainOpen(sessionCommitFolder)
-	if err != nil {
-		session.LogError(fmt.Sprintf("Error while using existing repository: %s", err.Error()))
-		return "", err
 	}
 
 	session.LogInfo("Fetching from remote")
@@ -76,17 +126,8 @@ func (w *SessionFilesystemWorker) buildSessionCommitStructure(session *models.Se
 		return "", err
 	}
 
-	worktree, err := repo.Worktree()
-	if err != nil {
-		session.LogError(fmt.Sprintf("Error while retrieving worktree: %s", err.Error()))
-		return "", err
-	}
-
 	session.LogInfo("Performing an hard reset to the selected commit")
-	err = worktree.Reset(&git.ResetOptions{
-		Mode:   git.HardReset,
-		Commit: plumbing.NewHash(session.CommitID),
-	})
+	err = gitClient.HardReset(applicationBaseFolder, sessionCommit)
 	if err != nil {
 		session.LogError(fmt.Sprintf("Error while performing hard reset: %s", err.Error()))
 		return "", err

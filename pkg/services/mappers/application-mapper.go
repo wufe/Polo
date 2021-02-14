@@ -28,7 +28,7 @@ func MapApplication(model *models.Application) *output.Application {
 		Commands:              MapCommands(model.Commands),
 		MaxConcurrentSessions: model.MaxConcurrentSessions,
 		Port:                  MapPort(model.Port),
-		UseGitCLI:             model.UseGitCLI,
+		UseFolderCopy:         model.UseFolderCopy,
 		Folder:                model.Folder,
 		BaseFolder:            model.BaseFolder,
 		Branches:              MapBranches(model.Branches),

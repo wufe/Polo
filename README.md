@@ -60,14 +60,11 @@ This diagram represents the states walked since the request of a session to its 
 ## Known issues / missing features
 - Add command line interface (e.g. polo reload)
 - Add command to reload applications
-- Print CLI errors on startup (cli & start commands)
 - Add support to command concatenations (; and &&)
 - Update session-helper design
 - Update session page design (estimated time required, progress bar)
 - Add "warmup" endpoints
 - Ended sessions cleanup (folder structure)
-- Add optional "copy mode" opposed to standard "clone mode" to initialize a application: copies the directory instead of cloning again
-- Pruning branches does not work with embedded git client (prune is not supported)
 - Add possibility to manually trigger a fetch in a git application folder
 - Configuration reload
 - Configuration reload via watching files

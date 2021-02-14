@@ -214,7 +214,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 		close(quit)
 	}
 
-	calcBuildMetrics := models.NewMetricsForSession(session)("Build")
+	calcBuildMetrics := models.NewMetricsForSession(session)("Build (total)")
 	err := w.prepareFolders(session)
 	if err != nil {
 		session.LogError(fmt.Sprintf("Could not build session commit structure: %s", err.Error()))

@@ -17,9 +17,9 @@ type Application struct {
 	Startup               Startup           `json:"startup"`
 	Recycle               Recycle           `json:"recycle"`
 	Commands              Commands          `json:"commands"`
-	MaxConcurrentSessions int               `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
-	Port                  PortConfiguration `yaml:"port" json:"port"`
-	UseGitCLI             bool              `yaml:"use_git_cli" json:"useGitCLI"`
+	MaxConcurrentSessions int               `json:"maxConcurrentSessions"`
+	Port                  PortConfiguration `json:"port"`
+	UseFolderCopy         bool              `json:"useFolderCopy"`
 	Folder                string            `json:"folder"`
 	BaseFolder            string            `json:"baseFolder"`
 	Branches              map[string]Branch `json:"branches"`

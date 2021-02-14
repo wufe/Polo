@@ -52,7 +52,12 @@ func (s *Startup) Start() {
 
 func (s *Startup) loadApplications() {
 	for _, application := range s.configuration.Applications {
-		go s.mediator.ApplicationInit.Enqueue(application)
+		go func(a *models.Application) {
+			err := s.mediator.ApplicationInit.Enqueue(a)
+			if err != nil {
+				log.Errorf("Error while loading application: %s", err.Error())
+			}
+		}(application)
 	}
 }
 

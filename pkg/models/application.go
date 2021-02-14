@@ -39,7 +39,7 @@ type Application struct {
 	Commands                Commands                  `json:"commands"`
 	MaxConcurrentSessions   int                       `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
 	Port                    PortConfiguration         `yaml:"port" json:"port"`
-	UseGitCLI               bool                      `yaml:"use_git_cli" json:"useGitCLI"`
+	UseFolderCopy           bool                      `yaml:"use_folder_copy" json:"useFolderCopy"`
 	Folder                  string                    `yaml:"-" json:"folder"`
 	BaseFolder              string                    `yaml:"-" json:"baseFolder"`
 	ObjectsToHashMap        map[string]string         `yaml:"-" json:"-"`
