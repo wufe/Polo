@@ -53,7 +53,6 @@ type Session struct {
 	MaxAge          int           `json:"maxAge"`
 	InactiveAt      time.Time     `json:"-"`
 	Folder          string        `json:"folder"`
-	CommandsLogs    []string      `json:"commandsLogs"`
 	Variables       Variables     `json:"variables"`
 	Metrics         []Metric      `json:"metrics"`
 	startupRetries  int
@@ -80,9 +79,6 @@ func NewSession(
 	session.Status = SessionStatusStarting
 	if session.Logs == nil {
 		session.Logs = []Log{}
-	}
-	if session.CommandsLogs == nil {
-		session.CommandsLogs = []string{}
 	}
 	if len(session.Variables) == 0 {
 		session.Variables = make(map[string]string)
@@ -266,6 +262,12 @@ func (session *Session) SetKillReason(reason KillReason) {
 	session.Lock()
 	defer session.Unlock()
 	session.killReason = reason
+}
+
+func (session *Session) SetVariable(k string, v string) {
+	session.Lock()
+	defer session.Unlock()
+	session.Variables[k] = v
 }
 
 func (session *Session) ResetVariables() {

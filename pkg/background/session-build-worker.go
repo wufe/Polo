@@ -218,8 +218,8 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 	err := w.prepareFolders(session)
 	if err != nil {
 		session.LogError(fmt.Sprintf("Could not build session commit structure: %s", err.Error()))
-		abort()
 		session.SetKillReason(models.KillReasonBuildFailed)
+		abort()
 		w.mediator.CleanSession.Enqueue(session, models.SessionStatusStartFailed)
 		return
 	}
@@ -231,7 +231,9 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 			select {
 			case <-quit:
 				session.LogError("Execution aborted")
-				session.SetKillReason(models.KillReasonBuildFailed)
+				if session.GetKillReason() == models.KillReasonNone {
+					session.SetKillReason(models.KillReasonBuildFailed)
+				}
 				w.mediator.CleanSession.Enqueue(session, models.SessionStatusStartFailed)
 				return
 			case <-done:
@@ -241,6 +243,9 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 	}()
 	healthcheckingStarted, err := w.execCommands(sessionStartContext, session, session.Application.Commands.Start)
 	if err != nil {
+		if err == ErrWrongSessionState {
+			session.SetKillReason(models.KillReasonStopped)
+		}
 		session.LogError(err.Error())
 		abort()
 		return
@@ -283,7 +288,8 @@ func (w *SessionBuildWorker) execCommands(ctx context.Context, session *models.S
 			return healthcheckingStarted, context.Canceled
 		default:
 
-			if session.Status != models.SessionStatusStarting {
+			status := session.GetStatus()
+			if status != models.SessionStatusStarting {
 				return healthcheckingStarted, ErrWrongSessionState
 			}
 

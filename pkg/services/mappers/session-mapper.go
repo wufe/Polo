@@ -22,7 +22,6 @@ func MapSession(model *models.Session) *output.Session {
 		Checkout:        model.Checkout,
 		MaxAge:          model.MaxAge,
 		Folder:          model.Folder,
-		CommandsLogs:    model.CommandsLogs,
 		Variables:       model.Variables,
 		Logs:            MapSessionLogs(model.Logs),
 		Metrics:         MapMetrics(model.Metrics),

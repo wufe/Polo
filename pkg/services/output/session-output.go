@@ -11,7 +11,6 @@ type Session struct {
 	Checkout        string            `json:"checkout"`
 	MaxAge          int               `json:"maxAge"`
 	Folder          string            `json:"folder"`
-	CommandsLogs    []string          `json:"commandsLogs"`
 	Variables       map[string]string `json:"variables"`
 	Logs            []SessionLog      `json:"logs"`
 	Metrics         []Metric          `json:"metrics"`

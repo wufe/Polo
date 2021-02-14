@@ -21,19 +21,18 @@ func getWorkingDir(baseDir string, commandWorkingDir string) string {
 }
 
 func parseSessionCommandOuput(session *models.Session, command *models.Command, output string) {
-	session.CommandsLogs = append(session.CommandsLogs, output)
-	session.Variables["last_output"] = output
+	session.SetVariable("last_output", output)
 	re := regexp.MustCompile(`polo\[([^\]]+?)=([^\]]+?)\]`)
 	matches := re.FindAllStringSubmatch(output, -1)
 	for _, variable := range matches {
 		key := variable[1]
 		value := variable[2]
-		session.Variables[key] = value
+		session.SetVariable(key, value)
 		session.LogWarn(fmt.Sprintf("Setting variable %s=%s", key, value))
 	}
 
 	if command.OutputVariable != "" {
-		session.Variables[command.OutputVariable] = output
+		session.SetVariable(command.OutputVariable, output)
 	}
 }
 
@@ -53,7 +52,7 @@ func addPortsOnDemand(input string, session *models.Session) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			session.Variables[portVariable] = fmt.Sprint(port)
+			session.SetVariable(portVariable, fmt.Sprint(port))
 		}
 	}
 	return input, nil
