@@ -34,7 +34,8 @@ type SessionStatus string
 func (status SessionStatus) IsAlive() bool {
 	return status != SessionStatusStartFailed &&
 		status != SessionStatusStopFailed &&
-		status != SessionStatusStopped
+		status != SessionStatusStopped &&
+		status != SessionStatusStopping
 }
 
 type Session struct {
