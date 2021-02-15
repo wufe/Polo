@@ -213,8 +213,23 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 				})
 			}
 		} else {
-			log.Infof("[APP:%s][WATCH] Auto-start on %s", appName, ref)
-			buildSession(w.mediator)
+
+			var lastSession *models.Session
+			allSessions := w.sessionStorage.GetByApplicationName(appName)
+			if len(allSessions) > 0 {
+				for _, s := range allSessions {
+					if s.Checkout == ref {
+						lastSession = s
+					}
+				}
+			}
+
+			if lastSession == nil ||
+				lastSession.GetKillReason() != models.KillReasonStopped {
+
+				log.Infof("[APP:%s][WATCH] Auto-start on %s", appName, ref)
+				buildSession(w.mediator)
+			}
 		}
 	}
 }

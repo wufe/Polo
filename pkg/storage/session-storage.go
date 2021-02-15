@@ -110,6 +110,16 @@ func (s *Session) AliveByApplicationCount(application *models.Application) int {
 	return count
 }
 
+func (s *Session) GetByApplicationName(app string) []*models.Session {
+	ret := []*models.Session{}
+	for _, session := range s.sessions {
+		if session.ApplicationName == app {
+			ret = append(ret, session)
+		}
+	}
+	return ret
+}
+
 func (s *Session) GetByUUID(uuid string) *models.Session {
 	var foundSession *models.Session
 	for _, session := range s.sessions {
