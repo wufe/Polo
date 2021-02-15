@@ -1,29 +1,34 @@
-import { IApplicationBranchModel } from '@/state/models';
+import { IApplication, IApplicationBranchModel } from '@/state/models';
 import { values } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 
 type TProps = {
-    branches: IApplicationBranchModel[];
+    branches: IApplication['branches'];
     onSessionCreationSubmission: (checkout: string) => void;
 }
 
 export const ApplicationBranches = observer((props: TProps) => {
+
+    const [openBranches, setOpenBranches] = useState<{[k:string]: boolean}>({});
+
+    const toggleBranch = (name: string) => setOpenBranches(b => ({...b, [name]: !b[name]}));
+
     return <>
-        <h4 className="my-2 text-gray-500 text-xs uppercase">Branches:</h4>
+        <h4 className="my-2 text-gray-500 text-xs uppercase px-6">Branches:</h4>
         <div className="divide-y dark:divide-gray-700">
-            {sortBranches(props.branches).map((branch, key) =>
+            {sortBranches(Array.from(props.branches.values())).map((branch, key) =>
                 <div
-                    className="grid items-start gap-2 grid-cols-12 pt-6 pb-4" key={key}>
-                    <div className="col-span-10">
+                    className="grid items-center gap-2 grid-cols-12 pt-1 pb-2 px-6 cursor-pointer dark:hover:bg-nord-1" key={key}>
+                    <div className="col-span-10" onClick={() => toggleBranch(branch.name)}>
                         <div className="text-xs text-gray-500 uppercase">Name</div>
                         <div className="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis" title={branch.name}>{branch.name}</div>
                     </div>
                     <span className="text-center col-span-2">
                         <span className="text-sm underline cursor-pointer inline-block mx-3 hover:text-blue-400" onClick={() => props.onSessionCreationSubmission(branch.name)}>Create session</span>
                     </span>
-                    <div className="col-span-12">
+                    <div className={`col-span-12 ${!openBranches[branch.name] && 'hidden'}`}>
                         <div className="grid grid-cols-12 gap-2 items-center p-3 bg-nord5 dark:bg-nord1 rounded-sm">
                             <div className="col-span-12">
                                 <div className="text-xs text-gray-500 uppercase">Message</div>
