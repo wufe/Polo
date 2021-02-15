@@ -62,12 +62,12 @@ func (h *Handler) RouteReverseProxyRequests() http.Handler {
 			if session == nil {
 				temporaryRedirect(w, "/_polo_/")
 			} else {
-				session.MarkAsBeingRequested()
 				h.sessionStorage.Update(session)
 				builder = h.buildSessionEnhancerProxy(session)
 
 				switch session.Status {
 				case models.SessionStatusStarted:
+					session.MarkAsBeingRequested()
 					TrackSession(w, session)
 					if usingSmartURL {
 						temporaryRedirect(w, "/")
@@ -77,13 +77,12 @@ func (h *Handler) RouteReverseProxyRequests() http.Handler {
 					}
 					break
 				case models.SessionStatusStarting:
+					temporaryRedirect(w, fmt.Sprintf("/_polo_/session/%s/", session.UUID))
 				case models.SessionStatusDegraded:
 					temporaryRedirect(w, fmt.Sprintf("/_polo_/session/%s/", session.UUID))
-					break
 				default:
 					UntrackSession(w)
 					temporaryRedirect(w, "/_polo_/")
-					break
 				}
 			}
 		}
