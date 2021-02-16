@@ -1,3 +1,5 @@
+global:
+  port: 7777
 applications:
   - name: test-server
     remote: "https://github.com/wufe/polo-testserver"
