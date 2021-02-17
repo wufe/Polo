@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { useScroll } from './scroll-hook';
+const { parse } = require('ansicolor');
 
 const colorsByLogType: {
     [key in SessionLogType]: string;
@@ -16,6 +17,25 @@ const colorsByLogType: {
     [SessionLogType.STDIN]: "#AAA",
     [SessionLogType.STDOUT]: "#a3be8c",
     [SessionLogType.STDERR]: "#d08770"
+}
+
+const parseMessage = (message: string) => {
+    try {
+        const parsed = parse(message);
+        return parsed.spans
+            .map(({ css, text }: { css: string; text: string; }, i: number) => {
+                const styles = css.split(';').reduce<{ [k: string]: string }>((acc, style) => {
+                    if (!style.trim())
+                        return acc;
+                    const [key, value] = style.trim().split(':');
+                    acc[key] = value;
+                    return acc;
+                }, {});
+                return <span style={styles} key={i}>{text}</span>
+            });
+    } catch {
+        return <span>{message}</span>
+    }
 }
 
 export const SessionLogs = observer((props: { logs: ISessionLog[], onLogsProportionChanged: (proportions: number) => void }) => {
@@ -32,7 +52,8 @@ export const SessionLogs = observer((props: { logs: ISessionLog[], onLogsProport
         {props.logs.map((log: ISessionLog, key) => {
             const color = colorsByLogType[log.type];
             return <p className="mx-10 leading-relaxed text-sm whitespace-nowrap max-w-full min-w-0 flex items-center" key={key}>
-                <span className="uppercase text-xs font-mono min-w-24 px-3">[{dayjs(log.when).format('HH:mm:ss')}]</span><span className="uppercase text-xs w-16 min-w-16" style={{ color }}>{log.type}:</span> <span>{log.message}</span>
+                <span className="uppercase text-xs font-mono min-w-24 px-3">[{dayjs(log.when).format('HH:mm:ss')}]</span><span className="uppercase text-xs w-16 min-w-16" style={{ color }}>{log.type}:</span>
+                {parseMessage(log.message)}
             </p>
         })}
     </div>
