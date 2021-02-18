@@ -59,6 +59,6 @@ body {
 
     transition: bottom ease-in-out 1s;
     @media (prefers-color-scheme: dark) {
-        background-image: linear-gradient(to bottom, #16181d, rgba(26, 29, 35, 0.9), rgba(29, 32, 39, .6), rgba(32, 36, 44, .2), rgba(36, 41, 50, 0));
+        background-image: linear-gradient(to bottom, #16181d, rgba(26, 29, 35, 0.9), rgba(29, 32, 39, .4), rgba(32, 36, 44, 0), rgba(36, 41, 50, 0));
     }
 }
