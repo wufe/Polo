@@ -38,6 +38,9 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 	}
 
 	session.SetStatus(models.SessionStatusStopping)
+	if _, cancel, ok := session.Context.TryGet(models.SessionBuildContextKey); ok {
+		cancel()
+	}
 	done := make(chan struct{})
 
 	go func(done chan struct{}) {

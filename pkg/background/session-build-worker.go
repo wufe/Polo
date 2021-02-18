@@ -203,6 +203,10 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 
 func (w *SessionBuildWorker) buildSession(session *models.Session) {
 	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(session.Application.Startup.Timeout))
+	defer session.Context.
+		Named(models.SessionBuildContextKey).
+		With(sessionStartContext, cancelSessionStart).
+		Delete()
 	defer cancelSessionStart()
 
 	done := make(chan struct{})

@@ -27,6 +27,8 @@ const (
 	KillReasonStopped           KillReason = "stopped"
 	KillReasonBuildFailed       KillReason = "build_failed"
 	KillReasonHealthcheckFailed KillReason = "healthcheck_failed"
+
+	SessionBuildContextKey string = "build"
 )
 
 type SessionStatus string
@@ -57,7 +59,8 @@ type Session struct {
 	Variables       Variables     `json:"variables"`
 	Metrics         []Metric      `json:"metrics"`
 	startupRetries  int
-	killReason      KillReason `json:"-"`
+	killReason      KillReason    `json:"-"`
+	Context         *contextStore `json:"-"`
 }
 
 type KillReason string
@@ -88,6 +91,7 @@ func NewSession(
 		session.Metrics = []Metric{}
 	}
 	session.killReason = KillReasonNone
+	session.Context = NewContextStore()
 	return session
 }
 
