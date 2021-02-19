@@ -75,12 +75,18 @@ func (w *SessionBuildWorker) startAcceptingSessionStartRequests() {
 }
 
 func (w *SessionBuildWorker) MarkSessionAsStarted(session *models.Session) {
+	app := session.Application
 	session.SetStatus(models.SessionStatusStarted)
 	session.ResetStartupRetriesCount()
-	session.SetMaxAge(session.Application.Recycle.InactivityTimeout)
-	if session.GetMaxAge() > 0 {
-		w.startSessionInactivityTimer(session)
+	if app.Watch.Contains(session.Checkout) {
+		session.SetMaxAge(-1)
+	} else {
+		session.SetMaxAge(session.Application.Recycle.InactivityTimeout)
+		if session.GetMaxAge() > 0 {
+			w.startSessionInactivityTimer(session)
+		}
 	}
+
 	w.sessionStorage.Update(session)
 }
 
