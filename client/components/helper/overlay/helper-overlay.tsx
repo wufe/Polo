@@ -20,6 +20,8 @@ export const HelperOverlay = memo((props: { status: HelperStatus }) => {
     useLayoutEffect(() => {
         if (props.status === idleStatus) {
             setStyleToSiblings(style => style.filter = 'blur(5px)');
+        } else {
+            setStyleToSiblings(style => style.filter = '');
         }
     }, [props.status]);
 
