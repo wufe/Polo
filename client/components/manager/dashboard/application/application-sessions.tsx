@@ -26,15 +26,15 @@ export const ApplicationSessions = observer((props: TProps) => {
         {props.sessions.map((session, key) =>
             <div
                 key={key}
-                className="items-center grid grid-cols-12 gap-2">
-                <span className="text-sm uppercase col-span-1 font-bold" style={{ color: colorByStatus(session.status) }}>{session.status}</span>
-                <span className="text-sm mr-3 flex-grow col-span-7">{session.checkout}</span>
-                <span className="text-xs uppercase text-gray-500 col-span-2">
+                className="items-end grid grid-cols-12 gap-2">
+                <span className="leading-none text-xs uppercase col-span-1 font-bold" style={{ color: colorByStatus(session.status) }}>{session.status}</span>
+                <span className="leading-none text-sm mr-3 flex-grow col-span-7">{session.checkout}</span>
+                <span className="leading-none text-xs uppercase text-gray-500 col-span-2">
                     Expires in {session.maxAge}s
                 </span>
-                <span className="col-span-2 text-center">
-                    <span className="text-sm underline cursor-pointer inline-block mx-3 hover:text-nord14" onClick={() => attachToSession(session)}>Attach</span>
-                    <span className="text-sm underline cursor-pointer inline-block mx-3 hover:text-nord11" onClick={() => killSession(session)}>Kill</span>
+                <span className="leading-none col-span-2 text-center">
+                    <span className="leading-none text-sm underline cursor-pointer inline-block mx-3 hover:text-nord14" onClick={() => attachToSession(session)}>Attach</span>
+                    <span className="leading-none text-sm underline cursor-pointer inline-block mx-3 hover:text-nord11" onClick={() => killSession(session)}>Kill</span>
                 </span>
             </div>)}
     </>;
