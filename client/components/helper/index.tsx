@@ -1,21 +1,34 @@
-import { APIRequestResult } from '@/api/common';
-import { IApp, IStore } from '@/state/models';
-import { observer } from 'mobx-react-lite';
-import { Instance } from 'mobx-state-tree';
-import React, { useEffect, useRef } from 'react';
+import { IAPISession } from '@/api/session';
+import React, {  } from 'react';
 import './index.scss';
-import { SessionHelperSession } from './session-helper-session';
+import { HelperSession } from './session/helper-session';
+import { render } from 'react-dom';
+import { HelperStatusContext } from './contexts';
+import { HelperOverlay } from './overlay/helper-overlay';
+import { HelperStatusProvider } from './status/helper-status-provider';
 
 type TProps = {
-    store: IStore;
+    session: IAPISession;
 }
+export const HelperApp = (props: TProps) => {
 
-export const SessionHelperApp = observer((props: TProps) => {
-
-    if (!props.store.app.session)
+    if (!props.session)
         return null;
 
-    return <div className="session-helper__component">
-        <SessionHelperSession session={props.store.app.session} />
-    </div>
-});
+    return <HelperStatusProvider uuid={props.session.uuid} age={props.session.maxAge}>
+        <HelperStatusContext.Consumer>
+            {({ status }) => <HelperOverlay status={status} />}
+        </HelperStatusContext.Consumer>
+        <div className="session-helper__component">
+            <HelperSession session={props.session} />
+        </div>
+    </HelperStatusProvider>
+};
+
+render(<HelperApp session={window.currentSession} />, document.getElementById('polo-session-helper'));
+
+declare global {
+    interface Window {
+        currentSession: any;
+    }
+}

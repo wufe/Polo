@@ -13,100 +13,206 @@ const isProduction = process.env.NODE_ENV === 'production';
 const isDevelopment = !isProduction;
 const mode = isProduction ? 'production' : 'development';
 
-module.exports = env => ({
-    mode,
-    entry: {
-        'manager'       : './client/manager-index.tsx',
-        'session-helper': './client/session-helper-index.tsx',
-    },
-    output: {
-        publicPath: '/_polo_/public/',
-        filename: '[name].js',
-        path: path.resolve(__dirname, 'public')
-    },
-    devtool: 'source-map',
-    resolve: {
-        extensions: ['.ts', '.tsx', '.js', '.scss', '.sass', '.hbs'],
-        plugins: [new TsconfigPathsPlugin({ configFile: path.resolve(__dirname, 'tsconfig.json') })]
-    },
-    module: {
-        rules: [
-            {
-                test: /\.tsx?$/,
-                exclude: /node_modules/,
-                use: [
-                    {
-                        loader: require.resolve('babel-loader'),
-                        options: {
-                            plugins: [
-                                isDevelopment && require.resolve('react-refresh/babel'),
-                            ].filter(Boolean),
+module.exports = [
+    env => ({
+        mode,
+        name: 'manager',
+        entry: {
+            'manager': './client/manager-index.tsx',
+            // 'session-helper': './client/session-helper-index.tsx',
+        },
+        output: {
+            publicPath: '/_polo_/public/',
+            filename: '[name].js',
+            path: path.resolve(__dirname, 'public')
+        },
+        devtool: 'source-map',
+        resolve: {
+            extensions: ['.ts', '.tsx', '.js', '.scss', '.sass', '.hbs'],
+            plugins: [new TsconfigPathsPlugin({ configFile: path.resolve(__dirname, 'tsconfig.json') })]
+        },
+        module: {
+            rules: [
+                {
+                    test: /\.tsx?$/,
+                    exclude: /node_modules/,
+                    use: [
+                        {
+                            loader: require.resolve('babel-loader'),
+                            options: {
+                                plugins: [
+                                    isDevelopment && require.resolve('react-refresh/babel'),
+                                ].filter(Boolean),
+                            },
                         },
-                    },
-                    {
-                        loader: 'ts-loader',
-                        options: {
-                            transpileOnly: true
-                        }
-                    },
-                ]
+                        {
+                            loader: 'ts-loader',
+                            options: {
+                                transpileOnly: true
+                            }
+                        },
+                    ]
 
-            },
-            {
-                test: /\.s[ac]ss$/,
-                use: [
-                    MiniCssExtractPlugin.loader,
-                    'css-loader',
-                    'postcss-loader',
-                    'sass-loader'
-                ]
-            },
-            { test: /\.hbs$/, loader: 'handlebars-loader' },
-            { test: /\.(png|svg)$/, loader: 'file-loader' },
+                },
+                {
+                    test: /\.s[ac]ss$/,
+                    use: [
+                        MiniCssExtractPlugin.loader,
+                        'css-loader',
+                        'postcss-loader',
+                        'sass-loader'
+                    ]
+                },
+                { test: /\.hbs$/, loader: 'handlebars-loader' },
+                { test: /\.(png|svg)$/, loader: 'file-loader' },
 
-        ]
-    },
-    target: 'web',
-    optimization: {
-        minimizer: [
-            "...",
-            isProduction && new CssMinimizerPlugin(),
-        ].filter(Boolean)
-    },
-    plugins: [
-        isDevelopment && new webpack.HotModuleReplacementPlugin(),
-        isDevelopment && new ReactRefreshWebpackPlugin(),
-        isProduction && new CleanWebpackPlugin(),
-        new ForkTsCheckerWebpackPlugin({
-            typescript: {
-                configFile: path.resolve(__dirname, 'tsconfig.json')
+            ]
+        },
+        target: 'web',
+        optimization: {
+            minimizer: [
+                "...",
+                isProduction && new CssMinimizerPlugin(),
+            ].filter(Boolean)
+        },
+        plugins: [
+            isDevelopment && new webpack.HotModuleReplacementPlugin(),
+            isDevelopment && new ReactRefreshWebpackPlugin(),
+            // isProduction && new CleanWebpackPlugin(),
+            new ForkTsCheckerWebpackPlugin({
+                typescript: {
+                    configFile: path.resolve(__dirname, 'tsconfig.json')
+                }
+            }),
+            new MiniCssExtractPlugin({
+                // Options similar to the same options in webpackOptions.output
+                // both options are optional
+                filename: "[name].css",
+                chunkFilename: "[id].css",
+            }),
+            // new HtmlWebpackPlugin({
+            //     filename: './session-helper.html',
+            //     template: './client/session-helper.hbs',
+            //     inject: false,
+            //     chunks: ['session-helper']
+            // }),
+            new HtmlWebpackPlugin({
+                filename: './manager.html',
+                template: './client/manager.html',
+                chunks: ['manager'],
+            }),
+
+        ].filter(Boolean),
+        devServer: {
+            contentBase: path.join(__dirname, 'public'),
+            public: 'localhost',
+            compress: true,
+            port: 9000,
+            hot: true
+        }
+    }),
+    env => ({
+        mode,
+        name: 'session-helper',
+        entry: {
+            'session-helper': './client/session-helper-index.tsx',
+        },
+        output: {
+            publicPath: '/_polo_/public/',
+            filename: '[name].js',
+            path: path.resolve(__dirname, 'public')
+        },
+        devtool: 'source-map',
+        resolve: {
+            extensions: ['.ts', '.tsx', '.js', '.scss', '.sass', '.hbs'],
+            plugins: [new TsconfigPathsPlugin({ configFile: path.resolve(__dirname, 'tsconfig.json') })],
+            alias: {
+                'react'    : 'preact/compat',
+                'react-dom': 'preact/compat',
             }
-        }),
-        new MiniCssExtractPlugin({
-            // Options similar to the same options in webpackOptions.output
-            // both options are optional
-            filename: "[name].css",
-            chunkFilename: "[id].css",
-        }),
-        new HtmlWebpackPlugin({
-            filename: './session-helper.html',
-            template: './client/session-helper.hbs',
-            inject: false,
-            chunks: ['session-helper']
-        }),
-        new HtmlWebpackPlugin({
-            filename: './manager.html',
-            template: './client/manager.html',
-            chunks: ['manager'],
-        }),
-        // isDevelopment && new webpack.HotModuleReplacementPlugin(),
+        },
+        module: {
+            rules: [
+                {
+                    test: /\.tsx?$/,
+                    exclude: /node_modules/,
+                    use: [
+                        // {
+                        //     loader: require.resolve('babel-loader'),
+                        //     options: {
+                        //         plugins: [
+                        //             isDevelopment && require.resolve('react-refresh/babel'),
+                        //         ].filter(Boolean),
+                        //     },
+                        // },
+                        {
+                            loader: 'ts-loader',
+                            options: {
+                                transpileOnly: true,
+                                compilerOptions: {
+                                    "jsx": "react-jsx",
+                                    "jsxImportSource": "preact"
+                                }
+                            }
+                        },
+                    ]
 
-    ].filter(Boolean),
-    devServer: {
-        contentBase: path.join(__dirname, 'public'),
-        public: 'localhost',
-        compress: true,
-        port: 9000,
-        hot: true
-    }
-});
+                },
+                {
+                    test: /\.s[ac]ss$/,
+                    use: [
+                        MiniCssExtractPlugin.loader,
+                        'css-loader',
+                        'postcss-loader',
+                        'sass-loader'
+                    ]
+                },
+                { test: /\.hbs$/, loader: 'handlebars-loader' },
+                { test: /\.(png|svg)$/, loader: 'file-loader' },
+
+            ]
+        },
+        target: 'web',
+        optimization: {
+            minimizer: [
+                "...",
+                isProduction && new CssMinimizerPlugin(),
+            ].filter(Boolean)
+        },
+        plugins: [
+            // isDevelopment && new webpack.HotModuleReplacementPlugin(),
+            // isDevelopment && new ReactRefreshWebpackPlugin(),
+            // isProduction && new CleanWebpackPlugin(),
+            new ForkTsCheckerWebpackPlugin({
+                typescript: {
+                    configFile: path.resolve(__dirname, 'tsconfig.json')
+                }
+            }),
+            new MiniCssExtractPlugin({
+                // Options similar to the same options in webpackOptions.output
+                // both options are optional
+                filename: "[name].css",
+                chunkFilename: "[id].css",
+            }),
+            new HtmlWebpackPlugin({
+                filename: './session-helper.html',
+                template: './client/session-helper.hbs',
+                inject: false,
+                chunks: ['session-helper']
+            }),
+            // new HtmlWebpackPlugin({
+            //     filename: './manager.html',
+            //     template: './client/manager.html',
+            //     chunks: ['manager'],
+            // }),
+
+        ].filter(Boolean),
+        // devServer: {
+        //     contentBase: path.join(__dirname, 'public'),
+        //     public: 'localhost',
+        //     compress: true,
+        //     port: 9001,
+        //     hot: true
+        // }
+    })
+];
