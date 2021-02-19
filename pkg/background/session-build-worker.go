@@ -42,7 +42,6 @@ func NewSessionBuildWorker(
 	}
 
 	worker.startAcceptingNewSessionRequests()
-	worker.startAcceptingSessionStartRequests()
 
 	return worker
 }
@@ -63,50 +62,6 @@ func (w *SessionBuildWorker) startAcceptingNewSessionRequests() {
 
 func (w *SessionBuildWorker) RequestNewSession(buildInput *queues.SessionBuildInput) *queues.SessionBuildResult {
 	return w.mediator.BuildSession.Enqueue(buildInput.Checkout, buildInput.Application, buildInput.PreviousSession)
-}
-
-func (w *SessionBuildWorker) startAcceptingSessionStartRequests() {
-	go func() {
-		for {
-			session := <-w.mediator.StartSession.Chan
-			w.MarkSessionAsStarted(session)
-		}
-	}()
-}
-
-func (w *SessionBuildWorker) MarkSessionAsStarted(session *models.Session) {
-	app := session.Application
-	session.SetStatus(models.SessionStatusStarted)
-	session.ResetStartupRetriesCount()
-	if app.Watch.Contains(session.Checkout) {
-		session.SetMaxAge(-1)
-	} else {
-		session.SetMaxAge(session.Application.Recycle.InactivityTimeout)
-		if session.GetMaxAge() > 0 {
-			w.startSessionInactivityTimer(session)
-		}
-	}
-
-	w.sessionStorage.Update(session)
-}
-
-func (w *SessionBuildWorker) startSessionInactivityTimer(session *models.Session) {
-	session.SetInactiveAt(time.Now().Add(time.Second * time.Duration(session.Application.Recycle.InactivityTimeout)))
-	go func() {
-		for {
-			status := session.GetStatus()
-			if status != models.SessionStatusStarted {
-				return
-			}
-
-			if time.Now().After(session.GetInactiveAt()) {
-				w.mediator.DestroySession.Enqueue(session, nil)
-				return
-			}
-			session.DecreaseMaxAge()
-			time.Sleep(1 * time.Second)
-		}
-	}()
 }
 
 func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput) *queues.SessionBuildResult {

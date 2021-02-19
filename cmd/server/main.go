@@ -50,6 +50,7 @@ func main() {
 
 	// Workers
 	background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator)
+	background.NewSessionStartWorker(sesStorage, mediator)
 	background.NewSessionCleanWorker(sesStorage, mediator)
 	background.NewSessionFilesystemWorker(mediator)
 	background.NewSessionDestroyWorker(mediator)
