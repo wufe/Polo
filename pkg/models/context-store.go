@@ -61,5 +61,8 @@ func (s *contextStore) TryGet(key string) (context.Context, context.CancelFunc, 
 	s.RLock()
 	defer s.RUnlock()
 	ctx, exists := s.contexts[key]
-	return ctx.Context, ctx.Cancel, exists
+	if exists {
+		return ctx.Context, ctx.Cancel, exists
+	}
+	return nil, nil, false
 }
