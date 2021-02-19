@@ -31,7 +31,7 @@ const parseMessage = (message: string) => {
                     acc[key] = value;
                     return acc;
                 }, {});
-                return <span style={styles} key={i}>{text}</span>
+                return <span style={{...styles, paddingRight: '2px'}} key={i}>{text}</span>
             });
     } catch {
         return <span>{message}</span>

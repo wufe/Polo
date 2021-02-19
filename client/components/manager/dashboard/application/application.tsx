@@ -11,14 +11,16 @@ import { ApplicationSessions } from './application-sessions';
 import './application.scss';
 
 type TProps = {
-    sessions: ISession[] | null;
-    application: IApplication;
+    isOpen       : boolean;
+    onToggle     : () => void;
+    toggleEnabled: boolean;
+    sessions     : ISession[] | null;
+    application  : IApplication;
 }
 
 export const Application = observer((props: TProps) => {
 
     const [newSessionCheckout, setNewSessionCheckout] = useState<string>("")
-    const [open, setOpen] = useState(false);
     const history = useHistory();
 
     const onCheckoutChange = (value: string) => setNewSessionCheckout(value);
@@ -36,8 +38,6 @@ export const Application = observer((props: TProps) => {
         }
     }
 
-    const branches: IApplicationBranchModel[] = values(props.application.branches) as any;
-
     return <div className={`
         px-0
         divide-y
@@ -48,9 +48,9 @@ export const Application = observer((props: TProps) => {
         bg-gray-50
         dark:bg-nord0
         font-quicksand
-        ${!open ? ' max-h-20 overflow-hidden dark:hover:bg-nord3' : ''}`}
+        ${!props.isOpen ? ' max-h-20 overflow-hidden dark:hover:bg-nord3' : ''}`}
         >
-        <div className=" h-20 grid items-center grid-cols-7 grid-rows-1 gap-2 relative cursor-pointer -mx-6 px-12 pr-12" onClick={() => setOpen(open => !open)}>
+        <div className={`h-20 grid items-center grid-cols-7 grid-rows-1 gap-2 relative -mx-6 px-12 pr-12 ${props.toggleEnabled ? 'cursor-pointer' : ''}`} onClick={props.onToggle}>
             <h3 className="text-mg font-normal leading-10 uppercase col-span-3 overflow-hidden overflow-ellipsis whitespace-nowrap" title={props.application.name}>{props.application.name}</h3>
             <div className="col-span-4">
                 <div className="text-xs text-gray-500 uppercase">Remote:</div>
@@ -58,10 +58,10 @@ export const Application = observer((props: TProps) => {
                     className="text-sm overflow-hidden overflow-ellipsis whitespace-nowrap"
                     title={props.application.remote}>{props.application.remote}</div>
             </div>
-            {open && <svg width={16} height={16} className="absolute right-10 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {props.isOpen && props.toggleEnabled && <svg width={16} height={16} className="absolute right-10 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>}
-            {!open && <svg width={16} height={16} className="absolute right-10 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {!props.isOpen && props.toggleEnabled && <svg width={16} height={16} className="absolute right-10 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>}
         </div>
@@ -75,7 +75,7 @@ export const Application = observer((props: TProps) => {
             </div>
         </div>
         
-        {props.sessions && props.sessions.length > 0 && <div className="py-4 px-6 dark:bg-nord-1">
+        {props.sessions && props.sessions.length > 0 && <div className="py-4 px-6 bg-gradient-to-bl from-nord4 to-white dark:from-nord-1 dark:to-nord-4">
             <ApplicationSessions sessions={props.sessions} />
         </div>}
 
