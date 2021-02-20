@@ -48,14 +48,9 @@ func unmarshalConfigurations(files []string) (*models.RootConfiguration, []*mode
 	applications := []*models.Application{}
 	for _, file := range files {
 		log.Infof("Found configuration file %s", file)
-		content, err := ioutil.ReadFile(file)
+		root, err := UnmarshalConfiguration(file)
 		if err != nil {
-			log.Errorln(fmt.Sprintf("Could not retrieve content of file %s", file), err)
-		}
-		var root models.RootConfiguration
-		err = yaml.Unmarshal(content, &root)
-		if err != nil {
-			log.Errorln(fmt.Sprintf("Error in configuration file %s", file), err)
+			continue
 		}
 		if root.Global != (models.GlobalConfiguration{}) {
 			rootConfiguration.Global = root.Global
@@ -63,12 +58,12 @@ func unmarshalConfigurations(files []string) (*models.RootConfiguration, []*mode
 		if root.ApplicationConfigurations != nil {
 			for _, conf := range root.ApplicationConfigurations {
 
-				builtApplication, err := models.NewApplication(conf)
+				builtApplication, err := models.NewApplication(conf, file)
 				if err != nil {
 					log.Errorf("Application %s configuration error: %s", conf.Name, err.Error())
 				} else {
 					applications = append(applications, builtApplication)
-					rootConfiguration.ApplicationConfigurations = append(rootConfiguration.ApplicationConfigurations, &builtApplication.Configuration)
+					root.ApplicationConfigurations = append(root.ApplicationConfigurations, &builtApplication.Configuration)
 				}
 			}
 		}
@@ -88,4 +83,29 @@ func unmarshalConfigurations(files []string) (*models.RootConfiguration, []*mode
 	}
 
 	return rootConfiguration, applications
+}
+
+func UnmarshalConfiguration(file string) (models.RootConfiguration, error) {
+	content, err := ioutil.ReadFile(file)
+	if err != nil {
+		log.Errorln(fmt.Sprintf("Could not retrieve content of file %s", file), err)
+		return models.RootConfiguration{}, err
+	}
+
+	var root models.RootConfiguration
+	err = yaml.Unmarshal(content, &root)
+	if err != nil {
+		log.Errorln(fmt.Sprintf("Error in configuration file %s", file), err)
+	}
+	if root.ApplicationConfigurations != nil {
+		for i, c := range root.ApplicationConfigurations {
+			root.ApplicationConfigurations[i], err = models.NewApplicationConfiguration(c)
+			if err != nil {
+				log.Errorln(err)
+				return root, err
+			}
+		}
+	}
+
+	return root, nil
 }

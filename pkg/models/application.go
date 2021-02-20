@@ -1,11 +1,9 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 	"os/exec"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -19,6 +17,7 @@ var (
 
 type Application struct {
 	utils.RWLocker          `json:"-"`
+	Filename                string                    `json:"filename"`
 	Configuration           ApplicationConfiguration  `json:"configuration"`
 	Status                  ApplicationStatus         `json:"status"`
 	Folder                  string                    `json:"folder"`
@@ -62,31 +61,17 @@ type Branch struct {
 	Message string    `json:"message"`
 }
 
-func NewApplication(configuration *ApplicationConfiguration) (*Application, error) {
-	application := &Application{}
-	application.RWLocker = utils.GetMutex()
-	application.Status = ApplicationStatusLoading
-	configuration.RWLocker = utils.GetMutex()
-	if configuration.Name == "" {
-		return nil, errors.New("application.name (required) not defined")
+func NewApplication(configuration *ApplicationConfiguration, filename string) (*Application, error) {
+	application := &Application{
+		Filename: filename,
+		RWLocker: utils.GetMutex(),
+		Status:   ApplicationStatusLoading,
 	}
-	if configuration.CleanOnExit == nil {
-		cleanOnExit := true
-		configuration.CleanOnExit = &cleanOnExit
-	}
-	if configuration.Watch == nil {
-		configuration.Watch = []string{}
-	}
-	if configuration.Remote == "" {
-		return nil, errors.New("application.remote (required) not defined; put the git repository URL")
-	}
-	if configuration.Forwards == nil {
-		configuration.Forwards = make([]Forward, 0)
+	configuration, err := NewApplicationConfiguration(configuration)
+	if err != nil {
+		return nil, err
 	}
 	for i, forward := range configuration.Forwards {
-		if forward.Pattern == "" {
-			return nil, fmt.Errorf("application.forwards[%d].pattern not defined", i)
-		}
 		compiledPattern, err := regexp.Compile(forward.Pattern)
 		if err != nil {
 			return nil, fmt.Errorf("application.forwards[%d].pattern is not a valid regex: %s", i, err.Error())
@@ -98,72 +83,6 @@ func NewApplication(configuration *ApplicationConfiguration) (*Application, erro
 				&forward,
 			},
 		)
-		if forward.To == "" {
-			return nil, fmt.Errorf("application.forwards[%d].to not defined", i)
-		}
-	}
-	if configuration.Fetch.Interval <= 0 {
-		configuration.Fetch.Interval = 60
-	}
-	if configuration.Target == "" {
-		configuration.Target = "http://127.0.0.1:{{port}}"
-	}
-	if configuration.Headers.Add == nil {
-		configuration.Headers.Add = []Header{}
-	}
-	if configuration.Headers.Del == nil {
-		configuration.Headers.Del = []string{}
-	}
-	if configuration.Headers.Set == nil {
-		configuration.Headers.Set = []Header{}
-	}
-	if configuration.Healthcheck.URL == "" {
-		configuration.Healthcheck.Method = "GET"
-	} else {
-		configuration.Healthcheck.Method = strings.ToUpper(configuration.Healthcheck.Method)
-	}
-	if configuration.Healthcheck.URL == "" {
-		configuration.Healthcheck.URL = "/"
-	}
-	if configuration.Healthcheck.Status == 0 {
-		configuration.Healthcheck.Status = 200
-	}
-	if configuration.Healthcheck.MaxRetries <= 0 {
-		configuration.Healthcheck.MaxRetries = 5
-	}
-	if configuration.Healthcheck.RetryInterval == 0 {
-		configuration.Healthcheck.RetryInterval = 30
-	}
-	if configuration.Healthcheck.RetryTimeout <= 0 {
-		configuration.Healthcheck.RetryTimeout = 20 // seconds
-	}
-	if configuration.Startup.Timeout <= 0 {
-		configuration.Startup.Timeout = 300 // seconds
-	}
-	if configuration.Recycle.InactivityTimeout == 0 {
-		configuration.Recycle.InactivityTimeout = 3600 // 1 hour
-	}
-	if configuration.Commands.Start == nil {
-		return nil, errors.New("application.commands.start (required) not defined; put commands required for starting the application; commands accept placeholders")
-	}
-	for _, command := range configuration.Commands.Start {
-		if command.Environment == nil {
-			command.Environment = []string{}
-		}
-	}
-	if configuration.Commands.Stop == nil {
-		return nil, errors.New("application.commands.stop (required) not defined; put commands required for stopping the application; commands accept placeholders")
-	}
-	for _, command := range configuration.Commands.Stop {
-		if command.Environment == nil {
-			command.Environment = []string{}
-		}
-	}
-	if configuration.MaxConcurrentSessions == 0 {
-		configuration.MaxConcurrentSessions = 5
-	}
-	if configuration.Port.Except == nil {
-		configuration.Port.Except = []int{}
 	}
 	application.ObjectsToHashMap = make(map[string]string)
 	application.HashToObjectsMap = make(map[string]*RemoteObject)

@@ -1,8 +1,10 @@
 package pkg
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/background"
@@ -47,6 +49,7 @@ func NewStartup(
 func (s *Startup) Start() {
 	s.loadApplications()
 	s.storeApplications()
+	s.watchApplications(context.Background())
 	s.loadSessions()
 	s.startSessions()
 	s.static.LoadSessionHelper()
@@ -67,6 +70,45 @@ func (s *Startup) loadApplications() {
 func (s *Startup) storeApplications() {
 	for _, application := range s.applications {
 		s.appStorage.Add(application)
+	}
+}
+
+func (s *Startup) watchApplications(ctx context.Context) {
+	for _, application := range s.applications {
+		var filename string
+		application.WithRLock(func(a *models.Application) {
+			filename = a.Filename
+		})
+		conf := application.GetConfiguration()
+		log.Infof("Watching file %s for app %s", filename, conf.Name)
+		go func(filename string, application *models.Application, conf models.ApplicationConfiguration) {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					time.Sleep(2 * time.Second)
+					rootConfig, err := storage.UnmarshalConfiguration(filename)
+					if err != nil {
+						continue
+					}
+					if rootConfig.ApplicationConfigurations != nil {
+						for _, c := range rootConfig.ApplicationConfigurations {
+							if c.Name == conf.Name {
+								newConf := *c
+								if !models.ConfigurationAreEqual(conf, newConf) {
+									log.Infof(fmt.Sprintf("[APP:%s] Detected configuration changed", newConf.Name))
+									application.WithLock(func(a *models.Application) {
+										a.Configuration = newConf
+									})
+									conf = newConf
+								}
+							}
+						}
+					}
+				}
+			}
+		}(filename, application, conf)
 	}
 }
 
