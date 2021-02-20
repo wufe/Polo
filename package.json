@@ -6,6 +6,7 @@
 	"license": "MIT",
 	"scripts": {
 		"dev": "run-p serve start",
+		"dev:race": "run-p serve start:race",
 		"start:race": "cross-env GO_DEBUG=race GO_ENV=development go run -race cmd/server/main.go",
 		"start": "cross-env GO_ENV=development go run cmd/server/main.go",
 		"build:server:application": "go build -o polo cmd/server/main.go",
