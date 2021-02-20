@@ -12,14 +12,12 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func LoadConfigurations() *models.RootConfiguration {
+func LoadConfigurations() (*models.RootConfiguration, []*models.Application) {
 	dir := utils.GetExecutableFolder()
 
 	files := getYamlFiles(dir)
 
-	configurations := unmarshalConfigurations(files)
-
-	return configurations
+	return unmarshalConfigurations(files)
 
 }
 
@@ -43,10 +41,11 @@ func getYamlFiles(root string) []string {
 	return files
 }
 
-func unmarshalConfigurations(files []string) *models.RootConfiguration {
+func unmarshalConfigurations(files []string) (*models.RootConfiguration, []*models.Application) {
 	rootConfiguration := &models.RootConfiguration{
-		Applications: []*models.Application{},
+		ApplicationConfigurations: []*models.ApplicationConfiguration{},
 	}
+	applications := []*models.Application{}
 	for _, file := range files {
 		log.Infof("Found configuration file %s", file)
 		content, err := ioutil.ReadFile(file)
@@ -61,14 +60,15 @@ func unmarshalConfigurations(files []string) *models.RootConfiguration {
 		if root.Global != (models.GlobalConfiguration{}) {
 			rootConfiguration.Global = root.Global
 		}
-		if root.Applications != nil {
-			for _, application := range root.Applications {
+		if root.ApplicationConfigurations != nil {
+			for _, conf := range root.ApplicationConfigurations {
 
-				builtApplication, err := models.NewApplication(application)
+				builtApplication, err := models.NewApplication(conf)
 				if err != nil {
-					log.Errorf("Application %s configuration error: %s", application.Name, err.Error())
+					log.Errorf("Application %s configuration error: %s", conf.Name, err.Error())
 				} else {
-					rootConfiguration.Applications = append(rootConfiguration.Applications, builtApplication)
+					applications = append(applications, builtApplication)
+					rootConfiguration.ApplicationConfigurations = append(rootConfiguration.ApplicationConfigurations, &builtApplication.Configuration)
 				}
 			}
 		}
@@ -87,5 +87,5 @@ func unmarshalConfigurations(files []string) *models.RootConfiguration {
 		rootConfiguration.Global.MaxConcurrentSessions = 10
 	}
 
-	return rootConfiguration
+	return rootConfiguration, applications
 }

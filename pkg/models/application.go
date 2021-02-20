@@ -9,9 +9,6 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/go-git/go-git/v5/plumbing/transport"
-	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/wufe/polo/pkg/utils"
 )
 
@@ -22,81 +19,20 @@ var (
 
 type Application struct {
 	utils.RWLocker          `json:"-"`
-	Status                  ApplicationStatus         `json:"status" yaml:"-"`
-	Auth                    Auth                      `json:"-"`
-	Name                    string                    `json:"name"`
-	Remote                  string                    `json:"remote"`
-	Target                  string                    `json:"target"`
-	Host                    string                    `json:"host"`
-	Fetch                   Fetch                     `json:"fetch"`
-	Watch                   Watch                     `json:"watch"`
-	IsDefault               bool                      `yaml:"is_default" json:"isDefault"`
-	Forwards                []Forward                 `json:"forwards"`
-	Headers                 Headers                   `json:"headers"`
-	Healthcheck             Healthcheck               `json:"healthCheck"`
-	Startup                 Startup                   `json:"startup"`
-	Recycle                 Recycle                   `json:"recycle"`
-	Commands                Commands                  `json:"commands"`
-	MaxConcurrentSessions   int                       `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
-	Port                    PortConfiguration         `yaml:"port" json:"port"`
-	UseFolderCopy           bool                      `yaml:"use_folder_copy" json:"useFolderCopy"`
-	CleanOnExit             *bool                     `yaml:"clean_on_exit" json:"cleanOnExit" default:"true"`
-	Folder                  string                    `yaml:"-" json:"folder"`
-	BaseFolder              string                    `yaml:"-" json:"baseFolder"`
-	ObjectsToHashMap        map[string]string         `yaml:"-" json:"-"`
-	HashToObjectsMap        map[string]*RemoteObject  `yaml:"-" json:"-"`
-	Branches                map[string]*Branch        `yaml:"-" json:"branches"`
-	Tags                    []string                  `yaml:"-" json:"-"`
-	Commits                 []string                  `yaml:"-" json:"-"`
-	CommitMap               map[string]*object.Commit `yaml:"-" json:"-"`
-	CompiledForwardPatterns []CompiledForwardPattern  `yaml:"-" json:"-"`
+	Configuration           ApplicationConfiguration  `json:"configuration"`
+	Status                  ApplicationStatus         `json:"status"`
+	Folder                  string                    `json:"folder"`
+	BaseFolder              string                    `json:"baseFolder"`
+	ObjectsToHashMap        map[string]string         `json:"-"`
+	HashToObjectsMap        map[string]*RemoteObject  `json:"-"`
+	Branches                map[string]*Branch        `json:"branches"`
+	Tags                    []string                  `json:"-"`
+	Commits                 []string                  `json:"-"`
+	CommitMap               map[string]*object.Commit `json:"-"`
+	CompiledForwardPatterns []CompiledForwardPattern  `json:"-"`
 }
 
 type ApplicationStatus string
-
-type Auth struct {
-	Basic BasicAuth `json:"basic"`
-	Token string    `json:"token"`
-	SSH   SSHAuth   `yaml:"ssh" json:"ssh"`
-}
-
-type BasicAuth struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-type Startup struct {
-	Timeout int `json:"timeout"`
-	Retries int `json:"retries"`
-}
-
-type SSHAuth struct {
-	User       string `json:"user"`
-	PrivateKey string `yaml:"private_key" json:"privateKey"`
-	Password   string `json:"password"`
-}
-
-type Forward struct {
-	Pattern string  `json:"pattern"`
-	To      string  `json:"to"`
-	Host    string  `json:"host"`
-	Headers Headers `json:"headers"`
-}
-
-type Watch []string
-
-func (w *Watch) Contains(obj string) bool {
-	for _, o := range *w {
-		if o == obj {
-			return true
-		}
-	}
-	return false
-}
-
-type Fetch struct {
-	Interval int `json:"interval"`
-}
 
 type CompiledForwardPattern struct {
 	Pattern *regexp.Regexp
@@ -126,26 +62,28 @@ type Branch struct {
 	Message string    `json:"message"`
 }
 
-func NewApplication(application *Application) (*Application, error) {
+func NewApplication(configuration *ApplicationConfiguration) (*Application, error) {
+	application := &Application{}
 	application.RWLocker = utils.GetMutex()
 	application.Status = ApplicationStatusLoading
-	if application.Name == "" {
+	configuration.RWLocker = utils.GetMutex()
+	if configuration.Name == "" {
 		return nil, errors.New("application.name (required) not defined")
 	}
-	if application.CleanOnExit == nil {
+	if configuration.CleanOnExit == nil {
 		cleanOnExit := true
-		application.CleanOnExit = &cleanOnExit
+		configuration.CleanOnExit = &cleanOnExit
 	}
-	if application.Watch == nil {
-		application.Watch = []string{}
+	if configuration.Watch == nil {
+		configuration.Watch = []string{}
 	}
-	if application.Remote == "" {
+	if configuration.Remote == "" {
 		return nil, errors.New("application.remote (required) not defined; put the git repository URL")
 	}
-	if application.Forwards == nil {
-		application.Forwards = make([]Forward, 0)
+	if configuration.Forwards == nil {
+		configuration.Forwards = make([]Forward, 0)
 	}
-	for i, forward := range application.Forwards {
+	for i, forward := range configuration.Forwards {
 		if forward.Pattern == "" {
 			return nil, fmt.Errorf("application.forwards[%d].pattern not defined", i)
 		}
@@ -164,73 +102,68 @@ func NewApplication(application *Application) (*Application, error) {
 			return nil, fmt.Errorf("application.forwards[%d].to not defined", i)
 		}
 	}
-	if application.Fetch.Interval <= 0 {
-		application.Fetch.Interval = 60
+	if configuration.Fetch.Interval <= 0 {
+		configuration.Fetch.Interval = 60
 	}
-	if application.Target == "" {
-		application.Target = "http://127.0.0.1:{{port}}"
+	if configuration.Target == "" {
+		configuration.Target = "http://127.0.0.1:{{port}}"
 	}
-	if application.Headers.Add == nil {
-		application.Headers.Add = []Header{}
+	if configuration.Headers.Add == nil {
+		configuration.Headers.Add = []Header{}
 	}
-	if application.Headers.Del == nil {
-		application.Headers.Del = []string{}
+	if configuration.Headers.Del == nil {
+		configuration.Headers.Del = []string{}
 	}
-	if application.Headers.Set == nil {
-		application.Headers.Set = []Header{}
+	if configuration.Headers.Set == nil {
+		configuration.Headers.Set = []Header{}
 	}
-	if application.Healthcheck.URL == "" {
-		application.Healthcheck.Method = "GET"
+	if configuration.Healthcheck.URL == "" {
+		configuration.Healthcheck.Method = "GET"
 	} else {
-		application.Healthcheck.Method = strings.ToUpper(application.Healthcheck.Method)
+		configuration.Healthcheck.Method = strings.ToUpper(configuration.Healthcheck.Method)
 	}
-	if application.Healthcheck.URL == "" {
-		application.Healthcheck.URL = "/"
+	if configuration.Healthcheck.URL == "" {
+		configuration.Healthcheck.URL = "/"
 	}
-	if application.Healthcheck.Status == 0 {
-		application.Healthcheck.Status = 200
+	if configuration.Healthcheck.Status == 0 {
+		configuration.Healthcheck.Status = 200
 	}
-	if application.Healthcheck.MaxRetries <= 0 {
-		application.Healthcheck.MaxRetries = 5
+	if configuration.Healthcheck.MaxRetries <= 0 {
+		configuration.Healthcheck.MaxRetries = 5
 	}
-	if application.Healthcheck.RetryInterval == 0 {
-		application.Healthcheck.RetryInterval = 30
+	if configuration.Healthcheck.RetryInterval == 0 {
+		configuration.Healthcheck.RetryInterval = 30
 	}
-	if application.Healthcheck.RetryTimeout <= 0 {
-		application.Healthcheck.RetryTimeout = 20 // seconds
+	if configuration.Healthcheck.RetryTimeout <= 0 {
+		configuration.Healthcheck.RetryTimeout = 20 // seconds
 	}
-	if application.Startup.Timeout <= 0 {
-		application.Startup.Timeout = 300 // seconds
+	if configuration.Startup.Timeout <= 0 {
+		configuration.Startup.Timeout = 300 // seconds
 	}
-	if application.Recycle.InactivityTimeout == 0 {
-		application.Recycle.InactivityTimeout = 3600 // 1 hour
+	if configuration.Recycle.InactivityTimeout == 0 {
+		configuration.Recycle.InactivityTimeout = 3600 // 1 hour
 	}
-	if application.Commands.Start == nil {
+	if configuration.Commands.Start == nil {
 		return nil, errors.New("application.commands.start (required) not defined; put commands required for starting the application; commands accept placeholders")
 	}
-	for _, command := range application.Commands.Start {
+	for _, command := range configuration.Commands.Start {
 		if command.Environment == nil {
 			command.Environment = []string{}
 		}
 	}
-	if application.Commands.Stop == nil {
+	if configuration.Commands.Stop == nil {
 		return nil, errors.New("application.commands.stop (required) not defined; put commands required for stopping the application; commands accept placeholders")
 	}
-	for _, command := range application.Commands.Stop {
+	for _, command := range configuration.Commands.Stop {
 		if command.Environment == nil {
 			command.Environment = []string{}
 		}
 	}
-	if application.MaxConcurrentSessions == 0 {
-		application.MaxConcurrentSessions = 5
+	if configuration.MaxConcurrentSessions == 0 {
+		configuration.MaxConcurrentSessions = 5
 	}
-	if application.Port.Except == nil {
-		application.Port.Except = []int{}
-	}
-	if application.Auth.SSH != (SSHAuth{}) {
-		if application.Auth.SSH.User == "" {
-			application.Auth.SSH.User = "git"
-		}
+	if configuration.Port.Except == nil {
+		configuration.Port.Except = []int{}
 	}
 	application.ObjectsToHashMap = make(map[string]string)
 	application.HashToObjectsMap = make(map[string]*RemoteObject)
@@ -238,39 +171,8 @@ func NewApplication(application *Application) (*Application, error) {
 	application.Tags = []string{}
 	application.Commits = []string{}
 	application.CommitMap = make(map[string]*object.Commit)
+	application.Configuration = *configuration
 	return application, nil
-}
-
-func (application *Application) GetAuth() (transport.AuthMethod, error) {
-	application.RLock()
-	defer application.RUnlock()
-	if application.Auth == (Auth{}) {
-		return nil, nil
-	}
-	if application.Auth.Basic != (BasicAuth{}) {
-		return &http.BasicAuth{
-			Username: application.Auth.Basic.Username,
-			Password: application.Auth.Basic.Password,
-		}, nil
-	}
-	if application.Auth.Token != "" {
-		return &http.BasicAuth{
-			Username: "_",
-			Password: application.Auth.Token,
-		}, nil
-	}
-	if application.Auth.SSH != (SSHAuth{}) {
-		publicKeys, err := ssh.NewPublicKeysFromFile(
-			application.Auth.SSH.User,
-			application.Auth.SSH.PrivateKey,
-			application.Auth.SSH.Password,
-		)
-		if err != nil {
-			return nil, err
-		}
-		return publicKeys, nil
-	}
-	return nil, nil
 }
 
 func (a *Application) WithLock(f func(*Application)) {
@@ -307,4 +209,10 @@ func (a *Application) SetStatus(status ApplicationStatus) {
 	a.Lock()
 	defer a.Unlock()
 	a.Status = status
+}
+
+func (a *Application) GetConfiguration() ApplicationConfiguration {
+	a.RLock()
+	defer a.RUnlock()
+	return a.Configuration
 }

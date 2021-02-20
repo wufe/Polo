@@ -53,8 +53,18 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 	go func() {
 		time.Sleep(5 * time.Second)
 
+		var maxRetries int
+		var healthcheck models.Healthcheck
+		var headers models.Headers
+		var host string
+		session.Application.Configuration.WithRLock(func(ac *models.ApplicationConfiguration) {
+			maxRetries = ac.Healthcheck.MaxRetries
+			healthcheck = ac.Healthcheck
+			headers = ac.Headers
+			host = ac.Host
+		})
+
 		retryCount := 0
-		maxRetries := session.Application.Healthcheck.MaxRetries
 
 		for {
 			// Failed or destroyed
@@ -71,31 +81,31 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 				w.sessions.Remove(session)
 				return
 			}
-			target.Path = path.Join(target.Path, session.Application.Healthcheck.URL)
+			target.Path = path.Join(target.Path, healthcheck.URL)
 			client := &http.Client{
-				Timeout: time.Duration(session.Application.Healthcheck.RetryTimeout) * time.Second,
+				Timeout: time.Duration(healthcheck.RetryTimeout) * time.Second,
 			}
 			req, err := http.NewRequest(
-				session.Application.Healthcheck.Method,
+				healthcheck.Method,
 				target.String(),
 				nil,
 			)
 			if err != nil {
 				log.Errorln("Could not build HTTP request", req)
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(session.Application.Healthcheck.RetryTimeout)*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(healthcheck.RetryTimeout)*time.Second)
 			req.WithContext(ctx)
-			err = session.Application.Headers.ApplyTo(req)
+			err = headers.ApplyTo(req)
 			if err != nil {
 				log.Errorf("Error applying headers to the request: %s", err.Error())
 			}
-			if session.Application.Host != "" {
-				req.Header.Add("Host", session.Application.Host)
-				req.Host = session.Application.Host
+			if host != "" {
+				req.Header.Add("Host", host)
+				req.Host = host
 			}
 			response, err := client.Do(req)
 			cancel()
-			if err != nil || response.StatusCode != session.Application.Healthcheck.Status {
+			if err != nil || response.StatusCode != healthcheck.Status {
 				retryCount++
 
 				if session.Status == models.SessionStatusStarted {
@@ -114,7 +124,7 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 					return
 				}
 
-				session.LogError(fmt.Sprintf("[%d/%d] Session healthcheck failed. Retrying in %d seconds", retryCount, maxRetries, session.Application.Healthcheck.RetryInterval))
+				session.LogError(fmt.Sprintf("[%d/%d] Session healthcheck failed. Retrying in %d seconds", retryCount, maxRetries, healthcheck.RetryInterval))
 			} else {
 				status := session.GetStatus()
 				if status == models.SessionStatusStarting {
@@ -126,7 +136,7 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 				retryCount = 0
 			}
 
-			time.Sleep(time.Duration(session.Application.Healthcheck.RetryInterval) * time.Second)
+			time.Sleep(time.Duration(healthcheck.RetryInterval) * time.Second)
 
 		}
 	}()

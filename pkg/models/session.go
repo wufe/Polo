@@ -79,7 +79,9 @@ func NewSession(
 ) *Session {
 	session.ShortUUID = strings.Split(session.UUID, "-")[0]
 	session.Locker = utils.GetMutex()
-	session.ApplicationName = session.Application.Name
+	if session.ApplicationName == "" {
+		session.ApplicationName = session.Application.GetConfiguration().Name
+	}
 	session.Status = SessionStatusStarting
 	if session.Logs == nil {
 		session.Logs = []Log{}
@@ -186,9 +188,10 @@ func (session *Session) LogStderr(message string) {
 }
 
 func (session *Session) MarkAsBeingRequested() {
+	conf := session.Application.GetConfiguration()
 	// Refreshes the inactiveAt field every time someone makes a request to this session
-	session.SetInactiveAt(time.Now().Add(time.Second * time.Duration(session.Application.Recycle.InactivityTimeout)))
-	session.SetMaxAge(session.Application.Recycle.InactivityTimeout)
+	session.SetInactiveAt(time.Now().Add(time.Second * time.Duration(conf.Recycle.InactivityTimeout)))
+	session.SetMaxAge(conf.Recycle.InactivityTimeout)
 }
 
 func (session *Session) SetStatus(status SessionStatus) {

@@ -17,7 +17,7 @@ export const AppModel = types.model({
         if (applications.result === APIRequestResult.SUCCEEDED) {
 
             const applicationsMap = applications.payload.reduce<{[applicationName: string]: IApplication}>((acc, application) => {
-                acc[application.name] = application;
+                acc[application.configuration.name] = application;
                 return acc;
             }, {});
 

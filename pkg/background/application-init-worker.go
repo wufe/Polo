@@ -39,8 +39,11 @@ func (w *ApplicationInitWorker) startAcceptingInitRequests() {
 
 func (w *ApplicationInitWorker) InitApplication(application *models.Application) error {
 	var name string
-	application.WithLock(func(a *models.Application) {
+	var remote string
+
+	application.Configuration.WithRLock(func(a *models.ApplicationConfiguration) {
 		name = a.Name
+		remote = a.Remote
 	})
 
 	log.Infof("[APP:%s] Initializing", name)
@@ -67,14 +70,9 @@ func (w *ApplicationInitWorker) InitApplication(application *models.Application)
 	baseFolder := filepath.Join(applicationFolder, "_base") // Folder used for performing periodic git fetch --all and/or git log
 	if _, err := os.Stat(baseFolder); os.IsNotExist(err) {  // Application folder does not exist
 
-		auth, err := application.GetAuth()
-		if err != nil {
-			return err
-		}
+		gitClient := versioning.GetGitClient(application)
 
-		gitClient := versioning.GetGitClient(application, auth)
-
-		err = gitClient.Clone(applicationFolder, "_base", application.Remote)
+		err = gitClient.Clone(applicationFolder, "_base", remote)
 		if err != nil {
 			return err
 		}
@@ -92,25 +90,16 @@ func (w *ApplicationInitWorker) InitApplication(application *models.Application)
 func (w *ApplicationInitWorker) startApplicationFetchRoutine(application *models.Application) {
 	go func() {
 		for {
-			time.Sleep(time.Duration(application.Fetch.Interval) * time.Second)
+			// Obtaining fetchInterval here because the configuration might change
+			var fetchInterval int
+			application.Configuration.WithRLock(func(ac *models.ApplicationConfiguration) {
+				fetchInterval = ac.Fetch.Interval
+			})
+			time.Sleep(time.Duration(fetchInterval) * time.Second)
 
 			w.mediator.ApplicationFetch.Enqueue(application, true)
 		}
 	}()
-}
-
-func defaultApplicationErrorLog(application *models.Application, err error, except ...error) {
-	if err != nil {
-		var foundError error
-		for _, exceptErr := range except {
-			if exceptErr == err {
-				foundError = exceptErr
-			}
-		}
-		if foundError == nil {
-			log.Errorf("[APP:%s] %s", application.Name, err.Error())
-		}
-	}
 }
 
 func appendWithoutDup(slice []string, elem ...string) []string {

@@ -9,10 +9,19 @@ func MapApplication(model *models.Application) *output.Application {
 	if model == nil {
 		return nil
 	}
-	model.Lock()
-	defer model.Unlock()
+	model.RLock()
+	defer model.RUnlock()
 	return &output.Application{
-		Status:                string(model.Status),
+		Status:        string(model.Status),
+		Configuration: MapApplicationConfiguration(model.Configuration),
+		Folder:        model.Folder,
+		BaseFolder:    model.BaseFolder,
+		Branches:      MapBranches(model.Branches),
+	}
+}
+
+func MapApplicationConfiguration(model models.ApplicationConfiguration) output.ApplicationConfiguration {
+	return output.ApplicationConfiguration{
 		Name:                  model.Name,
 		Remote:                model.Remote,
 		Target:                model.Target,
@@ -30,9 +39,6 @@ func MapApplication(model *models.Application) *output.Application {
 		Port:                  MapPort(model.Port),
 		UseFolderCopy:         model.UseFolderCopy,
 		CleanOnExit:           *model.CleanOnExit,
-		Folder:                model.Folder,
-		BaseFolder:            model.BaseFolder,
-		Branches:              MapBranches(model.Branches),
 	}
 }
 

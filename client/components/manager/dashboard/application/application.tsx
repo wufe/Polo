@@ -51,12 +51,12 @@ export const Application = observer((props: TProps) => {
         ${!props.isOpen ? ' max-h-20 overflow-hidden dark:hover:bg-nord3' : ''}`}
         >
         <div className={`h-20 grid items-center grid-cols-7 grid-rows-1 gap-2 relative -mx-6 px-12 pr-12 ${props.toggleEnabled ? 'cursor-pointer' : ''}`} onClick={props.onToggle}>
-            <h3 className="text-mg font-normal leading-10 uppercase col-span-3 overflow-hidden overflow-ellipsis whitespace-nowrap" title={props.application.name}>{props.application.name}</h3>
+            <h3 className="text-mg font-normal leading-10 uppercase col-span-3 overflow-hidden overflow-ellipsis whitespace-nowrap" title={props.application.configuration.name}>{props.application.configuration.name}</h3>
             <div className="col-span-4">
                 <div className="text-xs text-gray-500 uppercase">Remote:</div>
                 <div
                     className="text-sm overflow-hidden overflow-ellipsis whitespace-nowrap"
-                    title={props.application.remote}>{props.application.remote}</div>
+                    title={props.application.configuration.remote}>{props.application.configuration.remote}</div>
             </div>
             {props.isOpen && props.toggleEnabled && <svg width={16} height={16} className="absolute right-10 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -71,7 +71,7 @@ export const Application = observer((props: TProps) => {
                 <h4 className="my-1 text-xs text-gray-500 uppercase">Target:</h4>
                 <div
                     className="text-sm overflow-hidden overflow-ellipsis whitespace-nowrap"
-                    title={props.application.target}>{props.application.target}</div>
+                    title={props.application.configuration.target}>{props.application.configuration.target}</div>
             </div>
         </div>
         

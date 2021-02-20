@@ -1,7 +1,6 @@
 package versioning
 
 import (
-	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/wufe/polo/pkg/models"
 )
 
@@ -11,7 +10,7 @@ type GitClient interface {
 	HardReset(repoFolder string, commit string) error
 }
 
-func GetGitClient(application *models.Application, auth transport.AuthMethod) GitClient {
+func GetGitClient(application *models.Application) GitClient {
 	// Using CLI only
 	return NewCLIGitClient()
 }

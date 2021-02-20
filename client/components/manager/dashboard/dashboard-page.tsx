@@ -38,11 +38,11 @@ export const Dashboard = observer((props: TProps) => {
             <h1 className="text-4xl mb-10 font-light text-nord1 dark:text-nord5">Applications</h1>
             {(values(props.app.applications) as any as IApplication[]).map((application, index) =>
                 <Application
-                    isOpen={!!openApplications[application.name] || !openToggleEnabled}
-                    onToggle={toggleApplication(application.name)}
+                    isOpen={!!openApplications[application.configuration.name] || !openToggleEnabled}
+                    onToggle={toggleApplication(application.configuration.name)}
                     toggleEnabled={openToggleEnabled}
                     key={index}
-                    sessions={props.app.sessionsByApplicationName[application.name]}
+                    sessions={props.app.sessionsByApplicationName[application.configuration.name]}
                     application={application} />)}
         </div>
         

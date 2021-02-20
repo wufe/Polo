@@ -181,7 +181,8 @@ func (h *Handler) tryGetSessionByRequestURL(req *http.Request) *models.Session {
 				}
 
 			}
-			result, err := h.request.NewSession(checkout, foundApplication.Name)
+			conf := foundApplication.GetConfiguration()
+			result, err := h.request.NewSession(checkout, conf.Name)
 			if err != nil {
 				return nil
 			}

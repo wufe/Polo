@@ -14,7 +14,9 @@ type ForwardRules func(w http.ResponseWriter, r *http.Request) (http.ResponseWri
 
 func BuildDefaultForwardRules(session *models.Session) (ForwardRules, error) {
 
-	target := session.Application.Target
+	conf := session.Application.GetConfiguration()
+
+	target := conf.Target
 	target = session.Variables.ApplyTo(target)
 
 	url, err := url.Parse(target)
@@ -26,12 +28,12 @@ func BuildDefaultForwardRules(session *models.Session) (ForwardRules, error) {
 		r.URL.Scheme = url.Scheme
 		r.Host = url.Host
 
-		if session.Application.Host != "" {
-			r.Header.Add("Host", session.Application.Host)
-			r.Host = session.Application.Host
+		if conf.Host != "" {
+			r.Header.Add("Host", conf.Host)
+			r.Host = conf.Host
 		}
 
-		err := session.Application.Headers.ApplyTo(r)
+		err := conf.Headers.ApplyTo(r)
 		if err != nil {
 			log.Errorf("Error applying headers to the request: %s", err.Error())
 		}
@@ -41,8 +43,8 @@ func BuildDefaultForwardRules(session *models.Session) (ForwardRules, error) {
 }
 
 func BuildForwardRules(r *http.Request, pattern models.CompiledForwardPattern, session *models.Session) (ForwardRules, error) {
-
-	defaultTarget := session.Application.Target
+	conf := session.Application.GetConfiguration()
+	defaultTarget := conf.Target
 	defaultTarget = session.Variables.ApplyTo(defaultTarget)
 	defaultTo, err := url.Parse(defaultTarget)
 	if err != nil {

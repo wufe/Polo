@@ -23,10 +23,11 @@ func (a *Application) Add(application *models.Application) {
 func (a *Application) Get(name string) *models.Application {
 	var foundApplication *models.Application
 	for _, application := range a.applications {
-		if name == "" && application.IsDefault {
+		conf := application.GetConfiguration()
+		if name == "" && conf.IsDefault {
 			foundApplication = application
 			break
-		} else if strings.ToLower(application.Name) == strings.ToLower(name) {
+		} else if strings.ToLower(conf.Name) == strings.ToLower(name) {
 			foundApplication = application
 			break
 		}

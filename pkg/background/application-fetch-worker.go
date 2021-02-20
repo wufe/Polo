@@ -44,18 +44,15 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 
 	// TODO: Handle all these errors
 
-	auth, err := application.GetAuth()
-	if err != nil {
-		return
-	}
-
 	var appName string
 	var baseFolder string
 	var watch models.Watch
 
 	application.WithRLock(func(a *models.Application) {
-		appName = a.Name
 		baseFolder = a.BaseFolder
+	})
+	application.Configuration.WithRLock(func(a *models.ApplicationConfiguration) {
+		appName = a.Name
 		watch = a.Watch
 	})
 
@@ -79,22 +76,22 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 
 	registerHash, watchResults := w.registerObjectHash(objectsToHashMap, watch)
 
-	gitClient := versioning.GetGitClient(application, auth)
+	gitClient := versioning.GetGitClient(application)
 
 	// Open repository
 	repo, err := git.PlainOpen(baseFolder)
-	defaultApplicationErrorLog(application, err)
+	defaultApplicationErrorLog(appName, err)
 	if err != nil {
 		return
 	}
 
 	// Fetch
 	err = gitClient.FetchAll(baseFolder)
-	defaultApplicationErrorLog(application, err, git.NoErrAlreadyUpToDate)
+	defaultApplicationErrorLog(appName, err, git.NoErrAlreadyUpToDate)
 
 	// Branches
 	branches, err := repo.Branches()
-	defaultApplicationErrorLog(application, err)
+	defaultApplicationErrorLog(appName, err)
 	refPrefix := "refs/heads/"
 	branches.ForEach(func(ref *plumbing.Reference) error {
 		refName := ref.Name().String()
@@ -128,14 +125,14 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 
 		return nil
 	})
-	defaultApplicationErrorLog(application, err)
+	defaultApplicationErrorLog(appName, err)
 
 	// Tags
 	tags, err := repo.Tags()
 	if err != nil {
 		return
 	}
-	defaultApplicationErrorLog(application, err)
+	defaultApplicationErrorLog(appName, err)
 
 	tagPrefix := "refs/tags/"
 	err = tags.ForEach(func(ref *plumbing.Reference) error {
@@ -163,7 +160,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 	since := time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
 	until := time.Now().UTC()
 	logs, err := repo.Log(&git.LogOptions{All: true, Since: &since, Until: &until, Order: git.LogOrderCommitterTime})
-	defaultApplicationErrorLog(application, err)
+	defaultApplicationErrorLog(appName, err)
 	if err != nil {
 		return
 	}
@@ -251,5 +248,19 @@ func (w *ApplicationFetchWorker) registerObjectHash(objectsToHashMap map[string]
 func requestSessionBuilder(a *models.Application, ref string) func(*Mediator) {
 	return func(mediator *Mediator) {
 		mediator.BuildSession.Enqueue(ref, a, nil)
+	}
+}
+
+func defaultApplicationErrorLog(name string, err error, except ...error) {
+	if err != nil {
+		var foundError error
+		for _, exceptErr := range except {
+			if exceptErr == err {
+				foundError = exceptErr
+			}
+		}
+		if foundError == nil {
+			log.Errorf("[APP:%s] %s", name, err.Error())
+		}
 	}
 }

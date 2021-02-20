@@ -35,10 +35,16 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 			session.LogInfo("Session cleaned up")
 
 			killReason := session.GetKillReason()
+			var appStartupRetries int
+			var appCleanOnExit bool
+			session.Application.Configuration.WithRLock(func(ac *models.ApplicationConfiguration) {
+				appStartupRetries = ac.Startup.Retries
+				appCleanOnExit = *ac.CleanOnExit
+			})
 
 			shouldTryCleanFolders := false
 			if killReason == models.KillReasonBuildFailed || killReason == models.KillReasonHealthcheckFailed {
-				maxRetries := session.Application.Startup.Retries
+				maxRetries := appStartupRetries
 				if maxRetries > 0 {
 					retriesCount := session.GetStartupRetriesCount()
 					if retriesCount < maxRetries {
@@ -57,7 +63,7 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 			}
 
 			if shouldTryCleanFolders {
-				if *session.Application.CleanOnExit {
+				if appCleanOnExit {
 					session.LogInfo(fmt.Sprintf("Deleting session folder %s", session.Folder))
 					err := os.RemoveAll(session.Folder)
 					if err != nil {

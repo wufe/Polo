@@ -13,19 +13,23 @@ export const ApplicationBranchModel = types.model({
 
 export interface IApplicationBranchModel extends Instance<typeof ApplicationBranchModel> {}
 
-export const ApplicationModel = types.model({
+export const ApplicationConfigurationModel = types.model({
     name                 : types.string,
     remote               : types.string,
     target               : types.string,
     host                 : types.string,
     maxConcurrentSessions: types.number,
-    folder               : types.string,
-    branches             : types.map(ApplicationBranchModel)
+})
+
+export const ApplicationModel = types.model({
+    configuration: ApplicationConfigurationModel,
+    folder       : types.string,
+    branches     : types.map(ApplicationBranchModel)
 })
 .actions(self => {
 
     const newSession = flow(function* newSession(checkout: string) {
-        const session: APIPayload<ISession> = yield  createNewSessionAPI(self.name, checkout);
+        const session: APIPayload<ISession> = yield  createNewSessionAPI(self.configuration.name, checkout);
         return session;
     });
 

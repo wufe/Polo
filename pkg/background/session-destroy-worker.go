@@ -37,6 +37,11 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 		return
 	}
 
+	var appStopCommands []models.Command
+	session.Application.Configuration.WithRLock(func(ac *models.ApplicationConfiguration) {
+		appStopCommands = ac.Commands.Stop
+	})
+
 	session.SetStatus(models.SessionStatusStopping)
 	if _, cancel, ok := session.Context.TryGet(models.SessionBuildContextKey); ok {
 		cancel()
@@ -62,7 +67,7 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 		}()
 
 		// Destroy the session here
-		for _, command := range session.Application.Commands.Stop {
+		for _, command := range appStopCommands {
 			select {
 			case <-sessionStopContext.Done():
 				cancelSessionStop()

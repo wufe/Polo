@@ -14,8 +14,8 @@ var (
 )
 
 type RootConfiguration struct {
-	Global       GlobalConfiguration
-	Applications []*Application
+	Global                    GlobalConfiguration
+	ApplicationConfigurations []*ApplicationConfiguration `yaml:"applications"`
 }
 
 type GlobalConfiguration struct {

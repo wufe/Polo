@@ -15,6 +15,7 @@ import (
 type Startup struct {
 	isDev         bool
 	configuration *models.RootConfiguration
+	applications  []*models.Application
 	handler       *rest.Handler
 	static        *services.StaticService
 	appStorage    *storage.Application
@@ -25,6 +26,7 @@ type Startup struct {
 func NewStartup(
 	isDev bool,
 	configuration *models.RootConfiguration,
+	applications []*models.Application,
 	handler *rest.Handler,
 	static *services.StaticService,
 	appStorage *storage.Application,
@@ -33,6 +35,7 @@ func NewStartup(
 	return &Startup{
 		isDev:         isDev,
 		configuration: configuration,
+		applications:  applications,
 		handler:       handler,
 		static:        static,
 		appStorage:    appStorage,
@@ -51,7 +54,7 @@ func (s *Startup) Start() {
 }
 
 func (s *Startup) loadApplications() {
-	for _, application := range s.configuration.Applications {
+	for _, application := range s.applications {
 		go func(a *models.Application) {
 			err := s.mediator.ApplicationInit.Enqueue(a)
 			if err != nil {
@@ -62,7 +65,7 @@ func (s *Startup) loadApplications() {
 }
 
 func (s *Startup) storeApplications() {
-	for _, application := range s.configuration.Applications {
+	for _, application := range s.applications {
 		s.appStorage.Add(application)
 	}
 }

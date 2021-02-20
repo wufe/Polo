@@ -66,6 +66,18 @@ func (w *SessionBuildWorker) RequestNewSession(buildInput *queues.SessionBuildIn
 
 func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput) *queues.SessionBuildResult {
 
+	var appName string
+	var appMaxConcurrentSessions int
+	var appPort models.PortConfiguration
+	var appTarget string
+
+	input.Application.Configuration.WithRLock(func(ac *models.ApplicationConfiguration) {
+		appName = ac.Name
+		appMaxConcurrentSessions = ac.MaxConcurrentSessions
+		appPort = ac.Port
+		appTarget = ac.Target
+	})
+
 	aliveCount := len(w.sessionStorage.GetAllAliveSessions())
 	if aliveCount >= w.global.MaxConcurrentSessions {
 		return &queues.SessionBuildResult{
@@ -74,7 +86,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 		}
 	}
 
-	if w.sessionStorage.AliveByApplicationCount(input.Application) >= input.Application.MaxConcurrentSessions {
+	if w.sessionStorage.AliveByApplicationCount(input.Application) >= appMaxConcurrentSessions {
 		return &queues.SessionBuildResult{
 			Result:        queues.SessionBuildResultFailed,
 			FailingReason: "Reached maximum concurrent sessions for this application",
@@ -87,7 +99,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 
 		session = models.NewSession(&models.Session{
 			UUID:        sessionUUID,
-			Name:        input.Application.Name,
+			Name:        appName,
 			Port:        0,
 			Target:      "",
 			Status:      models.SessionStatusStarting,
@@ -103,7 +115,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 
 	session.LogInfo(fmt.Sprintf("Creating session %s", session.UUID))
 
-	freePort, err := getFreePort(&input.Application.Port)
+	freePort, err := getFreePort(appPort)
 	if err != nil {
 		log.Errorln("Could not get a free port", err)
 		return &queues.SessionBuildResult{
@@ -142,7 +154,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 		}
 	}
 
-	target := strings.ReplaceAll(input.Application.Target, "{{port}}", fmt.Sprint(freePort))
+	target := strings.ReplaceAll(appTarget, "{{port}}", fmt.Sprint(freePort))
 	session.Target = target
 	session.LogInfo(fmt.Sprintf("Setting session target to %s", session.Target))
 
@@ -163,7 +175,17 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 }
 
 func (w *SessionBuildWorker) buildSession(session *models.Session) {
-	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(session.Application.Startup.Timeout))
+	var appStartupTimeout int
+	var appStartCommands []models.Command
+	var appHealthcheck models.Healthcheck
+
+	session.Application.Configuration.WithRLock(func(ac *models.ApplicationConfiguration) {
+		appStartupTimeout = ac.Startup.Timeout
+		appStartCommands = ac.Commands.Start
+		appHealthcheck = ac.Healthcheck
+	})
+
+	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(appStartupTimeout))
 	defer session.Context.
 		Named(models.SessionBuildContextKey).
 		With(sessionStartContext, cancelSessionStart).
@@ -206,7 +228,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 			}
 		}
 	}()
-	healthcheckingStarted, err := w.execCommands(sessionStartContext, session, session.Application.Commands.Start)
+	healthcheckingStarted, err := w.execCommands(sessionStartContext, session, appStartCommands)
 	if err != nil {
 		if err == ErrWrongSessionState {
 			session.SetKillReason(models.KillReasonStopped)
@@ -219,7 +241,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 	calcBuildMetrics()
 	w.sessionStorage.Update(session)
 
-	if session.Application.Healthcheck == (models.Healthcheck{}) {
+	if appHealthcheck == (models.Healthcheck{}) {
 		if session.Status != models.SessionStatusStarted {
 			w.mediator.StartSession.Enqueue(session)
 		}
@@ -247,7 +269,14 @@ func (w *SessionBuildWorker) prepareFolders(session *models.Session) error {
 func (w *SessionBuildWorker) execCommands(ctx context.Context, session *models.Session, commands []models.Command) (healthcheckingStarted bool, err error) {
 	calcCommandMetrics := models.NewMetricsForSession(session)("Startup commands")
 	defer calcCommandMetrics()
-	for _, command := range session.Application.Commands.Start {
+
+	var appHealthcheck models.Healthcheck
+
+	session.Application.Configuration.WithRLock(func(ac *models.ApplicationConfiguration) {
+		appHealthcheck = ac.Healthcheck
+	})
+
+	for _, command := range commands {
 		select {
 		case <-ctx.Done():
 			return healthcheckingStarted, context.Canceled
@@ -268,7 +297,7 @@ func (w *SessionBuildWorker) execCommands(ctx context.Context, session *models.S
 				}
 			} else {
 				w.sessionStorage.Update(session)
-				if command.StartHealthchecking && !healthcheckingStarted && session.Application.Healthcheck != (models.Healthcheck{}) {
+				if command.StartHealthchecking && !healthcheckingStarted && appHealthcheck != (models.Healthcheck{}) {
 					w.mediator.HealthcheckSession.Enqueue(session)
 					healthcheckingStarted = true
 				}

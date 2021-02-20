@@ -43,12 +43,13 @@ func buildCommand(command string, session *models.Session) (string, error) {
 }
 
 func addPortsOnDemand(input string, session *models.Session) (string, error) {
+	conf := session.Application.GetConfiguration()
 	re := regexp.MustCompile(`{{(port\d*)}}`)
 	matches := re.FindAllStringSubmatch(input, -1)
 	for _, match := range matches {
 		portVariable := match[1]
 		if _, ok := session.Variables[portVariable]; !ok {
-			port, err := getFreePort(&session.Application.Port)
+			port, err := getFreePort(conf.Port)
 			if err != nil {
 				return "", err
 			}
@@ -58,7 +59,7 @@ func addPortsOnDemand(input string, session *models.Session) (string, error) {
 	return input, nil
 }
 
-func getFreePort(portConfiguration *models.PortConfiguration) (int, error) {
+func getFreePort(portConfiguration models.PortConfiguration) (int, error) {
 	foundPort := 0
 L:
 	for foundPort == 0 {

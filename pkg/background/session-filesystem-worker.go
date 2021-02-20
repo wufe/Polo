@@ -40,10 +40,13 @@ func (w *SessionFilesystemWorker) startAcceptingFSRequests() {
 }
 
 func (w *SessionFilesystemWorker) buildSessionCommitStructure(session *models.Session) (string, error) {
+	var useFolderCopy bool
+	session.Application.Configuration.WithRLock(func(ac *models.ApplicationConfiguration) {
+		useFolderCopy = ac.UseFolderCopy
+	})
 
 	session.LogInfo(fmt.Sprintf("Trying to build session commit structure in folder %s", session.Application.Folder))
 	checkout := sanitize.Name(session.CommitID)
-	useFolderCopy := session.Application.UseFolderCopy
 
 	if useFolderCopy {
 		return buildStructureCopying(session, checkout)
@@ -52,14 +55,7 @@ func (w *SessionFilesystemWorker) buildSessionCommitStructure(session *models.Se
 }
 
 func buildStructureCopying(session *models.Session, checkout string) (string, error) {
-
-	auth, err := session.Application.GetAuth()
-	if err != nil {
-		session.LogError(fmt.Sprintf("Error while providing authentication: %s", err.Error()))
-		return "", err
-	}
-
-	gitClient := versioning.GetGitClient(session.Application, auth)
+	gitClient := versioning.GetGitClient(session.Application)
 
 	applicationBaseFolder := session.Application.BaseFolder
 	sessionCommitFolder := filepath.Join(session.Application.Folder, checkout)
@@ -76,7 +72,7 @@ func buildStructureCopying(session *models.Session, checkout string) (string, er
 	}
 
 	session.LogInfo("Performing an hard reset to the selected commit")
-	err = gitClient.HardReset(applicationBaseFolder, sessionCommit)
+	err := gitClient.HardReset(applicationBaseFolder, sessionCommit)
 	if err != nil {
 		session.LogError(fmt.Sprintf("Error while performing hard reset: %s", err.Error()))
 		return "", err
@@ -97,22 +93,25 @@ func buildStructureCopying(session *models.Session, checkout string) (string, er
 }
 
 func buildStructureCloning(session *models.Session, checkout string) (string, error) {
-	auth, err := session.Application.GetAuth()
-	if err != nil {
-		session.LogError(fmt.Sprintf("Error while providing authentication: %s", err.Error()))
-		return "", err
-	}
+	gitClient := versioning.GetGitClient(session.Application)
 
-	gitClient := versioning.GetGitClient(session.Application, auth)
+	var appBaseFolder string
+	var appFolder string
+	var appRemote string
+	session.Application.WithRLock(func(a *models.Application) {
+		appBaseFolder = a.BaseFolder
+		appFolder = a.Folder
+	})
+	session.Application.Configuration.WithRLock(func(ac *models.ApplicationConfiguration) {
+		appRemote = ac.Remote
+	})
 
-	applicationRemote := session.Application.Remote
-	applicationBaseFolder := session.Application.BaseFolder
-	sessionCommitFolder := filepath.Join(session.Application.Folder, checkout)
+	sessionCommitFolder := filepath.Join(appFolder, checkout)
 	sessionCommit := session.CommitID
 
 	if _, err := os.Stat(sessionCommitFolder); os.IsNotExist(err) {
-		session.LogInfo(fmt.Sprintf("Cloning from remote %s into %s", applicationRemote, sessionCommitFolder))
-		err := gitClient.Clone(session.Application.Folder, checkout, applicationRemote)
+		session.LogInfo(fmt.Sprintf("Cloning from remote %s into %s", appRemote, sessionCommitFolder))
+		err := gitClient.Clone(appFolder, checkout, appRemote)
 		if err != nil {
 			session.LogError(fmt.Sprintf("Error while cloning: %s", err.Error()))
 			return "", err
@@ -120,14 +119,14 @@ func buildStructureCloning(session *models.Session, checkout string) (string, er
 	}
 
 	session.LogInfo("Fetching from remote")
-	err = gitClient.FetchAll(sessionCommitFolder)
+	err := gitClient.FetchAll(sessionCommitFolder)
 	if err != nil {
 		session.LogError(fmt.Sprintf("Error while fetching from remote: %s", err.Error()))
 		return "", err
 	}
 
 	session.LogInfo("Performing an hard reset to the selected commit")
-	err = gitClient.HardReset(applicationBaseFolder, sessionCommit)
+	err = gitClient.HardReset(appBaseFolder, sessionCommit)
 	if err != nil {
 		session.LogError(fmt.Sprintf("Error while performing hard reset: %s", err.Error()))
 		return "", err

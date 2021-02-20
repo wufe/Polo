@@ -21,7 +21,7 @@ func main() {
 	devServer := utils.DevServerURL()
 
 	// Configuration (.yml)
-	configuration := storage.LoadConfigurations()
+	configuration, applications := storage.LoadConfigurations()
 
 	// Instance
 	existingInstance, _ := storage.DetectInstance()
@@ -69,6 +69,6 @@ func main() {
 	rest := rest.NewHandler(dev, staticService, routing, proxy, queryService, requestService)
 
 	// Startup
-	pkg.NewStartup(dev, configuration, rest, staticService, appStorage, sesStorage, mediator).Start()
+	pkg.NewStartup(dev, configuration, applications, rest, staticService, appStorage, sesStorage, mediator).Start()
 
 }
