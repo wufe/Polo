@@ -23,7 +23,8 @@ module.exports = [
         },
         output: {
             publicPath: '/_polo_/public/',
-            filename: '[name].js',
+            filename: '[name].[fullhash].js',
+            chunkFilename: '[name].[fullhash].js',
             path: path.resolve(__dirname, 'public')
         },
         devtool: 'source-map',
@@ -87,8 +88,8 @@ module.exports = [
             new MiniCssExtractPlugin({
                 // Options similar to the same options in webpackOptions.output
                 // both options are optional
-                filename: "[name].css",
-                chunkFilename: "[id].css",
+                filename: "[name].[fullhash].css",
+                chunkFilename: "[id].[fullhash].css",
             }),
             // new HtmlWebpackPlugin({
             //     filename: './session-helper.html',
@@ -119,7 +120,8 @@ module.exports = [
         },
         output: {
             publicPath: '/_polo_/public/',
-            filename: '[name].js',
+            filename: '[name].[fullhash].js',
+            chunkFilename: '[name].[fullhash].js',
             path: path.resolve(__dirname, 'public')
         },
         devtool: 'source-map',
@@ -191,8 +193,8 @@ module.exports = [
             new MiniCssExtractPlugin({
                 // Options similar to the same options in webpackOptions.output
                 // both options are optional
-                filename: "[name].css",
-                chunkFilename: "[id].css",
+                filename: "[name].[fullhash].css",
+                chunkFilename: "[id].[fullhash].css",
             }),
             new HtmlWebpackPlugin({
                 filename: './session-helper.html',
