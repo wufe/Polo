@@ -3,6 +3,8 @@ import { ISession, SessionStatus } from '@/state/models';
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 
+export const noExpirationAgeValue = -1;
+
 type TProps = {
     sessions: ISession[];
 }
@@ -30,7 +32,7 @@ export const ApplicationSessions = observer((props: TProps) => {
                 <span className="leading-none text-xs uppercase col-span-1 font-bold" style={{ color: colorByStatus(session.status) }}>{session.status}</span>
                 <span className="leading-none text-sm mr-3 flex-grow col-span-7">{session.checkout}</span>
                 <span className="leading-none text-xs uppercase text-gray-500 col-span-2">
-                    Expires in {session.maxAge}s
+                    {session.maxAge > noExpirationAgeValue && <>Expires in {session.maxAge}s</>}
                 </span>
                 <span className="leading-none col-span-2 text-center">
                     <span className="leading-none text-sm underline cursor-pointer inline-block mx-3 hover:text-nord14" onClick={() => attachToSession(session)}>Attach</span>
