@@ -8,7 +8,7 @@ applications:
     fetch:
       interval: 30
     watch:
-      - 
+      - main
     is_default: true
     startup:
       retries: 3
@@ -34,7 +34,7 @@ applications:
         - command: "docker kill {{container_id}}"
           continue_on_error: true
     recycle:
-      inactivity_timeout: 1000
+      inactivity_timeout: 60
     healthcheck:
       max_retries: 1
       retry_interval: 5

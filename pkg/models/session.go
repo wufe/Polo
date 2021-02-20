@@ -189,9 +189,11 @@ func (session *Session) LogStderr(message string) {
 
 func (session *Session) MarkAsBeingRequested() {
 	conf := session.Application.GetConfiguration()
-	// Refreshes the inactiveAt field every time someone makes a request to this session
-	session.SetInactiveAt(time.Now().Add(time.Second * time.Duration(conf.Recycle.InactivityTimeout)))
-	session.SetMaxAge(conf.Recycle.InactivityTimeout)
+	if session.GetMaxAge() > -1 {
+		// Refreshes the inactiveAt field every time someone makes a request to this session
+		session.SetInactiveAt(time.Now().Add(time.Second * time.Duration(conf.Recycle.InactivityTimeout)))
+		session.SetMaxAge(conf.Recycle.InactivityTimeout)
+	}
 }
 
 func (session *Session) SetStatus(status SessionStatus) {

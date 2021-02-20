@@ -26,7 +26,7 @@ export const ApplicationSessions = observer((props: TProps) => {
         {props.sessions.map((session, key) =>
             <div
                 key={key}
-                className="items-end grid grid-cols-12 gap-2">
+                className="items-end grid grid-cols-12 gap-2 py-1">
                 <span className="leading-none text-xs uppercase col-span-1 font-bold" style={{ color: colorByStatus(session.status) }}>{session.status}</span>
                 <span className="leading-none text-sm mr-3 flex-grow col-span-7">{session.checkout}</span>
                 <span className="leading-none text-xs uppercase text-gray-500 col-span-2">

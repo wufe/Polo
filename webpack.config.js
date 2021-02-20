@@ -111,8 +111,8 @@ module.exports = [
         },
         output: {
             publicPath: '/_polo_/public/',
-            filename: '[name].[fullhash].js',
-            chunkFilename: '[name].[fullhash].js',
+            filename: isDevelopment ? '[name].js' : '[name].[fullhash].js',
+            chunkFilename: isDevelopment ? '[id]-chunk.js' : '[id]-chunk.[fullhash].js',
             path: path.resolve(__dirname, 'public')
         },
         devtool: 'source-map',
@@ -173,8 +173,8 @@ module.exports = [
             new MiniCssExtractPlugin({
                 // Options similar to the same options in webpackOptions.output
                 // both options are optional
-                filename: "[name].[fullhash].css",
-                chunkFilename: "[id].[fullhash].css",
+                filename: isDevelopment ? '[name].css' : '[name].[fullhash].css',
+                chunkFilename: isDevelopment ? '[id]-chunk.css' : '[id].[fullhash].css',
             }),
             new HtmlWebpackPlugin({
                 filename: './session-helper.html',
