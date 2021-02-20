@@ -19,7 +19,6 @@ module.exports = [
         name: 'manager',
         entry: {
             'manager': './client/manager-index.tsx',
-            // 'session-helper': './client/session-helper-index.tsx',
         },
         output: {
             publicPath: '/_polo_/public/',
@@ -64,7 +63,6 @@ module.exports = [
                         'sass-loader'
                     ]
                 },
-                { test: /\.hbs$/, loader: 'handlebars-loader' },
                 { test: /\.(png|svg)$/, loader: 'file-loader' },
 
             ]
@@ -79,7 +77,6 @@ module.exports = [
         plugins: [
             isDevelopment && new webpack.HotModuleReplacementPlugin(),
             isDevelopment && new ReactRefreshWebpackPlugin(),
-            // isProduction && new CleanWebpackPlugin(),
             new ForkTsCheckerWebpackPlugin({
                 typescript: {
                     configFile: path.resolve(__dirname, 'tsconfig.json')
@@ -91,12 +88,6 @@ module.exports = [
                 filename: "[name].[fullhash].css",
                 chunkFilename: "[id].[fullhash].css",
             }),
-            // new HtmlWebpackPlugin({
-            //     filename: './session-helper.html',
-            //     template: './client/session-helper.hbs',
-            //     inject: false,
-            //     chunks: ['session-helper']
-            // }),
             new HtmlWebpackPlugin({
                 filename: './manager.html',
                 template: './client/manager.html',
@@ -139,14 +130,6 @@ module.exports = [
                     test: /\.tsx?$/,
                     exclude: /node_modules/,
                     use: [
-                        // {
-                        //     loader: require.resolve('babel-loader'),
-                        //     options: {
-                        //         plugins: [
-                        //             isDevelopment && require.resolve('react-refresh/babel'),
-                        //         ].filter(Boolean),
-                        //     },
-                        // },
                         {
                             loader: 'ts-loader',
                             options: {
@@ -182,9 +165,6 @@ module.exports = [
             ].filter(Boolean)
         },
         plugins: [
-            // isDevelopment && new webpack.HotModuleReplacementPlugin(),
-            // isDevelopment && new ReactRefreshWebpackPlugin(),
-            // isProduction && new CleanWebpackPlugin(),
             new ForkTsCheckerWebpackPlugin({
                 typescript: {
                     configFile: path.resolve(__dirname, 'tsconfig.json')
@@ -202,19 +182,7 @@ module.exports = [
                 inject: false,
                 chunks: ['session-helper']
             }),
-            // new HtmlWebpackPlugin({
-            //     filename: './manager.html',
-            //     template: './client/manager.html',
-            //     chunks: ['manager'],
-            // }),
 
         ].filter(Boolean),
-        // devServer: {
-        //     contentBase: path.join(__dirname, 'public'),
-        //     public: 'localhost',
-        //     compress: true,
-        //     port: 9001,
-        //     hot: true
-        // }
     })
 ];
