@@ -91,7 +91,7 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 					)
 					cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
 				}
-				err = utils.ExecCmds(func(sl *utils.StdLine) {
+				err = utils.ExecCmds(sessionStopContext, func(sl *utils.StdLine) {
 					session.LogStdout(sl.Line)
 				}, cmds...)
 

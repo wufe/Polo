@@ -186,6 +186,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 	})
 
 	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(appStartupTimeout))
+	sessionStartContext, cancelSessionStart = context.WithCancel(sessionStartContext)
 	defer session.Context.
 		Named(models.SessionBuildContextKey).
 		With(sessionStartContext, cancelSessionStart).
@@ -329,7 +330,7 @@ func (w *SessionBuildWorker) execCommand(ctx context.Context, command *models.Co
 		cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
 	}
 
-	err = utils.ExecCmds(func(line *utils.StdLine) {
+	err = utils.ExecCmds(ctx, func(line *utils.StdLine) {
 		if line.Type == utils.StdTypeOut {
 			session.LogStdout(line.Line)
 		} else {

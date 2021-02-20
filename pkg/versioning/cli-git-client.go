@@ -1,6 +1,7 @@
 package versioning
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -39,7 +40,7 @@ func (client *CLIGitClient) HardReset(repoFolder string, commit string) error {
 func execCommands(cmds ...*exec.Cmd) error {
 	for _, cmd := range cmds {
 		errorLines := []string{}
-		err := utils.ExecCmds(func(sl *utils.StdLine) {
+		err := utils.ExecCmds(context.Background(), func(sl *utils.StdLine) {
 			if sl.Type == utils.StdTypeErr {
 				errorLines = append(errorLines, sl.Line)
 			}

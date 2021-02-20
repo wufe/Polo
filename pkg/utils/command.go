@@ -29,9 +29,9 @@ func ParseCommandContext(context context.Context, command string) []*exec.Cmd {
 	return commands
 }
 
-func ExecCmds(callback func(*StdLine), cmds ...*exec.Cmd) error {
+func ExecCmds(ctx context.Context, callback func(*StdLine), cmds ...*exec.Cmd) error {
 
-	cmdCtx, cancelCtx := context.WithCancel(context.Background())
+	cmdCtx, cancelCtx := context.WithCancel(ctx)
 
 	for i := 1; i < len(cmds); i++ {
 		cmds[i].Stdin, _ = cmds[i-1].StdoutPipe()
