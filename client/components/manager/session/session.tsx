@@ -24,13 +24,13 @@ export const Session = observer((props: TProps) => {
     }
 
     return <div className="
-        mx-auto w-10/12 max-w-full flex flex-col min-w-0 min-h-0 flex-1 pt-3 font-quicksand" style={{height:'calc(100vh - 120px)'}}>
+        mx-auto w-full max-w-6xl flex flex-col min-w-0 min-h-0 flex-1 pt-3 font-quicksand" style={{height:'calc(100vh - 120px)'}}>
         <div className="main-gradient-faded absolute left-0 right-0 top-0 pointer-events-none" style={{ bottom: `${overlayBottom}%`}}></div>
-        <h1 className="text-4xl mb-3 font-quicksand font-light text-nord1 dark:text-nord5 z-10">Session</h1>
+        <h1 className="text-4xl px-2 lg:px-0 mb-3 font-quicksand font-light text-nord1 dark:text-nord5 z-10">Session</h1>
         <div className="text-lg text-nord1 dark:text-nord5 mb-4 z-10 border-l pl-3 border-gray-500">
             <span>{props.session.checkout}</span>
         </div>
-        <blockquote className="relative px-4 py-3 italic text-gray-500 dark:text-gray-400 z-10 bg-nord6 shadow-md dark:bg-nord-5 leading-loose">
+        <blockquote className="relative px-2 lg:px-4 py-3 italic text-gray-500 dark:text-gray-400 z-10 bg-nord6 shadow-md dark:bg-nord-5 leading-loose">
             <p className="text-sm pb-1">{props.session.commitMessage}</p>
             <cite className="flex items-center">
                 <span className="mb-1 text-sm font-bold italic flex-1">~ {props.session.commitAuthorName}</span>

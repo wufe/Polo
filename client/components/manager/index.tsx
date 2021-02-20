@@ -27,7 +27,7 @@ export const ManagerApp = () => {
         dark:bg-gray-800
         dark:text-gray-300">
         <div className="flex pt-10 pb-8 z-10">
-            <div className="w-10/12 mx-auto">
+            <div className="w-10/12 mx-auto max-w-7xl">
                 <a href="/_polo_/">
                     <picture>
                         <source srcSet={whiteLogo} media="(prefers-color-scheme: dark)" />

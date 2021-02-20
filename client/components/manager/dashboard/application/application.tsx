@@ -48,11 +48,12 @@ export const Application = observer((props: TProps) => {
         bg-gray-50
         dark:bg-nord0
         font-quicksand
+        max-w-5xl
         ${!props.isOpen ? ' max-h-20 overflow-hidden dark:hover:bg-nord3' : ''}`}
         >
-        <div className={`h-20 grid items-center grid-cols-7 grid-rows-1 gap-2 relative -mx-6 px-12 pr-12 ${props.toggleEnabled ? 'cursor-pointer' : ''}`} onClick={props.onToggle}>
-            <h3 className="text-mg font-normal leading-10 uppercase col-span-3 overflow-hidden overflow-ellipsis whitespace-nowrap" title={props.application.configuration.name}>{props.application.configuration.name}</h3>
-            <div className="col-span-4">
+        <div className={`h-20 flex flex-col lg:flex-row items-stretch lg:items-center justify-between relative lg:-mx-6 px-2 lg:px-12 lg:pr-12 ${props.toggleEnabled ? 'cursor-pointer' : ''}`} onClick={props.onToggle}>
+            <h3 className="text-mg font-normal leading-10 uppercase col-span-3 overflow-hidden overflow-ellipsis whitespace-nowrap text-center lg:text-left" title={props.application.configuration.name}>{props.application.configuration.name}</h3>
+            <div className="col-span-4 lg:px-10">
                 <div className="text-xs text-gray-500 uppercase">Remote:</div>
                 <div
                     className="text-sm overflow-hidden overflow-ellipsis whitespace-nowrap"
@@ -66,7 +67,7 @@ export const Application = observer((props: TProps) => {
             </svg>}
         </div>
 
-        <div className="py-4 px-6">
+        <div className="py-4 px-2 lg:px-6">
             <div className="col-span-2">
                 <h4 className="my-1 text-xs text-gray-500 uppercase">Target:</h4>
                 <div
@@ -75,7 +76,7 @@ export const Application = observer((props: TProps) => {
             </div>
         </div>
         
-        {props.sessions && props.sessions.length > 0 && <div className="py-4 px-6 bg-gradient-to-bl from-nord4 to-white dark:from-nord-1 dark:to-nord-4">
+        {props.sessions && props.sessions.length > 0 && <div className="py-4 px-2 lg:px-6 bg-gradient-to-bl from-nord4 to-white dark:from-nord-1 dark:to-nord-4">
             <ApplicationSessions sessions={props.sessions} />
         </div>}
 
@@ -83,9 +84,9 @@ export const Application = observer((props: TProps) => {
             <ApplicationBranches branches={props.application.branches} onSessionCreationSubmission={submitSessionCreation} />
         </div>}
         
-        <div className="flex my-4 py-4 px-6">
+        <div className="flex my-4 py-4 px-2 lg:px-6">
             <input
-                className="flex-grow px-3 py-1 mx-3 text-sm border rounded-sm dark:bg-gray-300 dark:text-gray-700 dark:placeholder-gray-500"
+                className="flex-grow px-1 lg:px-3 py-1 mr-3 text-sm border rounded-sm dark:bg-gray-300 dark:text-gray-700 dark:placeholder-gray-500"
                 type="text"
                 placeholder="Checkout a commit, a branch or a tag.."
                 value={newSessionCheckout}
