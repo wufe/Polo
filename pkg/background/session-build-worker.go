@@ -65,18 +65,11 @@ func (w *SessionBuildWorker) RequestNewSession(buildInput *queues.SessionBuildIn
 }
 
 func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput) *queues.SessionBuildResult {
-
-	var appName string
-	var appMaxConcurrentSessions int
-	var appPort models.PortConfiguration
-	var appTarget string
-
-	input.Application.Configuration.WithRLock(func(ac *models.ApplicationConfiguration) {
-		appName = ac.Name
-		appMaxConcurrentSessions = ac.MaxConcurrentSessions
-		appPort = ac.Port
-		appTarget = ac.Target
-	})
+	conf := input.Application.GetConfiguration()
+	appName := conf.Name
+	appMaxConcurrentSessions := conf.MaxConcurrentSessions
+	appPort := conf.Port
+	appTarget := conf.Target
 
 	aliveCount := len(w.sessionStorage.GetAllAliveSessions())
 	if aliveCount >= w.global.MaxConcurrentSessions {
@@ -176,15 +169,10 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 }
 
 func (w *SessionBuildWorker) buildSession(session *models.Session) {
-	var appStartupTimeout int
-	var appStartCommands []models.Command
-	var appHealthcheck models.Healthcheck
-
-	session.Application.Configuration.WithRLock(func(ac *models.ApplicationConfiguration) {
-		appStartupTimeout = ac.Startup.Timeout
-		appStartCommands = ac.Commands.Start
-		appHealthcheck = ac.Healthcheck
-	})
+	conf := session.Application.GetConfiguration()
+	appStartupTimeout := conf.Startup.Timeout
+	appStartCommands := conf.Commands.Start
+	appHealthcheck := conf.Healthcheck
 
 	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(appStartupTimeout))
 	sessionStartContext, cancelSessionStart = context.WithCancel(sessionStartContext)
@@ -272,11 +260,8 @@ func (w *SessionBuildWorker) execCommands(ctx context.Context, session *models.S
 	calcCommandMetrics := models.NewMetricsForSession(session)("Startup commands")
 	defer calcCommandMetrics()
 
-	var appHealthcheck models.Healthcheck
-
-	session.Application.Configuration.WithRLock(func(ac *models.ApplicationConfiguration) {
-		appHealthcheck = ac.Healthcheck
-	})
+	conf := session.Application.GetConfiguration()
+	appHealthcheck := conf.Healthcheck
 
 	for _, command := range commands {
 		select {

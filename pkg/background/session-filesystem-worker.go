@@ -40,10 +40,8 @@ func (w *SessionFilesystemWorker) startAcceptingFSRequests() {
 }
 
 func (w *SessionFilesystemWorker) buildSessionCommitStructure(session *models.Session) (string, error) {
-	var useFolderCopy bool
-	session.Application.Configuration.WithRLock(func(ac *models.ApplicationConfiguration) {
-		useFolderCopy = ac.UseFolderCopy
-	})
+	conf := session.Application.GetConfiguration()
+	useFolderCopy := conf.UseFolderCopy
 
 	session.LogInfo(fmt.Sprintf("Trying to build session commit structure in folder %s", session.Application.Folder))
 	checkout := sanitize.Name(session.CommitID)
@@ -97,14 +95,12 @@ func buildStructureCloning(session *models.Session, checkout string) (string, er
 
 	var appBaseFolder string
 	var appFolder string
-	var appRemote string
 	session.Application.WithRLock(func(a *models.Application) {
 		appBaseFolder = a.BaseFolder
 		appFolder = a.Folder
 	})
-	session.Application.Configuration.WithRLock(func(ac *models.ApplicationConfiguration) {
-		appRemote = ac.Remote
-	})
+	conf := session.Application.GetConfiguration()
+	appRemote := conf.Remote
 
 	sessionCommitFolder := filepath.Join(appFolder, checkout)
 	sessionCommit := session.CommitID

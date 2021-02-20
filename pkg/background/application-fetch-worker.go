@@ -44,17 +44,15 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 
 	// TODO: Handle all these errors
 
-	var appName string
 	var baseFolder string
-	var watch models.Watch
 
 	application.WithRLock(func(a *models.Application) {
 		baseFolder = a.BaseFolder
 	})
-	application.Configuration.WithRLock(func(a *models.ApplicationConfiguration) {
-		appName = a.Name
-		watch = a.Watch
-	})
+
+	conf := application.GetConfiguration()
+	appName := conf.Name
+	watch := conf.Watch
 
 	objectsToHashMap := make(map[string]string)
 	hashToObjectsMap := make(map[string]*models.RemoteObject)

@@ -53,16 +53,11 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 	go func() {
 		time.Sleep(5 * time.Second)
 
-		var maxRetries int
-		var healthcheck models.Healthcheck
-		var headers models.Headers
-		var host string
-		session.Application.Configuration.WithRLock(func(ac *models.ApplicationConfiguration) {
-			maxRetries = ac.Healthcheck.MaxRetries
-			healthcheck = ac.Healthcheck
-			headers = ac.Headers
-			host = ac.Host
-		})
+		conf := session.Application.GetConfiguration()
+		maxRetries := conf.Healthcheck.MaxRetries
+		healthcheck := conf.Healthcheck
+		headers := conf.Headers
+		host := conf.Host
 
 		retryCount := 0
 

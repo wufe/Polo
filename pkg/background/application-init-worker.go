@@ -38,13 +38,9 @@ func (w *ApplicationInitWorker) startAcceptingInitRequests() {
 }
 
 func (w *ApplicationInitWorker) InitApplication(application *models.Application) error {
-	var name string
-	var remote string
-
-	application.Configuration.WithRLock(func(a *models.ApplicationConfiguration) {
-		name = a.Name
-		remote = a.Remote
-	})
+	conf := application.GetConfiguration()
+	name := conf.Name
+	remote := conf.Remote
 
 	log.Infof("[APP:%s] Initializing", name)
 	sessionsFolder, err := filepath.Abs(w.global.SessionsFolder)
@@ -91,10 +87,8 @@ func (w *ApplicationInitWorker) startApplicationFetchRoutine(application *models
 	go func() {
 		for {
 			// Obtaining fetchInterval here because the configuration might change
-			var fetchInterval int
-			application.Configuration.WithRLock(func(ac *models.ApplicationConfiguration) {
-				fetchInterval = ac.Fetch.Interval
-			})
+			conf := application.GetConfiguration()
+			fetchInterval := conf.Fetch.Interval
 			time.Sleep(time.Duration(fetchInterval) * time.Second)
 
 			w.mediator.ApplicationFetch.Enqueue(application, true)

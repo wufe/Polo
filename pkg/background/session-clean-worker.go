@@ -35,12 +35,9 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 			session.LogInfo("Session cleaned up")
 
 			killReason := session.GetKillReason()
-			var appStartupRetries int
-			var appCleanOnExit bool
-			session.Application.Configuration.WithRLock(func(ac *models.ApplicationConfiguration) {
-				appStartupRetries = ac.Startup.Retries
-				appCleanOnExit = *ac.CleanOnExit
-			})
+			conf := session.Application.GetConfiguration()
+			appStartupRetries := conf.Startup.Retries
+			appCleanOnExit := *conf.CleanOnExit
 
 			shouldTryCleanFolders := false
 			if killReason == models.KillReasonBuildFailed || killReason == models.KillReasonHealthcheckFailed {
