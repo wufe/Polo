@@ -46,7 +46,7 @@ export const SessionLogs = observer((props: { logs: ISessionLog[], onLogsProport
 
     return <div
         ref={containerRef}
-        className="lg:m-2 text-nord-3 dark:text-nord4 py-5 rounded-md flex-grow mt-10 mb-36 flex flex-col min-w-0 min-h-0 overflow-x-hidden no-horizontal-scrollbar"
+        className="lg:m-2 text-nord-3 dark:text-nord4 py-5 rounded-md flex-grow mt-10 mb-10 lg:mb-36 flex flex-col min-w-0 min-h-0 overflow-x-hidden no-horizontal-scrollbar"
         style={{ scrollBehavior: 'smooth' }}
         onScroll={onScroll}>
         {props.logs.map((log: ISessionLog, key) => {
