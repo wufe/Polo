@@ -18,6 +18,6 @@ type Session struct {
 	MaxAge            int               `json:"maxAge"`
 	Folder            string            `json:"folder"`
 	Variables         map[string]string `json:"variables"`
-	Logs              []SessionLog      `json:"logs"`
+	Logs              []SessionLog      `json:"-"`
 	Metrics           []Metric          `json:"metrics"`
 }
