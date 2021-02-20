@@ -36,7 +36,7 @@ export const useScroll = (onLogsProportionChanged: (proportions: number) => void
                 onLogsProportionChanged(proportion);
             }
         }
-    }, [containerRef.current, windowHeight, ...deps]);
+    }, [containerRef.current, windowHeight, scrolling, ...deps]);
 
     useEffect(() => {
         return () => clearTimeout(timeoutIdRef.current);

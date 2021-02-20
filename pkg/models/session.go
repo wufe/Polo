@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-git/go-git/v5/plumbing/object"
 	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/utils"
 )
@@ -53,6 +54,7 @@ type Session struct {
 	Logs            []Log         `json:"-"`
 	CommitID        string        `json:"commitID"` // The object to be checked out (branch/tag/commit id)
 	Checkout        string        `json:"checkout"`
+	Commit          object.Commit `json:"commit"`
 	MaxAge          int           `json:"maxAge"`
 	InactiveAt      time.Time     `json:"-"`
 	Folder          string        `json:"folder"`

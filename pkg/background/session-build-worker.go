@@ -113,6 +113,14 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 		session.IncStartupRetriesCount()
 	}
 
+	checkout, ok := input.Application.ObjectsToHashMap[input.Checkout]
+	if !ok {
+		return &queues.SessionBuildResult{
+			Result:        queues.SessionBuildResultFailed,
+			FailingReason: fmt.Sprintf("Could not find the hash of the selected checkout %s", input.Checkout),
+		}
+	}
+
 	session.LogInfo(fmt.Sprintf("Creating session %s", session.UUID))
 
 	freePort, err := getFreePort(appPort)
@@ -126,15 +134,8 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 	session.Port = freePort
 	session.LogInfo(fmt.Sprintf("Found new free port: %d", session.Port))
 
-	checkout, ok := input.Application.ObjectsToHashMap[input.Checkout]
-	if !ok {
-		log.Errorf("Could not find the hash of the selected checkout %s", input.Checkout)
-		return &queues.SessionBuildResult{
-			Result:        queues.SessionBuildResultFailed,
-			FailingReason: fmt.Sprintf("Could not find the hash of the selected checkout %s", input.Checkout),
-		}
-	}
 	session.CommitID = checkout
+	session.Commit = *input.Application.CommitMap[checkout]
 	session.LogInfo(fmt.Sprintf("Requested checkout to %s (%s)", input.Checkout, session.CommitID))
 
 	recyclingPreviousSession := input.PreviousSession != nil

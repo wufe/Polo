@@ -1,6 +1,7 @@
 import { APIPayload, APIRequestResult } from "@/api/common";
 import { IAPISession, IAPISessionLogsAndStatus, killSessionAPI, retrieveLogsAndStatusAPI, retrieveSessionAgeAPI, trackSessionAPI, untrackSessionAPI } from "@/api/session";
 import { flow, Instance, types } from "mobx-state-tree";
+import { string } from "mobx-state-tree/dist/internal";
 import { ApplicationModel } from "./application-model";
 
 export enum SessionLogType {
@@ -48,16 +49,21 @@ export enum SessionStatus {
 }
 
 export const SessionModel = types.model({
-    uuid       : types.string,
-    name       : types.string,
-    target     : types.string,
-    port       : types.number,
-    applicationName: types.string,
-    status     : types.enumeration<SessionStatus>(Object.values(SessionStatus)),
-    logs       : types.map(SessionLogModel),
-    checkout   : types.string,
-    maxAge     : types.number,
-    folder     : types.string
+    uuid             : types.string,
+    name             : types.string,
+    target           : types.string,
+    port             : types.number,
+    applicationName  : types.string,
+    status           : types.enumeration<SessionStatus>(Object.values(SessionStatus)),
+    commitID         : types.string,
+    commitMessage    : types.string,
+    commitAuthorName : types.string,
+    commitAuthorEmail: types.string,
+    commitDate       : types.string,
+    logs             : types.map(SessionLogModel),
+    checkout         : types.string,
+    maxAge           : types.number,
+    folder           : types.string
 }).actions(self => {
     const track = flow(function* track() {
         const trackRequest: APIPayload<void> = yield trackSessionAPI(self.uuid);
