@@ -61,6 +61,15 @@ func NewApplicationConfiguration(configuration *ApplicationConfiguration) (*Appl
 		if forward.To == "" {
 			return nil, fmt.Errorf("application.forwards[%d].to not defined", i)
 		}
+		if forward.Headers.Add == nil {
+			forward.Headers.Add = []Header{}
+		}
+		if forward.Headers.Del == nil {
+			forward.Headers.Del = []string{}
+		}
+		if forward.Headers.Set == nil {
+			forward.Headers.Set = []Header{}
+		}
 	}
 	if configuration.Fetch.Interval <= 0 {
 		configuration.Fetch.Interval = 60
