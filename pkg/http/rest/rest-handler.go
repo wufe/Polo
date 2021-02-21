@@ -53,6 +53,7 @@ func NewHandler(isDev bool, static *services.StaticService, routing *routing.Han
 
 func (rest *Handler) getManager(static *services.StaticService, proxy *proxy.Handler) func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		rest.untrackSession()
 		if rest.isDev {
 			r.URL.Path = "/_polo_/public/manager.html"
 			proxy.ServeDevServer(w, r)
