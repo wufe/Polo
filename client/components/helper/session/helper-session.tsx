@@ -9,7 +9,7 @@ import './helper-session.scss';
 
 export const SessionMaxAge = () => {
     return <HelperStatusContext.Consumer>
-        {({age}) => <>Expires in: {age}s</>}
+        {({ age }) => <>Expires in <b>{age}s</b></>}
     </HelperStatusContext.Consumer>
 }
 
@@ -32,10 +32,11 @@ export const HelperSession = (props: TProps) => {
 
     return <div className="helper-session__component">
         <div>On checkout <b>{props.session.checkout}</b></div>
-        <div><small>Session: {props.session.uuid.split('-')[0]}</small></div>
         {maxAgeVisible && <div>
             <SessionMaxAge />
         </div>}
+        <div><small>Session: {props.session.uuid.split('-')[0]}</small></div>
+        
         <div className="__detach" onClick={detach}>Exit</div>
     </div>
 }
