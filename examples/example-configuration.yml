@@ -24,15 +24,6 @@ applications:
             - Origin=host2.example.com
           del:
             - X-Powered-By
-    auth:
-      basic:
-        username: ""
-        password: ""
-      token: ""
-      ssh:
-        user: ""
-        private_key: ""
-        password: ""
     host: "hello-world.dev"
     port:
       except: [9876]
