@@ -31,12 +31,11 @@ export const HelperSession = (props: TProps) => {
         props.session.maxAge > expiredAgeValue;
 
     return <div className="helper-session__component">
-        Session: {props.session.uuid}
-        {maxAgeVisible && <>
-            <br />
+        <div>On checkout <b>{props.session.checkout}</b></div>
+        <div><small>Session: {props.session.uuid.split('-')[0]}</small></div>
+        {maxAgeVisible && <div>
             <SessionMaxAge />
-        </>}
-        <br />
-        <span className="__detach" onClick={detach}>Detach</span>
+        </div>}
+        <div className="__detach" onClick={detach}>Exit</div>
     </div>
 }

@@ -1,10 +1,13 @@
 .helper-session__component {
+    small {
+        color: #4c566a;
+    }
     .__detach {
-        display: inline-block;
-        margin-top: 4px;
+        text-align: center;
+        margin-top: 8px;
         text-decoration: underline;
         font-size: 14px;
-        color: #5e81ac;
+        color: #3b4252;
         cursor: pointer;
     }
 }

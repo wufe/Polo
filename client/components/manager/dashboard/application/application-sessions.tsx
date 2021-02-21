@@ -32,11 +32,11 @@ export const ApplicationSessions = observer((props: TProps) => {
                 <span className="leading-none text-xs uppercase font-bold" style={{ color: colorByStatus(session.status) }}>{session.status}</span>
                 <span className="leading-none text-sm mr-3 flex-grow px-2 lg:px-10 flex-1">{session.checkout}</span>
                 {session.maxAge > noExpirationAgeValue && <span className="leading-none text-xs uppercase text-gray-500 px-2 lg:px-10">
-                    <span className="hidden lg:inline-block">Expires in </span><span>{session.maxAge}s</span>
+                    <span className="hidden lg:inline-block pr-1">Expires in </span><span>{session.maxAge}s</span>
                 </span>}
                 <span className="leading-none lg:px-10 text-center whitespace-nowrap">
-                    <span className="leading-none text-sm underline cursor-pointer inline-block mx-3 hover:text-nord14" onClick={() => attachToSession(session)}>Attach</span>
-                    <span className="leading-none text-sm underline cursor-pointer inline-block mx-3 hover:text-nord11" onClick={() => killSession(session)}>Kill</span>
+                    <span className="leading-none text-sm underline cursor-pointer inline-block mx-3 hover:text-nord14" onClick={() => attachToSession(session)}>Enter</span>
+                    <span className="leading-none text-sm underline cursor-pointer inline-block mx-3 hover:text-nord11" onClick={() => killSession(session)}>Delete</span>
                 </span>
             </div>)}
     </>;
