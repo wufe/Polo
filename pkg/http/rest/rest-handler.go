@@ -284,6 +284,8 @@ func (h *Handler) serveStatic(st *services.StaticService) func(w http.ResponseWr
 
 			fileServer := http.FileServer(st.FileSystem)
 
+			w.Header().Set("Cache-Control", "public, max-age=604800, immutable")
+
 			r.URL.Path = p.ByName("filepath")
 			w.Header().Add("Vary", "Accept-Encoding")
 			if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
