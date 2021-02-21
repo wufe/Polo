@@ -37,9 +37,10 @@ type Forward struct {
 }
 
 type Headers struct {
-	Add []string `json:"add"`
-	Set []string `json:"set"`
-	Del []string `json:"del"`
+	Add     []string `json:"add"`
+	Set     []string `json:"set"`
+	Del     []string `json:"del"`
+	Replace []string `json:"replace"`
 }
 
 type Healthcheck struct {

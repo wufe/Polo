@@ -37,15 +37,25 @@ func (h Header) Parse() (string, string, error) {
 }
 
 type Headers struct {
-	Add []Header `json:"add"`
-	Set []Header `json:"set"`
-	Del []string `json:"del"`
+	Add     []Header `json:"add"`
+	Set     []Header `json:"set"`
+	Del     []string `json:"del"`
+	Replace []Header `json:"replace"`
 }
 
 func (h *Headers) ApplyTo(r *http.Request) error {
 	var err error
 	var k string
 	var v string
+
+	for _, header := range h.Replace {
+		k, v, err = header.Parse()
+		if err == nil {
+			if o := r.Header.Get(k); o != "" {
+				r.Header.Set(k, v)
+			}
+		}
+	}
 
 	for _, header := range h.Add {
 		k, v, err = header.Parse()

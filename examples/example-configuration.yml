@@ -22,7 +22,8 @@ applications:
         host: host2.example.com 
         headers:
           add: []
-          set:
+          set: []
+          replace:
             - Origin=host2.example.com
           del:
             - X-Powered-By
@@ -33,6 +34,7 @@ applications:
       add:
         - X-Powered-By=Polo
       set: []
+      replace: []
       del:
         - Origin
     healthcheck:

@@ -198,15 +198,16 @@ func (h *Handler) tryGetSessionByRequestURL(req *http.Request) *models.Session {
 }
 
 func findForwardRules(req *http.Request, session *models.Session) ForwardRules {
+	conf := session.Application.GetConfiguration()
 
-	defaultForward, err := BuildDefaultForwardRules(session)
+	defaultForward, err := BuildDefaultForwardRules(&conf, session.Variables)
 	if err != nil {
 		panic(err)
 	}
 
 	for _, compiledPattern := range session.Application.CompiledForwardPatterns {
 		if compiledPattern.Pattern.MatchString(req.URL.Path) {
-			forward, err := BuildForwardRules(req, compiledPattern, session)
+			forward, err := BuildForwardRules(req, compiledPattern, &conf, session.Variables)
 			if err != nil {
 				return defaultForward
 			}

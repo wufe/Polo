@@ -83,16 +83,21 @@ func MapForwards(models []models.Forward) []output.Forward {
 func MapHeaders(model models.Headers) output.Headers {
 	add := []string{}
 	set := []string{}
+	replace := []string{}
 	for _, a := range model.Add {
 		add = append(add, string(a))
 	}
 	for _, s := range model.Set {
 		set = append(set, string(s))
 	}
+	for _, r := range model.Replace {
+		replace = append(replace, string(r))
+	}
 	return output.Headers{
-		Add: add,
-		Set: set,
-		Del: model.Del,
+		Add:     add,
+		Set:     set,
+		Del:     model.Del,
+		Replace: replace,
 	}
 }
 

@@ -70,6 +70,9 @@ func NewApplicationConfiguration(configuration *ApplicationConfiguration) (*Appl
 		if forward.Headers.Set == nil {
 			forward.Headers.Set = []Header{}
 		}
+		if forward.Headers.Replace == nil {
+			forward.Headers.Replace = []Header{}
+		}
 	}
 	if configuration.Fetch.Interval <= 0 {
 		configuration.Fetch.Interval = 60
@@ -85,6 +88,9 @@ func NewApplicationConfiguration(configuration *ApplicationConfiguration) (*Appl
 	}
 	if configuration.Headers.Set == nil {
 		configuration.Headers.Set = []Header{}
+	}
+	if configuration.Headers.Replace == nil {
+		configuration.Headers.Replace = []Header{}
 	}
 	if configuration.Healthcheck.URL == "" {
 		configuration.Healthcheck.Method = "GET"

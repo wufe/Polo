@@ -12,12 +12,10 @@ import (
 
 type ForwardRules func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request)
 
-func BuildDefaultForwardRules(session *models.Session) (ForwardRules, error) {
-
-	conf := session.Application.GetConfiguration()
+func BuildDefaultForwardRules(conf *models.ApplicationConfiguration, variables models.Variables) (ForwardRules, error) {
 
 	target := conf.Target
-	target = session.Variables.ApplyTo(target)
+	target = variables.ApplyTo(target)
 
 	url, err := url.Parse(target)
 	if err != nil {
@@ -42,10 +40,9 @@ func BuildDefaultForwardRules(session *models.Session) (ForwardRules, error) {
 	}), nil
 }
 
-func BuildForwardRules(r *http.Request, pattern models.CompiledForwardPattern, session *models.Session) (ForwardRules, error) {
-	conf := session.Application.GetConfiguration()
+func BuildForwardRules(r *http.Request, pattern models.CompiledForwardPattern, conf *models.ApplicationConfiguration, variables models.Variables) (ForwardRules, error) {
 	defaultTarget := conf.Target
-	defaultTarget = session.Variables.ApplyTo(defaultTarget)
+	defaultTarget = variables.ApplyTo(defaultTarget)
 	defaultTo, err := url.Parse(defaultTarget)
 	if err != nil {
 		return nil, err
@@ -63,7 +60,7 @@ func BuildForwardRules(r *http.Request, pattern models.CompiledForwardPattern, s
 	for index, match := range matches {
 		target = strings.ReplaceAll(target, fmt.Sprintf("$%d", index), match)
 	}
-	target = session.Variables.ApplyTo(target)
+	target = variables.ApplyTo(target)
 
 	to, err := url.Parse(target)
 	if err != nil {

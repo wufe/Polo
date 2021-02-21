@@ -12,6 +12,8 @@ applications:
     watch:
       - main
     is_default: true
+    headers:
+      replace: []
     startup:
       retries: 3
     forwards:
