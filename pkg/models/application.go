@@ -18,7 +18,7 @@ var (
 type Application struct {
 	utils.RWLocker          `json:"-"`
 	Filename                string                    `json:"filename"`
-	Configuration           ApplicationConfiguration  `json:"configuration"`
+	configuration           ApplicationConfiguration  `json:"configuration"`
 	Status                  ApplicationStatus         `json:"status"`
 	Folder                  string                    `json:"folder"`
 	BaseFolder              string                    `json:"baseFolder"`
@@ -90,7 +90,7 @@ func NewApplication(configuration *ApplicationConfiguration, filename string) (*
 	application.Tags = []string{}
 	application.Commits = []string{}
 	application.CommitMap = make(map[string]*object.Commit)
-	application.Configuration = *configuration
+	application.SetConfiguration(*configuration)
 	return application, nil
 }
 
@@ -133,5 +133,11 @@ func (a *Application) SetStatus(status ApplicationStatus) {
 func (a *Application) GetConfiguration() ApplicationConfiguration {
 	a.RLock()
 	defer a.RUnlock()
-	return a.Configuration
+	return a.configuration
+}
+
+func (a *Application) SetConfiguration(conf ApplicationConfiguration) {
+	a.Lock()
+	defer a.Unlock()
+	a.configuration = conf
 }

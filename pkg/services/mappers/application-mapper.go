@@ -9,11 +9,12 @@ func MapApplication(model *models.Application) *output.Application {
 	if model == nil {
 		return nil
 	}
+	conf := model.GetConfiguration()
 	model.RLock()
 	defer model.RUnlock()
 	return &output.Application{
 		Status:        string(model.Status),
-		Configuration: MapApplicationConfiguration(model.Configuration),
+		Configuration: MapApplicationConfiguration(conf),
 		Folder:        model.Folder,
 		BaseFolder:    model.BaseFolder,
 		Branches:      MapBranches(model.Branches),

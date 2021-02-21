@@ -63,7 +63,8 @@ func unmarshalConfigurations(files []string) (*models.RootConfiguration, []*mode
 					log.Errorf("Application %s configuration error: %s", conf.Name, err.Error())
 				} else {
 					applications = append(applications, builtApplication)
-					root.ApplicationConfigurations = append(root.ApplicationConfigurations, &builtApplication.Configuration)
+					conf := builtApplication.GetConfiguration()
+					root.ApplicationConfigurations = append(root.ApplicationConfigurations, &conf)
 				}
 			}
 		}

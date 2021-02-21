@@ -99,7 +99,7 @@ func (s *Startup) watchApplications(ctx context.Context) {
 								if !models.ConfigurationAreEqual(conf, newConf) {
 									log.Infof(fmt.Sprintf("[APP:%s] Configuration changed", newConf.Name))
 									application.WithLock(func(a *models.Application) {
-										a.Configuration = newConf
+										a.SetConfiguration(newConf)
 									})
 									conf = newConf
 								}
