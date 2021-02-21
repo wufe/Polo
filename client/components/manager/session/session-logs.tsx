@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { useScroll } from './scroll-hook';
+import { FixedSizeList as List } from 'react-window';
 const { parse } = require('ansicolor');
 
 const colorsByLogType: {
@@ -38,24 +39,35 @@ const parseMessage = (message: string) => {
     }
 }
 
-export const SessionLogs = observer((props: { logs: ISessionLog[], onLogsProportionChanged: (proportions: number) => void }) => {
+const SessionLogsRow =  ({ index, style, data }: { index: number; style: React.CSSProperties; data: ISessionLog[] }) => {
+    const log = data[index];
+    const color = colorsByLogType[log.type];
+    return <p style={style} className="mx-2 lg:mx-0 leading-relaxed text-sm whitespace-nowrap max-w-full min-w-0 flex items-center" key={index}>
+        <span className="hidden lg:inline-block uppercase text-xs font-mono min-w-24 px-3">[{dayjs(log.when).format('HH:mm:ss')}]</span>
+        <span className="hidden lg:inline-block uppercase text-xs w-16 min-w-16" style={{ color }}>{log.type}:</span>
+        {parseMessage(log.message)}
+    </p>
+}
 
-    const { containerRef, onScroll } = useScroll(props.onLogsProportionChanged, [props.logs.length]);
+export const SessionLogs = observer((props: { logs: ISessionLog[], onLogsProportionChanged: (proportions: number) => void }) => {
+    const itemsHeight = 22;
+    const { contentRef, containerRef, listRef, onScroll, contentHeight } = useScroll(props.onLogsProportionChanged, itemsHeight, props.logs ? props.logs.length : 0);
 
     if (!props.logs) return null;
 
-    return <div
-        ref={containerRef}
-        className="lg:m-2 text-nord-3 dark:text-nord4 py-5 rounded-md flex-grow mt-10 mb-10 lg:mb-36 flex flex-col min-w-0 min-h-0 overflow-x-hidden no-horizontal-scrollbar"
-        style={{ scrollBehavior: 'smooth' }}
-        onScroll={onScroll}>
-        {props.logs.map((log: ISessionLog, key) => {
-            const color = colorsByLogType[log.type];
-            return <p className="mx-2 lg:mx-0 leading-relaxed text-sm whitespace-nowrap max-w-full min-w-0 flex items-center" key={key}>
-                <span className="hidden lg:inline-block uppercase text-xs font-mono min-w-24 px-3">[{dayjs(log.when).format('HH:mm:ss')}]</span>
-                <span className="hidden lg:inline-block uppercase text-xs w-16 min-w-16" style={{ color }}>{log.type}:</span>
-                {parseMessage(log.message)}
-            </p>
-        })}
+    return <div ref={containerRef} className="lg:m-2 lg:mt-5 flex-grow mt-10 mb-10 lg:mb-36 min-w-0 min-h-0 overflow-hidden">
+        <List
+            ref={listRef}
+            outerRef={contentRef}
+            className=" text-nord-3 dark:text-nord4 flex flex-col"
+            height={contentHeight}
+            itemCount={props.logs.length}
+            itemSize={itemsHeight}
+            itemData={props.logs}
+            width="100%"
+            style={{ overflowX: 'hidden' }}
+            onScroll={onScroll}>
+            {SessionLogsRow}
+        </List>
     </div>
 })

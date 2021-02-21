@@ -1,27 +1,44 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { FixedSizeList } from "react-window";
 
-export const useScroll = (onLogsProportionChanged: (proportions: number) => void, deps: any[]) => {
+export const useScroll = (onLogsProportionChanged: (proportions: number) => void, itemsHeight: number, itemsCount: number, ...deps: any[]) => {
+    const contentRef = useRef<HTMLDivElement | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
+    const listRef = useRef<FixedSizeList | null>(null);
+    const [contentHeight, setContentHeight] = useState(100);
     const [scrolling, setScrolling] = useState(false);
     const [scrollTop, setScrollTop] = useState(0);
     const timeoutIdRef = useRef<NodeJS.Timeout>();
     const [scrollProportions, setScrollProportions] = useState(0);
     const [windowHeight, setWindowHeight] = useState(window.innerHeight);
 
+    const getScrollTop = () => itemsHeight * itemsCount;
+    
+    useLayoutEffect(() => {
+        if (containerRef.current) {
+            setContentHeight(containerRef.current.clientHeight);
+        }
+    }, [containerRef])
+
     useLayoutEffect(() => {
         const onResize = () => {
             setWindowHeight(window.innerHeight);
+            if (containerRef.current) {
+                setContentHeight(containerRef.current.clientHeight);
+            }
         };
-        document.addEventListener('resize', onResize);
-        return () => document.removeEventListener('resize', onResize);
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
     }, []);
 
     useEffect(() => {
-        const container = containerRef.current;
+        const container = contentRef.current;
         if (container && !scrolling) {
-            container.scrollTop = container.scrollHeight;
+            if (listRef.current) {
+                listRef.current.scrollToItem (itemsCount);
+            }
             const clientHeight = container.clientHeight;
-            const scrollHeight = container.scrollHeight;
+            const scrollHeight = getScrollTop();
             if (scrollHeight > clientHeight) {
                 // Full height: 100%
                 setScrollProportions(1)
@@ -36,14 +53,14 @@ export const useScroll = (onLogsProportionChanged: (proportions: number) => void
                 onLogsProportionChanged(proportion);
             }
         }
-    }, [containerRef.current, windowHeight, scrolling, ...deps]);
+    }, [contentRef.current, windowHeight, scrolling, itemsCount]);
 
     useEffect(() => {
         return () => clearTimeout(timeoutIdRef.current);
     }, [])
 
     const onScroll = () => {
-        const newScrollTop = containerRef.current.scrollTop;
+        const newScrollTop = contentRef.current.scrollTop;
         if (scrollTop > newScrollTop || scrolling) {
             setScrolling(true);
             onLogsProportionChanged(0);
@@ -55,8 +72,8 @@ export const useScroll = (onLogsProportionChanged: (proportions: number) => void
             }, 5000);
         }
 
-        setScrollTop(containerRef.current.scrollTop);
+        setScrollTop(newScrollTop);
     }
 
-    return { containerRef, onScroll };
+    return { contentRef, containerRef, listRef, onScroll, contentHeight };
 }

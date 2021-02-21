@@ -55,10 +55,18 @@ body {
 }
 
 .main-gradient-faded {
-    background-image: linear-gradient(to bottom, #faf9fb, rgba(243, 244, 246, .9), rgba(243, 244, 246, .4), rgba(243, 244, 246, 0), rgba(243, 244, 246, 0));
-
     transition: bottom ease-in-out 1s;
+
+    background-image: linear-gradient(to bottom, #faf9fb, rgba(243, 244, 246, .9), rgba(243, 244, 246, .9), rgba(243, 244, 246, .5), rgba(243, 244, 246, 0));
     @media (prefers-color-scheme: dark) {
-        background-image: linear-gradient(to bottom, #16181d, rgba(26, 29, 35, 0.9), rgba(29, 32, 39, .4), rgba(32, 36, 44, 0), rgba(36, 41, 50, 0));
+        background-image: linear-gradient(to bottom, #16181d, rgba(26, 29, 35, 0.9), rgba(29, 32, 39, .9), rgba(32, 36, 44, .5), rgba(36, 41, 50, 0));
     }
+
+    @media (min-width: 1024px) {
+        background-image: linear-gradient(to bottom, #faf9fb, rgba(243, 244, 246, .9), rgba(243, 244, 246, .4), rgba(243, 244, 246, 0), rgba(243, 244, 246, 0));
+        @media (prefers-color-scheme: dark) {
+            background-image: linear-gradient(to bottom, #16181d, rgba(26, 29, 35, 0.9), rgba(29, 32, 39, .4), rgba(32, 36, 44, 0), rgba(36, 41, 50, 0));
+        }
+    }
+    
 }
