@@ -5,6 +5,8 @@ applications:
     remote: "https://github.com/wufe/polo-testserver"
     target: "http://127.0.0.1:{{port}}"
     host: "my.app.host.dev"
+    helper:
+      position: bottom-right
     fetch:
       interval: 30
     watch:
@@ -27,9 +29,10 @@ applications:
             - asd
     commands:
       start:
-        - command: docker build -t polo-testserver:{{commit}} .
+        - command: docker build --no-cache -t polo-testserver:{{commit}} .
         - command: docker run -p {{port}}:3000 -d polo-testserver:{{commit}}
           output_variable: container_id
+        
       stop:
         - command: "docker kill {{container_id}}"
           continue_on_error: true

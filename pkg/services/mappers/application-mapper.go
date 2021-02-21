@@ -28,6 +28,7 @@ func MapApplicationConfiguration(model models.ApplicationConfiguration) output.A
 		Host:                  model.Host,
 		Fetch:                 MapFetch(model.Fetch),
 		Watch:                 model.Watch,
+		Helper:                MapHelper(model.Helper),
 		IsDefault:             model.IsDefault,
 		Forwards:              MapForwards(model.Forwards),
 		Headers:               MapHeaders(model.Headers),
@@ -53,6 +54,12 @@ func MapApplications(models []*models.Application) []output.Application {
 func MapFetch(model models.Fetch) output.Fetch {
 	return output.Fetch{
 		Interval: model.Interval,
+	}
+}
+
+func MapHelper(model models.Helper) output.Helper {
+	return output.Helper{
+		Position: string(model.Position),
 	}
 }
 

@@ -7,6 +7,7 @@ type ApplicationConfiguration struct {
 	Host                  string            `json:"host"`
 	Fetch                 Fetch             `json:"fetch"`
 	Watch                 []string          `json:"watch"`
+	Helper                Helper            `json:"helper"`
 	IsDefault             bool              `json:"isDefault"`
 	Forwards              []Forward         `json:"forwards"`
 	Headers               Headers           `json:"headers"`
@@ -22,6 +23,10 @@ type ApplicationConfiguration struct {
 
 type Fetch struct {
 	Interval int `json:"interval"`
+}
+
+type Helper struct {
+	Position string `json:"position"`
 }
 
 type Forward struct {

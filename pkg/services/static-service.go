@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/rakyll/statik/fs"
@@ -13,7 +12,7 @@ import (
 )
 
 type StaticService struct {
-	sync.Locker
+	utils.RWLocker
 	isDev                bool
 	devServer            string
 	FileSystem           http.FileSystem
@@ -22,7 +21,7 @@ type StaticService struct {
 
 func NewStaticService(isDev bool, devServer string) *StaticService {
 	service := &StaticService{
-		Locker:    utils.GetMutex(),
+		RWLocker:  utils.GetMutex(),
 		isDev:     isDev,
 		devServer: devServer,
 	}
@@ -37,8 +36,8 @@ func (s *StaticService) SetSessionHelperContent(helper string) {
 }
 
 func (s *StaticService) GetSessionHelperContent() string {
-	s.Lock()
-	defer s.Unlock()
+	s.RLock()
+	defer s.RUnlock()
 	return s.sessionHelperContent
 }
 

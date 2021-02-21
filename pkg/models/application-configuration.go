@@ -18,6 +18,7 @@ type ApplicationConfiguration struct {
 	Host                  string            `json:"host"`
 	Fetch                 Fetch             `json:"fetch"`
 	Watch                 Watch             `json:"watch"`
+	Helper                Helper            `json:"helper"`
 	IsDefault             bool              `yaml:"is_default" json:"isDefault"`
 	Forwards              []Forward         `json:"forwards"`
 	Headers               Headers           `json:"headers"`
@@ -164,6 +165,27 @@ func (w *Watch) Contains(obj string) bool {
 
 type Fetch struct {
 	Interval int `json:"interval"`
+}
+
+type Helper struct {
+	Position HelperPosition `json:"position"`
+}
+
+type HelperPosition string
+
+func (p *HelperPosition) GetStyle() string {
+	switch *p {
+	case "right-bottom", "bottom-right":
+		return "bottom: 0; right: 0"
+	case "right-top", "top-right":
+		return "top: 0; right: 0"
+	case "left-top", "top-left":
+		return "top: 0; left: 0"
+	case "left-bottom", "bottom-left":
+		return "bottom: 0; left: 0"
+	default:
+		return "bottom: 0; left: 0"
+	}
 }
 
 func (a *ApplicationConfiguration) WithLock(f func(*ApplicationConfiguration)) {

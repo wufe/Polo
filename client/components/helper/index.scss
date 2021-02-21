@@ -1,16 +1,12 @@
 #polo-session-helper {
     font-family: 'Georgia';
+    position: fixed;
+    z-index: 99999;
 
     .session-helper__component {
-        position: fixed;
-        bottom: 0;
-        right: 0;
-        z-index: 99999;
         background: #f0f0f0;
-        
         font-size: 14px;
         padding: 10px 20px;
-        border-radius: 5px 0 0 0;
         border: 1px solid #D1D1D1;
     }
 }

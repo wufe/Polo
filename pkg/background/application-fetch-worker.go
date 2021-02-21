@@ -171,9 +171,11 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 		return nil
 	})
 
-	log.Infof("[APP:%s] Found %d commits", appName, len(appCommits))
-
+	var lastCommitsCount int
+	newCommitsCount := len(appCommits)
 	application.WithLock(func(a *models.Application) {
+		lastCommitsCount = len(a.Commits)
+
 		a.ObjectsToHashMap = objectsToHashMap
 		a.HashToObjectsMap = hashToObjectsMap
 		a.Branches = appBranches
@@ -181,6 +183,10 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 		a.Commits = appCommits
 		a.CommitMap = appCommitMap
 	})
+
+	if newCommitsCount > lastCommitsCount {
+		log.Infof("[APP:%s] Found %d new commits", appName, newCommitsCount-lastCommitsCount)
+	}
 
 	if !watchObjects {
 		return

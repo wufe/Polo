@@ -138,6 +138,9 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 					serializedSession = []byte(strings.ReplaceAll(string(serializedSession), `\\`, `\\\\`))
 					sessionHelper := strings.ReplaceAll(h.static.GetSessionHelperContent(), "%%currentSession%%", base64.StdEncoding.EncodeToString(serializedSession))
 
+					conf := session.Application.GetConfiguration()
+					sessionHelper = strings.ReplaceAll(sessionHelper, "SESSION_HELPER_STYLE", conf.Helper.Position.GetStyle())
+
 					stringBody = stringBody[:bodyIndex[1]] + sessionHelper + stringBody[bodyIndex[1]:]
 
 					buffer = bytes.NewBufferString(stringBody)

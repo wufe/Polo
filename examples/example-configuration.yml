@@ -11,6 +11,8 @@ applications:
     remote: https://github.com/nginxinc/NGINX-Demos # Mandatory
     use_folder_copy: false # Copy files and directories instead of cloning
     clean_on_exit: true
+    helper:
+      position: bottom-left
     fetch:
       interval: 60
     target: "http://127.0.0.1:{{port}}"
