@@ -59,7 +59,7 @@ export const SessionLogs = observer((props: { logs: ISessionLog[], onLogsProport
         <List
             ref={listRef}
             outerRef={contentRef}
-            className=" text-nord-3 dark:text-nord4 flex flex-col"
+            className=" text-nord-3 dark:text-nord4"
             height={contentHeight}
             itemCount={props.logs.length}
             itemSize={itemsHeight}
