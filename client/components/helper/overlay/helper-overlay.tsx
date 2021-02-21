@@ -34,7 +34,7 @@ export const HelperOverlay = memo((props: { status: HelperStatus }) => {
                 The session has expired
             </span>
             <br /><br />
-            <a className="__link" href="/_polo_">Return to dashboard</a>
+            <a className="__link" href="/_polo_/">Return to dashboard</a>
         </div>
     </>;
 }, (prev, next) => prev.status === next.status);
