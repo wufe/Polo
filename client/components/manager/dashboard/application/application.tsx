@@ -80,8 +80,8 @@ export const Application = observer((props: TProps) => {
             <ApplicationSessions sessions={props.sessions} />
         </div>}
 
-        {props.application.branches.size > 0 && <div className="py-4">
-            <ApplicationBranches branches={props.application.branches} onSessionCreationSubmission={submitSessionCreation} />
+        {props.application.branchesMap.size > 0 && <div className="py-4">
+            <ApplicationBranches branches={props.application.branchesMap} onSessionCreationSubmission={submitSessionCreation} />
         </div>}
         
         <div className="flex my-4 py-4 px-2 lg:px-6">

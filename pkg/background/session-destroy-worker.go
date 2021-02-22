@@ -37,7 +37,7 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 		return
 	}
 
-	conf := session.Application.GetConfiguration()
+	conf := session.GetConfiguration()
 	appStopCommands := conf.Commands.Stop
 
 	session.SetStatus(models.SessionStatusStopping)

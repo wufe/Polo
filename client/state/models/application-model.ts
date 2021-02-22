@@ -24,7 +24,7 @@ export const ApplicationConfigurationModel = types.model({
 export const ApplicationModel = types.model({
     configuration: ApplicationConfigurationModel,
     folder       : types.string,
-    branches     : types.map(ApplicationBranchModel)
+    branchesMap  : types.map(ApplicationBranchModel)
 })
 .actions(self => {
 

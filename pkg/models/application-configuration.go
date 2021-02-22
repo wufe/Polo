@@ -13,11 +13,14 @@ import (
 type ApplicationConfiguration struct {
 	BranchConfiguration   `yaml:",inline"`
 	utils.RWLocker        `json:"-"`
-	Name                  string `json:"name"`
-	Fetch                 Fetch  `json:"fetch"`
-	Watch                 Watch  `json:"watch"`
-	IsDefault             bool   `yaml:"is_default" json:"isDefault"`
-	MaxConcurrentSessions int    `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
+	Name                  string                     `json:"name"`
+	Fetch                 Fetch                      `json:"fetch"`
+	Watch                 Watch                      `json:"watch"`
+	IsDefault             bool                       `yaml:"is_default" json:"isDefault"`
+	MaxConcurrentSessions int                        `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
+	Branches              []BranchConfigurationMatch `yaml:"branches"`
+	UseFolderCopy         bool                       `yaml:"use_folder_copy" json:"useFolderCopy"`
+	CleanOnExit           *bool                      `yaml:"clean_on_exit" json:"cleanOnExit" default:"true"`
 }
 
 func NewApplicationConfiguration(configuration *ApplicationConfiguration) (*ApplicationConfiguration, error) {
@@ -129,6 +132,62 @@ func NewApplicationConfiguration(configuration *ApplicationConfiguration) (*Appl
 		configuration.Port.Except = []int{}
 	}
 	return configuration, nil
+}
+
+func (a *ApplicationConfiguration) OverrideWith(override BranchConfiguration) {
+	if override.Host != "" {
+		a.Host = override.Host
+	}
+	if override.Remote != "" {
+		a.Remote = override.Remote
+	}
+	if override.Target != "" {
+		a.Target = override.Target
+	}
+	if override.Helper != (Helper{}) {
+		if override.Helper.Position != "" {
+			a.Helper.Position = override.Helper.Position
+		}
+	}
+	// TODO: Not working yet. Requires compiledForwardPatterns to be stored by session
+	if len(override.Forwards) > 0 {
+		a.Forwards = override.Forwards
+	}
+	if len(override.Headers.Add) > 0 {
+		a.Headers.Add = override.Headers.Add
+	}
+	if len(override.Headers.Del) > 0 {
+		a.Headers.Del = override.Headers.Del
+	}
+	if len(override.Headers.Set) > 0 {
+		a.Headers.Set = override.Headers.Set
+	}
+	if len(override.Headers.Replace) > 0 {
+		a.Headers.Replace = override.Headers.Replace
+	}
+	if override.Healthcheck != (Healthcheck{}) {
+		a.Healthcheck = override.Healthcheck
+	}
+	if override.Startup != (Startup{}) {
+		if override.Startup.Retries != 0 {
+			a.Startup.Retries = override.Startup.Retries
+		}
+		if override.Startup.Timeout != 0 {
+			a.Startup.Timeout = override.Startup.Timeout
+		}
+	}
+	if override.Recycle.InactivityTimeout != 0 {
+		a.Recycle.InactivityTimeout = override.Recycle.InactivityTimeout
+	}
+	if len(override.Commands.Start) > 0 {
+		a.Commands.Start = override.Commands.Start
+	}
+	if len(override.Commands.Stop) > 0 {
+		a.Commands.Stop = override.Commands.Stop
+	}
+	if len(override.Port.Except) > 0 {
+		a.Port.Except = override.Port.Except
+	}
 }
 
 func ConfigurationAreEqual(c1 ApplicationConfiguration, c2 ApplicationConfiguration) bool {

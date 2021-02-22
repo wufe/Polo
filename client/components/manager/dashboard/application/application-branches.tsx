@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 
 type TProps = {
-    branches: IApplication['branches'];
+    branches: IApplication['branchesMap'];
     onSessionCreationSubmission: (checkout: string) => void;
 }
 

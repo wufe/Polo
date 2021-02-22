@@ -7,7 +7,7 @@ type Application struct {
 	Configuration ApplicationConfiguration `json:"configuration"`
 	Folder        string                   `json:"folder"`
 	BaseFolder    string                   `json:"baseFolder"`
-	Branches      map[string]Branch        `json:"branches"`
+	BranchesMap   map[string]Branch        `json:"branchesMap"`
 }
 
 type Branch struct {

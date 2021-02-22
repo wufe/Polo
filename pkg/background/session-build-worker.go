@@ -68,8 +68,6 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 	conf := input.Application.GetConfiguration()
 	appName := conf.Name
 	appMaxConcurrentSessions := conf.MaxConcurrentSessions
-	appPort := conf.Port
-	appTarget := conf.Target
 
 	aliveCount := len(w.sessionStorage.GetAllAliveSessions())
 	if aliveCount >= w.global.MaxConcurrentSessions {
@@ -105,6 +103,11 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 		session.ResetVariables()
 		session.IncStartupRetriesCount()
 	}
+
+	// Getting configuration matching this session
+	conf = session.GetConfiguration()
+	appPort := conf.Port
+	appTarget := conf.Target
 
 	checkout, ok := input.Application.ObjectsToHashMap[input.Checkout]
 	if !ok {
@@ -169,7 +172,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 }
 
 func (w *SessionBuildWorker) buildSession(session *models.Session) {
-	conf := session.Application.GetConfiguration()
+	conf := session.GetConfiguration()
 	appStartupTimeout := conf.Startup.Timeout
 	appStartCommands := conf.Commands.Start
 	appHealthcheck := conf.Healthcheck
@@ -260,7 +263,7 @@ func (w *SessionBuildWorker) execCommands(ctx context.Context, session *models.S
 	calcCommandMetrics := models.NewMetricsForSession(session)("Startup commands")
 	defer calcCommandMetrics()
 
-	conf := session.Application.GetConfiguration()
+	conf := session.GetConfiguration()
 	appHealthcheck := conf.Healthcheck
 
 	for _, command := range commands {

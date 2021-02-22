@@ -2,8 +2,8 @@ package models
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -42,28 +42,28 @@ func (status SessionStatus) IsAlive() bool {
 }
 
 type Session struct {
-	sync.Locker     `json:"-"`
+	utils.RWLocker  `json:"-"`
 	UUID            string       `json:"uuid"`
 	ShortUUID       string       `json:"-"`
 	Name            string       `json:"name"`
 	Target          string       `json:"target"`
 	Port            int          `json:"port"`
 	ApplicationName string       `json:"applicationName"`
-	Application     *Application `json:"application"`
-	// Configuration   *BranchConfiguration `json:"configuration"`
-	Status         SessionStatus `json:"status"`
-	Logs           []Log         `json:"-"`
-	CommitID       string        `json:"commitID"` // The object to be checked out (branch/tag/commit id)
-	Checkout       string        `json:"checkout"`
-	Commit         object.Commit `json:"commit"`
-	MaxAge         int           `json:"maxAge"`
-	InactiveAt     time.Time     `json:"-"`
-	Folder         string        `json:"folder"`
-	Variables      Variables     `json:"variables"`
-	Metrics        []Metric      `json:"metrics"`
-	startupRetries int
-	killReason     KillReason    `json:"-"`
-	Context        *contextStore `json:"-"`
+	Application     *Application `json:"-"`
+	configuration   ApplicationConfiguration
+	Status          SessionStatus `json:"status"`
+	Logs            []Log         `json:"-"`
+	CommitID        string        `json:"commitID"` // The object to be checked out (branch/tag/commit id)
+	Checkout        string        `json:"checkout"`
+	Commit          object.Commit `json:"commit"`
+	MaxAge          int           `json:"maxAge"`
+	InactiveAt      time.Time     `json:"-"`
+	Folder          string        `json:"folder"`
+	Variables       Variables     `json:"variables"`
+	Metrics         []Metric      `json:"metrics"`
+	startupRetries  int
+	killReason      KillReason    `json:"-"`
+	Context         *contextStore `json:"-"`
 }
 
 type KillReason string
@@ -81,7 +81,7 @@ func NewSession(
 	session *Session,
 ) *Session {
 	session.ShortUUID = strings.Split(session.UUID, "-")[0]
-	session.Locker = utils.GetMutex()
+	session.RWLocker = utils.GetMutex()
 	if session.ApplicationName == "" {
 		session.ApplicationName = session.Application.GetConfiguration().Name
 	}
@@ -97,7 +97,47 @@ func NewSession(
 	}
 	session.killReason = KillReasonNone
 	session.Context = NewContextStore()
+	if session.Application != nil {
+		session.configuration = session.getMatchingConfiguration()
+	}
 	return session
+}
+
+func (session *Session) GetConfiguration() ApplicationConfiguration {
+	session.RLock()
+	defer session.RUnlock()
+	return session.configuration
+}
+
+func (session *Session) SetConfiguration(conf ApplicationConfiguration) {
+	session.Lock()
+	defer session.Unlock()
+	session.Application.SetConfiguration(conf)
+	session.configuration = session.getMatchingConfiguration()
+}
+
+func (session *Session) getMatchingConfiguration() ApplicationConfiguration {
+	branches := session.Application.configuration.Branches
+	baseConfig := session.Application.GetConfiguration()
+	if branches == nil {
+		return baseConfig
+	}
+	checkout := session.Checkout
+	found := false
+	var matchingConf BranchConfiguration
+	for _, conf := range branches {
+		testRE := regexp.MustCompile(conf.Test)
+		if testRE.MatchString(checkout) {
+			matchingConf = conf.BranchConfiguration
+			found = true
+			break
+		}
+	}
+	if !found {
+		return baseConfig
+	}
+	baseConfig.OverrideWith(matchingConf)
+	return baseConfig
 }
 
 func (session *Session) LogCritical(message string) {
@@ -191,7 +231,7 @@ func (session *Session) LogStderr(message string) {
 }
 
 func (session *Session) MarkAsBeingRequested() {
-	conf := session.Application.GetConfiguration()
+	conf := session.GetConfiguration()
 	if session.GetMaxAge() > -1 {
 		// Refreshes the inactiveAt field every time someone makes a request to this session
 		session.SetInactiveAt(time.Now().Add(time.Second * time.Duration(conf.Recycle.InactivityTimeout)))

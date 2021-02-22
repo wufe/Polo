@@ -24,7 +24,7 @@ type Application struct {
 	BaseFolder              string                    `json:"baseFolder"`
 	ObjectsToHashMap        map[string]string         `json:"-"`
 	HashToObjectsMap        map[string]*RemoteObject  `json:"-"`
-	Branches                map[string]*Branch        `json:"branches"`
+	BranchesMap             map[string]*Branch        `json:"branchesMap"`
 	Tags                    []string                  `json:"-"`
 	Commits                 []string                  `json:"-"`
 	CommitMap               map[string]*object.Commit `json:"-"`
@@ -35,7 +35,7 @@ type ApplicationStatus string
 
 type CompiledForwardPattern struct {
 	Pattern *regexp.Regexp
-	Forward *Forward
+	Forward Forward
 }
 
 type ApplicationCommand struct {
@@ -71,27 +71,37 @@ func NewApplication(configuration *ApplicationConfiguration, filename string) (*
 	if err != nil {
 		return nil, err
 	}
-	for i, forward := range configuration.Forwards {
-		compiledPattern, err := regexp.Compile(forward.Pattern)
-		if err != nil {
-			return nil, fmt.Errorf("application.forwards[%d].pattern is not a valid regex: %s", i, err.Error())
-		}
-		application.CompiledForwardPatterns = append(
-			application.CompiledForwardPatterns,
-			CompiledForwardPattern{
-				compiledPattern,
-				&forward,
-			},
-		)
+	compiled, err := initForwards(configuration.Forwards)
+	if err != nil {
+		return nil, err
 	}
+	application.CompiledForwardPatterns = compiled
 	application.ObjectsToHashMap = make(map[string]string)
 	application.HashToObjectsMap = make(map[string]*RemoteObject)
-	application.Branches = make(map[string]*Branch)
+	application.BranchesMap = make(map[string]*Branch)
 	application.Tags = []string{}
 	application.Commits = []string{}
 	application.CommitMap = make(map[string]*object.Commit)
 	application.SetConfiguration(*configuration)
 	return application, nil
+}
+
+func initForwards(forwards []Forward) ([]CompiledForwardPattern, error) {
+	compiled := []CompiledForwardPattern{}
+	for i, forward := range forwards {
+		compiledPattern, err := regexp.Compile(forward.Pattern)
+		if err != nil {
+			return nil, fmt.Errorf("application.forwards[%d].pattern is not a valid regex: %s", i, err.Error())
+		}
+		compiled = append(
+			compiled,
+			CompiledForwardPattern{
+				compiledPattern,
+				forward,
+			},
+		)
+	}
+	return compiled, nil
 }
 
 func (a *Application) WithLock(f func(*Application)) {

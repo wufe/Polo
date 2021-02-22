@@ -17,7 +17,7 @@ func MapApplication(model *models.Application) *output.Application {
 		Configuration: MapApplicationConfiguration(conf),
 		Folder:        model.Folder,
 		BaseFolder:    model.BaseFolder,
-		Branches:      MapBranches(model.Branches),
+		BranchesMap:   MapBranches(model.BranchesMap),
 	}
 }
 

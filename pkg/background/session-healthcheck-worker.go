@@ -53,7 +53,7 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 	go func() {
 		time.Sleep(5 * time.Second)
 
-		conf := session.Application.GetConfiguration()
+		conf := session.GetConfiguration()
 		maxRetries := conf.Healthcheck.MaxRetries
 		healthcheck := conf.Healthcheck
 		headers := conf.Headers

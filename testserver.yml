@@ -17,6 +17,8 @@ applications:
     startup:
       retries: 3
     forwards:
+      - pattern: asd
+        to: /qwe
       - pattern: /github/(.+?)/(.+?)/?$
         to: https://github.com/$2/$1
       - pattern: /testserver/(.+?)/(.+?)/?(\?(.+?))?$
@@ -39,8 +41,11 @@ applications:
         - command: "docker kill {{container_id}}"
           continue_on_error: true
     recycle:
-      inactivity_timeout: 60
+      inactivity_timeout: 600
     healthcheck:
       max_retries: 1
       retry_interval: 5
       retry_timeout: 10
+    branches:
+      - test: feature/*
+        host: feature.host.dev

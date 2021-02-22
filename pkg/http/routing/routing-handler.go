@@ -138,7 +138,7 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 					serializedSession = []byte(strings.ReplaceAll(string(serializedSession), `\\`, `\\\\`))
 					sessionHelper := strings.ReplaceAll(h.static.GetSessionHelperContent(), "%%currentSession%%", base64.StdEncoding.EncodeToString(serializedSession))
 
-					conf := session.Application.GetConfiguration()
+					conf := session.GetConfiguration()
 					sessionHelper = strings.ReplaceAll(sessionHelper, "SESSION_HELPER_STYLE", conf.Helper.Position.GetStyle())
 
 					stringBody = stringBody[:bodyIndex[1]] + sessionHelper + stringBody[bodyIndex[1]:]
@@ -198,7 +198,7 @@ func (h *Handler) tryGetSessionByRequestURL(req *http.Request) *models.Session {
 }
 
 func findForwardRules(req *http.Request, session *models.Session) ForwardRules {
-	conf := session.Application.GetConfiguration()
+	conf := session.GetConfiguration()
 
 	defaultForward, err := BuildDefaultForwardRules(&conf, session.Variables)
 	if err != nil {

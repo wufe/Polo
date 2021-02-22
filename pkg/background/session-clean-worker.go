@@ -35,7 +35,7 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 			session.LogInfo("Session cleaned up")
 
 			killReason := session.GetKillReason()
-			conf := session.Application.GetConfiguration()
+			conf := session.GetConfiguration()
 			appStartupRetries := conf.Startup.Retries
 			appCleanOnExit := *conf.CleanOnExit
 

@@ -178,7 +178,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 
 		a.ObjectsToHashMap = objectsToHashMap
 		a.HashToObjectsMap = hashToObjectsMap
-		a.Branches = appBranches
+		a.BranchesMap = appBranches
 		a.Tags = appTags
 		a.Commits = appCommits
 		a.CommitMap = appCommitMap

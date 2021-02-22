@@ -64,3 +64,28 @@ applications:
       stop: # At least one stop command is mandatory
         - command: "docker kill {{container_id}}"
         - command: "docker kill {{container_id_2}}"
+    branches:
+      - test: feature/.*
+        host: ''
+        remote: ''
+        target: ''
+        helper:
+          position: 'bottom-left'
+        forwards: [] # Not implemented yet
+        headers:
+          add: []
+          del: []
+          set: []
+          replace: []
+        healthcheck:
+          method: GET
+          url: /
+        startup:
+          retries: 3
+        recycle:
+          inactivity_timeout: 1200
+        commands:
+          start: []
+          stop: []
+        port:
+          except: [9876]

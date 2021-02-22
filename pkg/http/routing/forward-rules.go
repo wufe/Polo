@@ -54,7 +54,7 @@ func BuildForwardRules(r *http.Request, pattern models.CompiledForwardPattern, c
 	}
 
 	matches := pattern.Pattern.FindStringSubmatch(path)
-	log.WithField("matches", matches).Traceln("Matching additional forward rule")
+	log.Traceln("Matching additional forward rule")
 
 	target := pattern.Forward.To
 	for index, match := range matches {
