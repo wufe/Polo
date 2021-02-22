@@ -17,8 +17,8 @@ var (
 
 type Application struct {
 	utils.RWLocker          `json:"-"`
-	Filename                string                    `json:"filename"`
-	configuration           ApplicationConfiguration  `json:"configuration"`
+	Filename                string `json:"filename"`
+	configuration           ApplicationConfiguration
 	Status                  ApplicationStatus         `json:"status"`
 	Folder                  string                    `json:"folder"`
 	BaseFolder              string                    `json:"baseFolder"`

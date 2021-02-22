@@ -11,25 +11,13 @@ import (
 )
 
 type ApplicationConfiguration struct {
+	BranchConfiguration   `yaml:",inline"`
 	utils.RWLocker        `json:"-"`
-	Name                  string            `json:"name"`
-	Remote                string            `json:"remote"`
-	Target                string            `json:"target"`
-	Host                  string            `json:"host"`
-	Fetch                 Fetch             `json:"fetch"`
-	Watch                 Watch             `json:"watch"`
-	Helper                Helper            `json:"helper"`
-	IsDefault             bool              `yaml:"is_default" json:"isDefault"`
-	Forwards              []Forward         `json:"forwards"`
-	Headers               Headers           `json:"headers"`
-	Healthcheck           Healthcheck       `json:"healthCheck"`
-	Startup               Startup           `json:"startup"`
-	Recycle               Recycle           `json:"recycle"`
-	Commands              Commands          `json:"commands"`
-	MaxConcurrentSessions int               `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
-	Port                  PortConfiguration `yaml:"port" json:"port"`
-	UseFolderCopy         bool              `yaml:"use_folder_copy" json:"useFolderCopy"`
-	CleanOnExit           *bool             `yaml:"clean_on_exit" json:"cleanOnExit" default:"true"`
+	Name                  string `json:"name"`
+	Fetch                 Fetch  `json:"fetch"`
+	Watch                 Watch  `json:"watch"`
+	IsDefault             bool   `yaml:"is_default" json:"isDefault"`
+	MaxConcurrentSessions int    `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
 }
 
 func NewApplicationConfiguration(configuration *ApplicationConfiguration) (*ApplicationConfiguration, error) {

@@ -43,26 +43,27 @@ func (status SessionStatus) IsAlive() bool {
 
 type Session struct {
 	sync.Locker     `json:"-"`
-	UUID            string        `json:"uuid"`
-	ShortUUID       string        `json:"-"`
-	Name            string        `json:"name"`
-	Target          string        `json:"target"`
-	Port            int           `json:"port"`
-	ApplicationName string        `json:"applicationName"`
-	Application     *Application  `json:"application"`
-	Status          SessionStatus `json:"status"`
-	Logs            []Log         `json:"-"`
-	CommitID        string        `json:"commitID"` // The object to be checked out (branch/tag/commit id)
-	Checkout        string        `json:"checkout"`
-	Commit          object.Commit `json:"commit"`
-	MaxAge          int           `json:"maxAge"`
-	InactiveAt      time.Time     `json:"-"`
-	Folder          string        `json:"folder"`
-	Variables       Variables     `json:"variables"`
-	Metrics         []Metric      `json:"metrics"`
-	startupRetries  int
-	killReason      KillReason    `json:"-"`
-	Context         *contextStore `json:"-"`
+	UUID            string       `json:"uuid"`
+	ShortUUID       string       `json:"-"`
+	Name            string       `json:"name"`
+	Target          string       `json:"target"`
+	Port            int          `json:"port"`
+	ApplicationName string       `json:"applicationName"`
+	Application     *Application `json:"application"`
+	// Configuration   *BranchConfiguration `json:"configuration"`
+	Status         SessionStatus `json:"status"`
+	Logs           []Log         `json:"-"`
+	CommitID       string        `json:"commitID"` // The object to be checked out (branch/tag/commit id)
+	Checkout       string        `json:"checkout"`
+	Commit         object.Commit `json:"commit"`
+	MaxAge         int           `json:"maxAge"`
+	InactiveAt     time.Time     `json:"-"`
+	Folder         string        `json:"folder"`
+	Variables      Variables     `json:"variables"`
+	Metrics        []Metric      `json:"metrics"`
+	startupRetries int
+	killReason     KillReason    `json:"-"`
+	Context        *contextStore `json:"-"`
 }
 
 type KillReason string
