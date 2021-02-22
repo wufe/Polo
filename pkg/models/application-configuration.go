@@ -11,7 +11,7 @@ import (
 )
 
 type ApplicationConfiguration struct {
-	BranchConfiguration   `yaml:",inline"`
+	BranchConfiguration   `yaml:",inline"` // Base configuration, common for all branches
 	utils.RWLocker        `json:"-"`
 	Name                  string                     `json:"name"`
 	Fetch                 Fetch                      `json:"fetch"`

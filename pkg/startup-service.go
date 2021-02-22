@@ -102,7 +102,7 @@ func (s *Startup) watchApplications(ctx context.Context) {
 									conf = newConf
 									sessions := s.sesStorage.GetByApplicationName(conf.Name)
 									for _, session := range sessions {
-										session.SetConfiguration(newConf)
+										session.InitializeConfiguration()
 									}
 								}
 							}

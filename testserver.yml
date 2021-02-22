@@ -47,5 +47,5 @@ applications:
       retry_interval: 5
       retry_timeout: 10
     branches:
-      - test: feature/*
+      - test: feature
         host: feature.host.dev

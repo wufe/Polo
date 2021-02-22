@@ -48,7 +48,7 @@ func (s *Session) LoadSessions(application *Application) {
 	for _, session := range sessions {
 		app := application.Get(session.ApplicationName)
 		session.Application = app
-		session.SetConfiguration(app.GetConfiguration())
+		session.InitializeConfiguration()
 		if session.Application == nil {
 			log.Errorf("Session with id %s and application name %s could not be attached to any configured application. Shutdown it manually.", session.UUID, session.ApplicationName)
 			s.Delete(session)
