@@ -84,8 +84,25 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 		}
 	}
 
+	var basedOnPreviousSession bool
+	var recyclingPreviousSession bool
+
+	if input.PreviousSession != nil {
+		basedOnPreviousSession = true
+		killReason := input.PreviousSession.GetKillReason()
+		switch killReason {
+		case models.KillReasonBuildFailed, models.KillReasonHealthcheckFailed:
+			recyclingPreviousSession = true
+		default:
+		}
+	}
+
 	var session *models.Session
-	if input.PreviousSession == nil {
+	if recyclingPreviousSession {
+		session = models.NewSession(input.PreviousSession)
+		session.ResetVariables()
+		session.IncStartupRetriesCount()
+	} else {
 		sessionUUID := uuid.NewString()
 
 		session = models.NewSession(&models.Session{
@@ -98,10 +115,6 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 			CommitID:    input.Checkout,
 			Checkout:    input.Checkout,
 		})
-	} else {
-		session = models.NewSession(input.PreviousSession)
-		session.ResetVariables()
-		session.IncStartupRetriesCount()
 	}
 
 	// Getting configuration matching this session
@@ -134,8 +147,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 	session.Commit = *input.Application.CommitMap[checkout]
 	session.LogInfo(fmt.Sprintf("Requested checkout to %s (%s)", input.Checkout, session.CommitID))
 
-	recyclingPreviousSession := input.PreviousSession != nil
-	if !recyclingPreviousSession {
+	if !basedOnPreviousSession {
 		// Check if someone else just requested the same type of session
 		// looking through all open session and comparing applications and checkouts
 		sessionAlreadyBeingBuilt := w.sessionStorage.GetAliveApplicationSessionByCheckout(
