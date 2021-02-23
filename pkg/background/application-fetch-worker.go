@@ -209,11 +209,13 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 			sessionCommitID := foundSession.CommitID
 			if sessionCommitID != hash {
 				log.Infof("[APP:%s][WATCH] Detected new commit on %s", appName, ref)
-				// foundSession.SetKillReason(models.KillReasonReplaced)
-				// buildSession(w.mediator, foundSession)
-				w.mediator.DestroySession.Enqueue(foundSession, func(s *models.Session) {
-					buildSession(w.mediator, nil)
-				})
+				// FEATURE: Hot swap
+				// Set the previous' session kill-reason to "replaced"
+				// and create a new session.
+				// This new one will be aware that it is a replacement for another session that is going to expire.
+				// When the new one gets started, the old one gets destroyed.
+				foundSession.SetKillReason(models.KillReasonReplaced)
+				buildSession(w.mediator, foundSession)
 			}
 		} else {
 
