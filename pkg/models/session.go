@@ -345,13 +345,6 @@ func (session *Session) GetStartupRetriesCount() int {
 	return session.startupRetries
 }
 
-// SetStartupRetriesCount is a thread-safe setter for the current count of startup retries
-func (session *Session) SetStartupRetriesCount(retries int) {
-	session.Lock()
-	defer session.Unlock()
-	session.startupRetries = retries
-}
-
 // IncStartupRetriesCount thread-safely increments the current count of startup retries
 func (session *Session) IncStartupRetriesCount() {
 	session.Lock()
@@ -359,30 +352,36 @@ func (session *Session) IncStartupRetriesCount() {
 	session.startupRetries++
 }
 
+// ResetStartupRetriesCount thread-safely resets the current count of startup retries
 func (session *Session) ResetStartupRetriesCount() {
 	session.Lock()
 	defer session.Unlock()
 	session.startupRetries = 0
 }
 
+// GetKillReason returns the reason why the session has been killed thread-safely.
+// Returns KillReasonNone if the session has not been killed
 func (session *Session) GetKillReason() KillReason {
 	session.Lock()
 	defer session.Unlock()
 	return session.killReason
 }
 
+// SetKillReason allows to set the session kill reason thread-safely
 func (session *Session) SetKillReason(reason KillReason) {
 	session.Lock()
 	defer session.Unlock()
 	session.killReason = reason
 }
 
+// SetVariable thread-safely sets a variable value into the session variables dictionary
 func (session *Session) SetVariable(k string, v string) {
 	session.Lock()
 	defer session.Unlock()
 	session.Variables[k] = v
 }
 
+// ResetVariables thread-safely resets the session variables dictionary
 func (session *Session) ResetVariables() {
 	session.Lock()
 	defer session.Unlock()
