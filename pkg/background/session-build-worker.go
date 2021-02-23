@@ -86,6 +86,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 
 	var basedOnPreviousSession bool
 	var recyclingPreviousSession bool
+	var isAReplacement bool
 
 	if input.PreviousSession != nil {
 		basedOnPreviousSession = true
@@ -93,6 +94,8 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 		switch killReason {
 		case models.KillReasonBuildFailed, models.KillReasonHealthcheckFailed:
 			recyclingPreviousSession = true
+		case models.KillReasonReplaced:
+			isAReplacement = true
 		default:
 		}
 	}
@@ -115,6 +118,10 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 			CommitID:    input.Checkout,
 			Checkout:    input.Checkout,
 		})
+	}
+
+	if isAReplacement {
+		session.IsReplacementFor(input.PreviousSession)
 	}
 
 	// Getting configuration matching this session

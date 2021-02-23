@@ -46,6 +46,19 @@ func (w *SessionStartWorker) MarkSessionAsStarted(session *models.Session) {
 		}
 	}
 
+	// FEATURE: Hot swap
+	// Checks if this session replaces something else
+	replaces := session.Replaces()
+	// If replaces another session and that session has been killed for replacements reason
+	if replaces != nil && replaces.GetKillReason() == models.KillReasonReplaced {
+		// Notify the previous one that it has been replaced
+		replaces.SetReplacedBy(session.UUID)
+		// And destroy it
+		w.mediator.DestroySession.Enqueue(replaces, nil)
+	}
+	// Reset status of current session
+	session.IsReplacementFor(nil)
+
 	w.sessionStorage.Update(session)
 }
 

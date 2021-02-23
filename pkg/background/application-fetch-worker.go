@@ -209,8 +209,10 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 			sessionCommitID := foundSession.CommitID
 			if sessionCommitID != hash {
 				log.Infof("[APP:%s][WATCH] Detected new commit on %s", appName, ref)
+				// foundSession.SetKillReason(models.KillReasonReplaced)
+				// buildSession(w.mediator, foundSession)
 				w.mediator.DestroySession.Enqueue(foundSession, func(s *models.Session) {
-					buildSession(w.mediator)
+					buildSession(w.mediator, nil)
 				})
 			}
 		} else {
@@ -229,7 +231,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 				lastSession.GetKillReason() != models.KillReasonStopped {
 
 				log.Infof("[APP:%s][WATCH] Auto-start on %s", appName, ref)
-				buildSession(w.mediator)
+				buildSession(w.mediator, nil)
 			}
 		}
 	}
@@ -249,9 +251,9 @@ func (w *ApplicationFetchWorker) registerObjectHash(objectsToHashMap map[string]
 	}, &watchResults
 }
 
-func requestSessionBuilder(a *models.Application, ref string) func(*Mediator) {
-	return func(mediator *Mediator) {
-		mediator.BuildSession.Enqueue(ref, a, nil)
+func requestSessionBuilder(a *models.Application, ref string) func(*Mediator, *models.Session) {
+	return func(mediator *Mediator, previousSession *models.Session) {
+		mediator.BuildSession.Enqueue(ref, a, previousSession)
 	}
 }
 

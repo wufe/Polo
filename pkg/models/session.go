@@ -45,6 +45,8 @@ const (
 	// KillReasonHealthcheckFailed - The session has been killed because the healthcheck process
 	// could not check the service reachability. It depends on user-provided configuration
 	KillReasonHealthcheckFailed KillReason = "healthcheck_failed"
+	// KillReasonReplaced - Means the session is going to be replaced with an updated one
+	KillReasonReplaced KillReason = "replaced"
 
 	// SessionBuildContextKey is the name of the shared BUILD context.
 	// It is shared to allow an early session destruction to stop a running build of a session
@@ -91,6 +93,9 @@ type Session struct {
 	startupRetries  int
 	killReason      KillReason    `json:"-"`
 	Context         *contextStore `json:"-"`
+	// If set, states that this session replaces a previous one
+	replaces       *Session
+	replacedByUUID string
 }
 
 // Variables are those variables used by a single session.
@@ -133,6 +138,30 @@ func NewSession(
 		session.configuration = session.getMatchingConfiguration()
 	}
 	return session
+}
+
+func (session *Session) IsReplacementFor(previous *Session) {
+	session.Lock()
+	defer session.Unlock()
+	session.replaces = previous
+}
+
+func (session *Session) Replaces() *Session {
+	session.RLock()
+	defer session.RUnlock()
+	return session.replaces
+}
+
+func (session *Session) SetReplacedBy(newSessionUUID string) {
+	session.Lock()
+	defer session.Unlock()
+	session.replacedByUUID = newSessionUUID
+}
+
+func (session *Session) GetReplacedBy() string {
+	session.RLock()
+	defer session.RUnlock()
+	return session.replacedByUUID
 }
 
 // GetConfiguration allows to retrieve the CURRENT configuration in a thread-safe manner.
