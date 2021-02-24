@@ -65,6 +65,7 @@ export const SessionLogs = observer((props: { logs: ISessionLog[], onLogsProport
             itemSize={itemsHeight}
             itemData={props.logs}
             width="100%"
+            overscanCount={15}
             style={{ overflowX: 'hidden' }}
             onScroll={onScroll}>
             {SessionLogsRow}
