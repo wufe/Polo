@@ -2,8 +2,14 @@
     > * {
         line-height: 1.5em;
     }
+
+    b {
+        font-weight: bold !important;
+    }
+
     small {
-        color: #4c566a;
+        color: #4c566a !important;
+        font-size: smaller !important
     }
     .__detach {
         text-align: center;
