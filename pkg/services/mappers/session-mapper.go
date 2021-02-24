@@ -10,8 +10,7 @@ func MapSession(model *models.Session) *output.Session {
 		return nil
 	}
 	model.Lock()
-	defer model.Unlock()
-	return &output.Session{
+	session := &output.Session{
 		UUID:              model.UUID,
 		Name:              model.Name,
 		Target:            model.Target,
@@ -30,6 +29,9 @@ func MapSession(model *models.Session) *output.Session {
 		Logs:              MapSessionLogs(model.Logs),
 		Metrics:           MapMetrics(model.Metrics),
 	}
+	model.Unlock()
+	session.ReplacesSession = MapReplaces(model.Replaces())
+	return session
 }
 
 func MapSessions(models []*models.Session) []output.Session {
@@ -38,4 +40,11 @@ func MapSessions(models []*models.Session) []output.Session {
 		ret = append(ret, *MapSession(s))
 	}
 	return ret
+}
+
+func MapReplaces(model *models.Session) string {
+	if model == nil {
+		return ""
+	}
+	return model.UUID
 }
