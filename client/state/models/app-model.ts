@@ -30,6 +30,7 @@ export const AppModel = types.model({
         const sessions: APIPayload<IAPISession[]> = yield retrieveAllSessionsAPI();
         if (sessions.result === APIRequestResult.SUCCEEDED) {
             const sessionsMap = sessions.payload.reduce<{ [applicationName: string]: ISession }>((acc, session) => {
+                session.beingReplaced = !!sessions.payload.find(s => s.replacesSession === session.uuid);
                 acc[session.uuid] = castAPISessionToSessionModel(session);
                 return acc;
             }, {});

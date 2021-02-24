@@ -140,24 +140,32 @@ func NewSession(
 	return session
 }
 
+// IsReplacementFor thread-safely sets the session which will be replaced
+// when this session will go online
 func (session *Session) IsReplacementFor(previous *Session) {
 	session.Lock()
 	defer session.Unlock()
 	session.replaces = previous
 }
 
+// Replaces thread-safely retrieves the session which will be replaced
+// when this session will go online
 func (session *Session) Replaces() *Session {
 	session.RLock()
 	defer session.RUnlock()
 	return session.replaces
 }
 
+// SetReplacedBy thread-safely sets the UUID of the session by which
+// this session has been replaced
 func (session *Session) SetReplacedBy(newSessionUUID string) {
 	session.Lock()
 	defer session.Unlock()
 	session.replacedByUUID = newSessionUUID
 }
 
+// GetReplacedBy thread-safely retrieves the UUID of the session by which
+// this session has been replaced
 func (session *Session) GetReplacedBy() string {
 	session.RLock()
 	defer session.RUnlock()

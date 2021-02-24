@@ -2,6 +2,7 @@ import { APIRequestResult } from '@/api/common';
 import { ISession, SessionStatus } from '@/state/models';
 import { observer } from 'mobx-react-lite';
 import React from 'react';
+import loading from '../../../../assets/loading.svg';
 
 export const noExpirationAgeValue = -1;
 
@@ -25,12 +26,25 @@ export const ApplicationSessions = observer((props: TProps) => {
 
     return <>
         <h4 className="my-1 text-xs text-gray-500 uppercase">Sessions:</h4>
-        {props.sessions.map((session, key) =>
+        {props.sessions
+            .filter(session => !session.replacesSession)
+            .map((session, key) =>
             <div
                 key={key}
                 className="flex items-end py-1">
-                <span className="leading-none text-xs uppercase font-bold" style={{ color: colorByStatus(session.status) }}>{session.status}</span>
-                <span className="leading-none text-sm mr-3 flex-grow px-2 lg:px-10 flex-1">{session.checkout}</span>
+                <span className="loading-none flex flex-nowrap lg:w-24">
+                    <span className="lg:w-5 text-center inline-block">
+                        {
+                            (
+                                session.status === SessionStatus.STARTING ||
+                                session.beingReplaced
+                            ) &&
+                            <img src={loading} width={12} height={12} className="mr-1" />}
+                    </span>
+                    <span className="leading-none text-xs uppercase font-bold" style={{ color: colorByStatus(session.status) }}>{session.status}</span>
+                    
+                </span>
+                <span className="leading-none text-sm mr-3 flex-grow px-2 lg:px-10 flex-1 whitespace-nowrap overflow-hidden overflow-ellipsis">{session.checkout}</span>
                 {session.maxAge > noExpirationAgeValue && <span className="leading-none text-xs uppercase text-gray-500 px-2 lg:px-10">
                     <span className="hidden lg:inline-block pr-1">Expires in </span><span>{session.maxAge}s</span>
                 </span>}

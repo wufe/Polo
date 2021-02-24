@@ -63,7 +63,9 @@ export const SessionModel = types.model({
     logs             : types.map(SessionLogModel),
     checkout         : types.string,
     maxAge           : types.number,
-    folder           : types.string
+    folder           : types.string,
+    replacesSession  : types.optional(types.string, ''),
+    beingReplaced    : types.optional(types.boolean, false),
 }).actions(self => {
     const track = flow(function* track() {
         const trackRequest: APIPayload<void> = yield trackSessionAPI(self.uuid);
