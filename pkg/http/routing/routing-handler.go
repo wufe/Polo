@@ -50,13 +50,11 @@ func (h *Handler) RouteReverseProxyRequests() http.Handler {
 			var session *models.Session
 			var builder proxy.Builder
 
-			session = h.detectSession(r)
-
-			if session == nil {
-				session = h.tryGetSessionByRequestURL(r)
-				if session != nil {
-					usingSmartURL = true
-				}
+			session = h.tryGetSessionByRequestURL(r)
+			if session != nil {
+				usingSmartURL = true
+			} else {
+				session = h.detectSession(r)
 			}
 
 			if session == nil {
