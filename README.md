@@ -61,6 +61,5 @@ This diagram represents the states walked since the request of a session to its 
 - Add support to command concatenations (; and &&)
 - Update session-helper design
 - Update session page design (estimated time required, progress bar)
-- Add "warmup" endpoints
 - Add possibility to manually trigger a fetch in a git application folder
 - Configuration CRUD via UI

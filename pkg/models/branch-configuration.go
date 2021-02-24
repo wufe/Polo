@@ -17,4 +17,15 @@ type BranchConfiguration struct {
 	Recycle     Recycle           `json:"recycle"`
 	Commands    Commands          `json:"commands"`
 	Port        PortConfiguration `yaml:"port" json:"port"`
+	Warmup      Warmups
+}
+
+type Warmups struct {
+	MaxRetries    int      `yaml:"max_retries"`
+	RetryInterval int      `yaml:"retry_interval"`
+	URLs          []Warmup `yaml:"urls"`
+}
+
+type Warmup struct {
+	RequestConfiguration `yaml:",inline"`
 }

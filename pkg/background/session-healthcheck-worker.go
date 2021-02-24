@@ -78,7 +78,7 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 			}
 			target.Path = path.Join(target.Path, healthcheck.URL)
 			client := &http.Client{
-				Timeout: time.Duration(healthcheck.RetryTimeout) * time.Second,
+				Timeout: time.Duration(healthcheck.Timeout) * time.Second,
 			}
 			req, err := http.NewRequest(
 				healthcheck.Method,
@@ -88,7 +88,7 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 			if err != nil {
 				log.Errorln("Could not build HTTP request", req)
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(healthcheck.RetryTimeout)*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(healthcheck.Timeout)*time.Second)
 			req.WithContext(ctx)
 			err = headers.ApplyTo(req)
 			if err != nil {

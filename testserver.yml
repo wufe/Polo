@@ -43,6 +43,12 @@ applications:
           continue_on_error: true
     recycle:
       inactivity_timeout: 600
+    warmup:
+      retry_interval: 5
+      max_retries: 2
+      urls:
+        - url: http://localhost:{{port}}/asd
+          timeout: 1
     healthcheck:
       max_retries: 1
       retry_interval: 5

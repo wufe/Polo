@@ -100,8 +100,30 @@ func NewApplicationConfiguration(configuration *ApplicationConfiguration) (*Appl
 	if configuration.Healthcheck.RetryInterval == 0 {
 		configuration.Healthcheck.RetryInterval = 30
 	}
-	if configuration.Healthcheck.RetryTimeout <= 0 {
-		configuration.Healthcheck.RetryTimeout = 20 // seconds
+	if configuration.Healthcheck.Timeout <= 0 {
+		configuration.Healthcheck.Timeout = 20 // seconds
+	}
+	if configuration.Warmup.RetryInterval == 0 {
+		configuration.Warmup.RetryInterval = 5
+	} else if configuration.Warmup.RetryInterval == -1 {
+		configuration.Warmup.RetryInterval = 0
+	}
+	if configuration.Warmup.URLs == nil {
+		configuration.Warmup.URLs = []Warmup{}
+	}
+	urls := configuration.Warmup.URLs
+	for i, u := range urls {
+		if u.Status == 0 {
+			urls[i].Status = 200
+		}
+		if u.Method == "" {
+			urls[i].Method = "GET"
+		} else {
+			urls[i].Method = strings.ToUpper(u.Method)
+		}
+		if u.Timeout <= 0 {
+			urls[i].Timeout = 20
+		}
 	}
 	if configuration.Startup.Timeout <= 0 {
 		configuration.Startup.Timeout = 300 // seconds
@@ -260,4 +282,11 @@ func (a *ApplicationConfiguration) WithRLock(f func(*ApplicationConfiguration)) 
 	a.RLock()
 	defer a.RUnlock()
 	f(a)
+}
+
+type RequestConfiguration struct {
+	Method  string `json:"method"`
+	URL     string `yaml:"url" json:"url"`
+	Status  int    `json:"status"`
+	Timeout int    `yaml:"timeout" json:"timeout"`
 }

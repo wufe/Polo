@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -193,7 +194,6 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 func (w *SessionBuildWorker) buildSession(session *models.Session) {
 	conf := session.GetConfiguration()
 	appStartupTimeout := conf.Startup.Timeout
-	appStartCommands := conf.Commands.Start
 	appHealthcheck := conf.Healthcheck
 
 	sessionStartContext, cancelSessionStart := context.WithTimeout(context.Background(), time.Second*time.Duration(appStartupTimeout))
@@ -240,14 +240,35 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 			}
 		}
 	}()
-	healthcheckingStarted, err := w.execCommands(sessionStartContext, session, appStartCommands)
+	healthcheckingStarted, err := w.execCommands(sessionStartContext, session, conf)
 	if err != nil {
 		if err == ErrWrongSessionState {
-			session.SetKillReason(models.KillReasonStopped)
+			if session.GetKillReason() == models.KillReasonNone {
+				session.SetKillReason(models.KillReasonStopped)
+			} else {
+				session.LogTrace("Commands: it has been killed by the user, right?")
+			}
 		}
 		session.LogError(err.Error())
 		abort()
 		return
+	}
+
+	warmup := conf.Warmup
+	if len(warmup.URLs) > 0 {
+		err := w.execWarmups(sessionStartContext, session, conf)
+		if err != nil {
+			if err == ErrWrongSessionState {
+				if session.GetKillReason() == models.KillReasonNone {
+					session.SetKillReason(models.KillReasonStopped)
+				} else {
+					session.LogTrace("Warmup: it has been killed by the user, right?")
+				}
+			}
+			session.LogError(err.Error())
+			abort()
+			return
+		}
 	}
 
 	calcBuildMetrics()
@@ -278,12 +299,12 @@ func (w *SessionBuildWorker) prepareFolders(session *models.Session) error {
 	return err
 }
 
-func (w *SessionBuildWorker) execCommands(ctx context.Context, session *models.Session, commands []models.Command) (healthcheckingStarted bool, err error) {
+func (w *SessionBuildWorker) execCommands(ctx context.Context, session *models.Session, conf models.ApplicationConfiguration) (healthcheckingStarted bool, err error) {
 	calcCommandMetrics := models.NewMetricsForSession(session)("Startup commands")
 	defer calcCommandMetrics()
 
-	conf := session.GetConfiguration()
 	appHealthcheck := conf.Healthcheck
+	commands := conf.Commands.Start
 
 	for _, command := range commands {
 		select {
@@ -292,7 +313,8 @@ func (w *SessionBuildWorker) execCommands(ctx context.Context, session *models.S
 		default:
 
 			status := session.GetStatus()
-			if status != models.SessionStatusStarting {
+			// The command execution is permitted while the session is building or available
+			if status != models.SessionStatusStarting && status != models.SessionStatusStarted {
 				return healthcheckingStarted, ErrWrongSessionState
 			}
 
@@ -348,4 +370,99 @@ func (w *SessionBuildWorker) execCommand(ctx context.Context, command *models.Co
 	}, cmds...)
 
 	return err
+}
+
+func (w *SessionBuildWorker) execWarmups(ctx context.Context, session *models.Session, conf models.ApplicationConfiguration) error {
+	calcWarmupMetrics := models.NewMetricsForSession(session)("Warmup")
+	defer calcWarmupMetrics()
+
+	warmups := conf.Warmup
+
+	for _, warmup := range warmups.URLs {
+		select {
+		case <-ctx.Done():
+			return context.Canceled
+		default:
+			status := session.GetStatus()
+			// The warmup is permitted while the session is building or availble
+			if status != models.SessionStatusStarting && status != models.SessionStatusStarted {
+				return ErrWrongSessionState
+			}
+
+			success, url, err := w.execWarmup(ctx, session, conf, warmup, warmups)
+			if !success {
+				if err != nil {
+					session.LogError(fmt.Sprintf("Cannot execute warmup of URL %s: %s", url, err.Error()))
+				} else {
+					session.LogError(fmt.Sprintf("Cannot execute warmup of URL %s", url))
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (w *SessionBuildWorker) execWarmup(ctx context.Context, session *models.Session, conf models.ApplicationConfiguration, warmup models.Warmup, warmups models.Warmups) (bool, string, error) {
+	reqCtx := ctx
+
+	retryCount := 0
+
+	for {
+		var client *http.Client
+		cancelCtx := func() {}
+		if warmup.Timeout != -1 {
+			timeout := 60
+			if warmup.Timeout > 0 {
+				timeout = warmup.Timeout
+			}
+			timeCtx, cancel := context.WithTimeout(reqCtx, time.Duration(timeout)*time.Second)
+			reqCtx = timeCtx
+			cancelCtx = func() {
+				cancel()
+			}
+			defer cancelCtx()
+			client = &http.Client{
+				Timeout: time.Duration(timeout) * time.Second,
+			}
+		} else {
+			client = &http.Client{}
+		}
+
+		url := session.Variables.ApplyTo(warmup.URL)
+		session.LogTrace(fmt.Sprintf("Requesting warmup URL %s", url))
+		req, err := http.NewRequest(warmup.Method, url, nil)
+		if err != nil {
+			return false, url, err
+		}
+		req.WithContext(reqCtx)
+		err = conf.Headers.ApplyTo(req)
+		if err != nil {
+			return false, url, err
+		}
+		if conf.Host != "" {
+			req.Header.Add("Host", conf.Host)
+			req.Host = conf.Host
+		}
+		response, err := client.Do(req)
+		if err != nil || response.StatusCode != warmup.Status {
+
+			retryCount++
+
+			if err != nil {
+				session.LogTrace(fmt.Sprintf("Warmup error: %s", err.Error()))
+			} else {
+				session.LogTrace(fmt.Sprintf("Warmup error: received status code %d, wanted %d", response.StatusCode, warmup.Status))
+			}
+
+			if retryCount >= warmups.MaxRetries {
+				return false, url, fmt.Errorf("Warmup did not return successfull status code")
+			}
+
+			time.Sleep(time.Duration(warmups.RetryInterval) * time.Second)
+			cancelCtx()
+		} else {
+			return true, url, nil
+		}
+	}
 }

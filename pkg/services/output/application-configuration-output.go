@@ -19,6 +19,7 @@ type ApplicationConfiguration struct {
 	Port                  PortConfiguration `json:"port"`
 	UseFolderCopy         bool              `json:"useFolderCopy"`
 	CleanOnExit           bool              `json:"cleanOnExit"`
+	Warmup                Warmups           `json:"warmups"`
 }
 
 type Fetch struct {
@@ -49,7 +50,7 @@ type Healthcheck struct {
 	Status        int    `json:"status"`
 	MaxRetries    int    `json:"maxRetries"`
 	RetryInterval int    `json:"retryInterval"`
-	RetryTimeout  int    `json:"retryTimeout"`
+	Timeout       int    `json:"timeout"`
 }
 
 type Startup struct {
@@ -78,4 +79,17 @@ type Command struct {
 
 type PortConfiguration struct {
 	Except []int `json:"except"`
+}
+
+type Warmups struct {
+	MaxRetries    int      `json:"maxRetries"`
+	RetryInterval int      `json:"retryInterval"`
+	URLs          []Warmup `json:"warmup"`
+}
+
+type Warmup struct {
+	Method  string `json:"method"`
+	URL     string `json:"url"`
+	Status  int    `json:"status"`
+	Timeout int    `json:"timeout"`
 }

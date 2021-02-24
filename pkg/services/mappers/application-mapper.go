@@ -41,6 +41,24 @@ func MapApplicationConfiguration(model models.ApplicationConfiguration) output.A
 		Port:                  MapPort(model.Port),
 		UseFolderCopy:         model.UseFolderCopy,
 		CleanOnExit:           *model.CleanOnExit,
+		Warmup:                MapWarmups(model.Warmup),
+	}
+}
+
+func MapWarmups(model models.Warmups) output.Warmups {
+	urls := []output.Warmup{}
+	for _, u := range model.URLs {
+		urls = append(urls, output.Warmup{
+			Method:  u.Method,
+			URL:     u.URL,
+			Status:  u.Status,
+			Timeout: u.Timeout,
+		})
+	}
+	return output.Warmups{
+		MaxRetries:    model.MaxRetries,
+		RetryInterval: model.RetryInterval,
+		URLs:          urls,
 	}
 }
 
@@ -109,7 +127,7 @@ func MapHealthcheck(model models.Healthcheck) output.Healthcheck {
 		Status:        model.Status,
 		MaxRetries:    model.MaxRetries,
 		RetryInterval: model.RetryInterval,
-		RetryTimeout:  model.RetryTimeout,
+		Timeout:       model.Timeout,
 	}
 }
 
