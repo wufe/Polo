@@ -377,6 +377,7 @@ func (w *SessionBuildWorker) execWarmups(ctx context.Context, session *models.Se
 	defer calcWarmupMetrics()
 
 	warmups := conf.Warmup
+	time.Sleep(1 * time.Second)
 
 	for _, warmup := range warmups.URLs {
 		select {
