@@ -93,10 +93,8 @@ func buildStructureCopying(session *models.Session, checkout string) (string, er
 func buildStructureCloning(session *models.Session, checkout string) (string, error) {
 	gitClient := versioning.GetGitClient(session.Application)
 
-	var appBaseFolder string
 	var appFolder string
 	session.Application.WithRLock(func(a *models.Application) {
-		appBaseFolder = a.BaseFolder
 		appFolder = a.Folder
 	})
 	conf := session.GetConfiguration()
@@ -122,7 +120,7 @@ func buildStructureCloning(session *models.Session, checkout string) (string, er
 	}
 
 	session.LogInfo("Performing an hard reset to the selected commit")
-	err = gitClient.HardReset(appBaseFolder, sessionCommit)
+	err = gitClient.HardReset(sessionCommitFolder, sessionCommit)
 	if err != nil {
 		session.LogError(fmt.Sprintf("Error while performing hard reset: %s", err.Error()))
 		return "", err
