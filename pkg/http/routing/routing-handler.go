@@ -103,7 +103,17 @@ func (h *Handler) detectSession(req *http.Request) *models.Session {
 		return nil
 	}
 	sessionUUID := cookie.Value
-	return h.sessionStorage.GetByUUID(sessionUUID)
+	session := h.sessionStorage.GetByUUID(sessionUUID)
+	// FEATURE: Hot swap
+	// If the found tracked session links to a replacement session
+	// use that replacement UUID to look for the updated session.
+	replaced := session.GetReplacedBy()
+	// If it has been replaced
+	if replaced != "" {
+		// Search instead for the replacement
+		session = h.sessionStorage.GetByUUID(replaced)
+	}
+	return session
 }
 
 func getHostURL(full *url.URL) *url.URL {
