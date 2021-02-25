@@ -1,6 +1,9 @@
 package services
 
 import (
+	"strings"
+
+	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
 )
@@ -79,4 +82,34 @@ func (s *QueryService) GetSessionLogsAndStatus(uuid string, lastLogUUID string) 
 	}
 
 	return logs, session.Status, nil
+}
+
+func (s *QueryService) GetMatchingCheckout(rawInput string) (queues.SessionBuildInput, bool) {
+	rawInput = strings.ToLower(rawInput)
+	var defaultApp *models.Application
+	apps := s.applicationStorage.GetAll()
+	for _, app := range apps {
+		conf := app.GetConfiguration()
+		if conf.IsDefault {
+			defaultApp = app
+			break
+		}
+	}
+	if defaultApp == nil {
+		return queues.SessionBuildInput{}, false
+	}
+	var objectsToHashMap map[string]string
+	defaultApp.WithRLock(func(a *models.Application) {
+		objectsToHashMap = a.ObjectsToHashMap
+	})
+	for k, v := range objectsToHashMap {
+		if strings.ToLower(k) == rawInput {
+			return queues.SessionBuildInput{
+				Application: defaultApp,
+				Checkout:    v,
+			}, true
+		}
+	}
+	return queues.SessionBuildInput{}, false
+
 }
