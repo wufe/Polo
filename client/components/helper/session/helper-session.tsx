@@ -21,7 +21,6 @@ export const HelperSession = (props: TProps) => {
 
     const [open, setOpen] = useState(false);
     const copy = useClipboard();
-    const history = useHistory();
 
     const detach = async () => {
         const untrack = await untrackSessionAPI();
@@ -36,9 +35,10 @@ export const HelperSession = (props: TProps) => {
 
     const copyLink = () => copy(`${location.origin}/s/${props.session.checkout}`);
     const copyFullLink = () => copy(`${location.origin}/s/${props.session.checkout}${location.pathname}`);
+    const goToLogs = () => location.href = `/_polo_/session/${props.session.uuid}/logs`;
 
     return <div className={`helper-session__component background-hover ${open && '--open'}`}>
-        <div className="__visible" onClick={() => setOpen(open => !open)}>
+        <div className={`__visible ${open && '--open'}`} onClick={() => setOpen(open => !open)}>
             <div className="__content">
                 <div className="__checkout">
                     <span>On checkout <b className="__checkout-title">{props.session.checkout}</b></span>
@@ -71,7 +71,7 @@ export const HelperSession = (props: TProps) => {
                     </svg>
                 </div>
             </div>
-            <div className="__shortcut" onClick={() => history.push(`/_polo_/session/${props.session.uuid}/logs`)}>
+            <div className="__shortcut" onClick={goToLogs}>
                 <span className="__desc">View logs</span>
                 <div className="__icon-container">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width={16} height={16}>

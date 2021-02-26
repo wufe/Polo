@@ -50,20 +50,100 @@
             
             top: 50%;
             transform: translateY(-50%);
-        }
-
-        @at-root[data-pos-x="right"] & .__icon-container {
             right: 5px;
+
+            svg {
+                transition: transform .3s linear;
+            }
+
         }
 
-        @at-root[data-pos-x="left"] & .__icon-container {
-            left: 5px;
+        @at-root[data-pos-y="bottom"][data-pos-x="right"] & {
+            .__icon-container {
+                right: 5px;
+
+                svg {
+                    transform: rotateZ(90deg);
+                }
+            }
+
+            &.--open {
+                .__icon-container {
+                    svg {
+                        transform: rotateZ(0deg);
+                    }
+                }
+            }
+        }
+
+        @at-root[data-pos-y="bottom"][data-pos-x="left"] & {
+            .__icon-container {
+                left: 5px;
+
+                svg {
+                    transform: rotateZ(-90deg);
+                }
+            }
+
+            &.--open {
+                .__icon-container {
+                    svg {
+                        transform: rotateZ(0deg);
+                    }
+                }
+            }
+        }
+
+        @at-root[data-pos-y="top"][data-pos-x="right"] & {
+            .__icon-container {
+                right: 5px;
+
+                svg {
+                    transform: rotateZ(90deg);
+                }
+            }
+
+            &.--open {
+                .__icon-container {
+                    svg {
+                        transform: rotateZ(180deg);
+                    }
+                }
+            }
+        }
+
+        @at-root[data-pos-y="top"][data-pos-x="left"] & {
+            .__icon-container {
+                left: 5px;
+
+                svg {
+                    transform: rotateZ(270deg);
+                }
+            }
+
+            &.--open {
+                .__icon-container {
+                    svg {
+                        transform: rotateZ(180deg);
+                    }
+                }
+            }
         }
     }
 
     .__collapsible {
         transition: max-height .2s ease-in-out;
+        overflow: hidden;
         max-height: 0px;
+        display: flex;
+        
+        @at-root[data-pos-y="top"] & {
+            flex-direction: column-reverse;
+        }
+
+        @at-root[data-pos-y="bottom"] & {
+            flex-direction: column;
+        }
 
         .__shortcut {
             display: flex;
