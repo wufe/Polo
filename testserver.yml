@@ -11,15 +11,13 @@ applications:
       interval: 30
     watch:
       - main
-      - feature/my-watched-feature
+      # - feature/my-watched-feature
     is_default: true
     headers:
       replace: []
     startup:
       retries: 3
     forwards:
-      - pattern: asd
-        to: /qwe
       - pattern: /github/(.+?)/(.+?)/?$
         to: https://github.com/$2/$1
       - pattern: /testserver/(.+?)/(.+?)/?(\?(.+?))?$
@@ -42,7 +40,7 @@ applications:
         - command: "docker kill {{container_id}}"
           continue_on_error: true
     recycle:
-      inactivity_timeout: 600
+      inactivity_timeout: 6000
     warmup:
       retry_interval: 5
       max_retries: 2

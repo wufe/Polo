@@ -31,7 +31,7 @@ export const Application = observer((props: TProps) => {
         if (checkout) {
             const newSession = await props.application.newSession(checkout);
             if (newSession.result === APIRequestResult.SUCCEEDED) {
-                history.push(`/_polo_/session/${newSession.payload.uuid}`);
+                history.push(`/_polo_/session/${newSession.payload.uuid}/`);
             } else {
                 alert('Could not create new session.\n' + newSession.reason);
             }

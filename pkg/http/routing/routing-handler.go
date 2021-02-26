@@ -148,7 +148,9 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 					sessionHelper := strings.ReplaceAll(h.static.GetSessionHelperContent(), "%%currentSession%%", base64.StdEncoding.EncodeToString(serializedSession))
 
 					conf := session.GetConfiguration()
-					sessionHelper = strings.ReplaceAll(sessionHelper, "SESSION_HELPER_STYLE", conf.Helper.Position.GetStyle())
+					positionX, positionY := conf.Helper.Position.GetStyle()
+					sessionHelper = strings.ReplaceAll(sessionHelper, "SESSION_HELPER_X", positionX)
+					sessionHelper = strings.ReplaceAll(sessionHelper, "SESSION_HELPER_Y", positionY)
 
 					stringBody = stringBody[:bodyIndex[1]] + sessionHelper + stringBody[bodyIndex[1]:]
 

@@ -257,18 +257,18 @@ type Helper struct {
 
 type HelperPosition string
 
-func (p *HelperPosition) GetStyle() string {
+func (p *HelperPosition) GetStyle() (x string, y string) {
 	switch *p {
 	case "right-bottom", "bottom-right":
-		return "bottom: 0; right: 0"
+		return "right", "bottom"
 	case "right-top", "top-right":
-		return "top: 0; right: 0"
+		return "right", "top"
 	case "left-top", "top-left":
-		return "top: 0; left: 0"
+		return "left", "top"
 	case "left-bottom", "bottom-left":
-		return "bottom: 0; left: 0"
+		return "left", "bottom"
 	default:
-		return "bottom: 0; left: 0"
+		return "left", "bottom"
 	}
 }
 

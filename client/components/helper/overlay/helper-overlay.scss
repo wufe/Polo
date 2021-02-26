@@ -10,6 +10,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    color: #232323;
 
     span.__text {
         font-size: xx-large;
@@ -19,6 +20,6 @@
         font-size: larger;
         cursor: pointer;
         text-decoration: underline;
-        color: #232323;
+        color: inherit;
     }
 }
