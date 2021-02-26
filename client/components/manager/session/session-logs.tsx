@@ -20,25 +20,6 @@ const colorsByLogType: {
     [SessionLogType.STDERR]: "#d08770"
 }
 
-const parseMessage = (message: string) => {
-    try {
-        const parsed = parse(message);
-        return <span className="overflow-hidden whitespace-nowrap overflow-ellipsis">{parsed.spans
-                .map(({ css, text }: { css: string; text: string; }, i: number) => {
-                    const styles = css.split(';').reduce<{ [k: string]: string }>((acc, style) => {
-                        if (!style.trim())
-                            return acc;
-                        const [key, value] = style.trim().split(':');
-                        acc[key] = value;
-                        return acc;
-                    }, {});
-                    return <span style={{...styles, paddingRight: '2px'}} key={i}>{text}</span>
-                })}</span>;
-    } catch {
-        return <span>{message}</span>
-    }
-}
-
 const SessionLogsRow =  ({ index, style, data }: { index: number; style: React.CSSProperties; data: ISessionLog[] }) => {
     const log = data[index];
     const color = colorsByLogType[log.type];
@@ -72,3 +53,58 @@ export const SessionLogs = observer((props: { logs: ISessionLog[], onLogsProport
         </List>
     </div>
 })
+
+
+function parseMessage(message: string) {
+    try {
+        const parsed = parse(message);
+        return <span className="overflow-hidden whitespace-nowrap overflow-ellipsis">{parsed.spans
+            .map(({ css, text }: { css: string; text: string; }, i: number) => {
+                const styles = css.split(';').reduce<{ [k: string]: string }>((acc, style) => {
+                    if (!style.trim())
+                        return acc;
+                    const [key, value] = style.trim().split(':');
+                    acc[key] = value;
+                    return acc;
+                }, {});
+                return <span style={{ ...styles, paddingRight: '2px' }} key={i}>{parseSpaces(text)}</span>
+            })}</span>;
+    } catch {
+        return <span>{parseSpaces(message)}</span>
+    }
+}
+
+function parseSpaces(message: string) {
+    const acc: JSX.Element[] = [];
+    let spaces = 0;
+    let chars = '';
+    for (let i = 0; i < message.length; i++) {
+        const char = message[i];
+        if (char === ' ') {
+            if (chars != '') {
+                acc.push(<span key={acc.length}>{chars}</span>)
+            }
+            chars = '';
+            spaces++;
+        } else if (char === '\t') {
+            if (chars != '') {
+                acc.push(<span key={acc.length}>{chars}</span>)
+            }
+            chars = '';
+            spaces += 2;
+        } else {
+            if (spaces > 0) {
+                acc.push(<span key={acc.length} style={{ paddingLeft: `${6 * spaces}px` }}></span>)
+            }
+            spaces = 0;
+            chars += char;
+        }
+    }
+    if (chars != '') {
+        acc.push(<span key={acc.length}>{chars}</span>)
+    }
+    if (spaces > 0) {
+        acc.push(<span key={acc.length} style={{ paddingLeft: `${6 * spaces}px` }}></span>)
+    }
+    return acc;
+}
