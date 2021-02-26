@@ -30,8 +30,7 @@ func NewHandler(isDev bool, static *services.StaticService, routing *routing.Han
 	}
 
 	router.GET("/_polo_/", h.getManager(static, proxy))
-	router.GET("/_polo_/session/:uuid/", h.getManager(static, proxy))
-	router.GET("/_polo_/session/:uuid/logs", h.getManager(static, proxy))
+	router.GET("/_polo_/session/*catchall", h.getManager(static, proxy))
 	router.GET("/_polo_/api/application/", h.getApplications(query))
 	router.GET("/_polo_/api/session/", h.getSessions(query))
 	router.POST("/_polo_/api/session/", h.addSession(request))

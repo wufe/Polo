@@ -49,10 +49,9 @@ func (h *Handler) RouteReverseProxyRequests() http.Handler {
 		} else {
 			usingSmartURL := false
 
-			var session *models.Session
 			var builder proxy.Builder
 
-			session = h.tryGetSessionByRequestURL(r)
+			session, path := h.tryGetSessionByRequestURL(r)
 			if session != nil {
 				usingSmartURL = true
 			} else {
@@ -70,16 +69,16 @@ func (h *Handler) RouteReverseProxyRequests() http.Handler {
 					session.MarkAsBeingRequested()
 					TrackSession(w, session)
 					if usingSmartURL {
-						temporaryRedirect(w, "/")
+						temporaryRedirect(w, fmt.Sprintf("/%s", path))
 					} else {
 						forward := findForwardRules(r, session)
 						h.serveRev(forward, builder)(w, r)
 					}
 					break
 				case models.SessionStatusStarting:
-					temporaryRedirect(w, fmt.Sprintf("/_polo_/session/%s/", session.UUID))
+					temporaryRedirect(w, fmt.Sprintf("/_polo_/session/%s/%s", session.UUID, path))
 				case models.SessionStatusDegraded:
-					temporaryRedirect(w, fmt.Sprintf("/_polo_/session/%s/", session.UUID))
+					temporaryRedirect(w, fmt.Sprintf("/_polo_/session/%s/%s", session.UUID, path))
 				default:
 					UntrackSession(w)
 					temporaryRedirect(w, "/_polo_/")
@@ -168,17 +167,17 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 	}
 }
 
-func (h *Handler) tryGetSessionByRequestURL(req *http.Request) *models.Session {
+func (h *Handler) tryGetSessionByRequestURL(req *http.Request) (*models.Session, string) {
 	if strings.HasPrefix(req.URL.Path, "/s/") {
-		if checkout, application, found := h.query.GetMatchingCheckout(req.URL.Path[3:]); found {
+		if checkout, application, path, found := h.query.GetMatchingCheckout(req.URL.Path[3:]); found {
 			result, err := h.request.NewSession(checkout, application)
 			if err != nil {
-				return nil
+				return nil, ""
 			}
-			return result.Session
+			return result.Session, path
 		}
 	}
-	return nil
+	return nil, ""
 }
 
 func findForwardRules(req *http.Request, session *models.Session) ForwardRules {

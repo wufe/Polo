@@ -1,6 +1,8 @@
 package services
 
 import (
+	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/wufe/polo/pkg/models"
@@ -83,7 +85,9 @@ func (s *QueryService) GetSessionLogsAndStatus(uuid string, lastLogUUID string) 
 	return logs, session.Status, nil
 }
 
-func (s *QueryService) GetMatchingCheckout(rawInput string) (checkout string, application string, found bool) {
+// GetMatchingCheckout
+// The rawInput parameter is without prefix "/s/"
+func (s *QueryService) GetMatchingCheckout(rawInput string) (checkout string, application string, path string, found bool) {
 	rawInput = strings.ToLower(rawInput)
 	var defaultApp *models.Application
 	apps := s.applicationStorage.GetAll()
@@ -95,17 +99,25 @@ func (s *QueryService) GetMatchingCheckout(rawInput string) (checkout string, ap
 		}
 	}
 	if defaultApp == nil {
-		return "", "", false
+		return "", "", "", false
 	}
 	var objectsToHashMap map[string]string
 	defaultApp.WithRLock(func(a *models.Application) {
 		objectsToHashMap = a.ObjectsToHashMap
 	})
 	for k := range objectsToHashMap {
-		if strings.ToLower(k) == rawInput {
-			return rawInput, defaultApp.GetConfiguration().Name, true
+		k = strings.ToLower(k)
+		if k == rawInput {
+			// In case the url is formed like /s/<branch>
+			return rawInput, defaultApp.GetConfiguration().Name, "", true
+		} else if strings.HasPrefix(rawInput, k+"/") {
+			// In case the url is formed like /s/<branch>/<path>
+			// Here we return
+			replaceRegex := regexp.MustCompile(fmt.Sprintf(`^(%s)/(.+?)$`, k))
+			path := replaceRegex.ReplaceAllString(rawInput, "$2")
+			return k, defaultApp.GetConfiguration().Name, path, true
 		}
 	}
-	return "", "", false
+	return "", "", "", false
 
 }

@@ -1,6 +1,6 @@
 import { store } from '@/state/models';
 import React from 'react';
-import { BrowserRouter, Switch, Route } from 'react-router-dom';
+import { BrowserRouter, Switch, Route, useRouteMatch } from 'react-router-dom';
 import './index.scss';
 import whiteLogo from '@/assets/white-logo.png';
 import blackLogo from '@/assets/black-logo.png';
@@ -9,6 +9,7 @@ const Dashboard = React.lazy(() => import('@/components/manager/dashboard/dashbo
 const Session = React.lazy(() => import('@/components/manager/session/session-page'));
 
 export const ManagerApp = () => {
+
     return <div className="
         flex-1
         w-full
@@ -42,8 +43,8 @@ export const ManagerApp = () => {
                     <Route path="/_polo_/" exact>
                         <Dashboard app={store.app} />
                     </Route>
-                    <Route path="/_polo_/session/:uuid/:logs?">
-                        <Session app={store.app} />
+                    <Route path="/_polo_/session/:uuid">
+                        <SessionRoute />
                     </Route>
                 </Switch>
             </React.Suspense>
@@ -54,4 +55,15 @@ export const ManagerApp = () => {
             </a>
         </div>
     </div>;
+}
+
+function SessionRoute() {
+
+    const { path } = useRouteMatch();
+
+    return <Switch>
+        <Route path={`${path}/*`}>
+            <Session app={store.app} />
+        </Route>
+    </Switch>
 }
