@@ -33,8 +33,14 @@ export const HelperSession = (props: TProps) => {
         props.session.maxAge > noExpirationAgeValue &&
         props.session.maxAge > expiredAgeValue;
 
-    const copyLink = () => copy(`${location.origin}/s/${props.session.checkout}`);
-    const copyFullLink = () => copy(`${location.origin}/s/${props.session.checkout}${location.pathname}`);
+    const copyLink = () => {
+        copy(`${location.origin}/s/${props.session.checkout}`);
+        setOpen(false);
+    }
+    const copyFullLink = () => {
+        copy(`${location.origin}/s/${props.session.checkout}${location.pathname}`);
+        setOpen(false);
+    }
     const goToLogs = () => location.href = `/_polo_/session/${props.session.uuid}/logs`;
 
     return <div className={`helper-session__component background-hover ${open && '--open'}`}>
