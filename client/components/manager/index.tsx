@@ -42,7 +42,7 @@ export const ManagerApp = () => {
                     <Route path="/_polo_/" exact>
                         <Dashboard app={store.app} />
                     </Route>
-                    <Route path="/_polo_/session/:uuid">
+                    <Route path="/_polo_/session/:uuid/:logs?">
                         <Session app={store.app} />
                     </Route>
                 </Switch>

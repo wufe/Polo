@@ -11,7 +11,7 @@ type TProps = {
 }
 export const SessionPage = observer((props: TProps) => {
 
-    const { uuid } = useParams<{ uuid: string }>();
+    const { uuid, logs } = useParams<{ uuid: string, logs: string }>();
     const history = useHistory();
 
     const { session } = props.app;
@@ -31,7 +31,8 @@ export const SessionPage = observer((props: TProps) => {
 
     useEffect(() => {
 
-        if (session) {
+        const onLogsPage = logs === 'logs';
+        if (session && !onLogsPage) {
             if (session.status === SessionStatus.STARTED) {
                 session.track()
                     .then(request => {
