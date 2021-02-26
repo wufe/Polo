@@ -24,16 +24,18 @@ type Handler struct {
 	proxy              *proxy.Handler
 	sessionStorage     *storage.Session
 	applicationStorage *storage.Application
+	query              *services.QueryService
 	request            *services.RequestService
 	static             *services.StaticService
 }
 
-func NewHandler(isDev bool, proxy *proxy.Handler, sessionStorage *storage.Session, applicationStorage *storage.Application, request *services.RequestService, static *services.StaticService) *Handler {
+func NewHandler(isDev bool, proxy *proxy.Handler, sessionStorage *storage.Session, applicationStorage *storage.Application, query *services.QueryService, request *services.RequestService, static *services.StaticService) *Handler {
 	return &Handler{
 		isDev:              isDev,
 		proxy:              proxy,
 		sessionStorage:     sessionStorage,
 		applicationStorage: applicationStorage,
+		query:              query,
 		request:            request,
 		static:             static,
 	}
@@ -167,39 +169,13 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 }
 
 func (h *Handler) tryGetSessionByRequestURL(req *http.Request) *models.Session {
-	if req.URL.Path != "" && req.URL.Path != "/" {
-		appAndCheckRegexp := regexp.MustCompile(`^(/([^/]+?))?/(.+?)/?$`)
-		if appAndCheck := appAndCheckRegexp.FindStringSubmatch(req.URL.Path); len(appAndCheck) == 4 {
-			// Matching /<application>/<branch-seg-1>/<branch-seg-2>
-			// as
-			// 		application: <application>
-			//		checkout: <branch-seg-1>/<branch-seg-2>
-			application := appAndCheck[2]
-			checkout := appAndCheck[3]
-			log.Traceln("application", application)
-			log.Traceln("checkout", checkout)
-			foundApplication := h.applicationStorage.Get(application)
-			if foundApplication == nil {
-
-				// Matching /<branch-seg-1>/<branch-seg-2>
-				// as
-				// 		application: ""
-				// 		<branch-seg-1>/<branch-seg-2>
-				checkout = fmt.Sprintf("%s/%s", application, checkout)
-				foundApplication = h.applicationStorage.Get("")
-				if foundApplication == nil {
-					return nil
-				}
-
-			}
-			conf := foundApplication.GetConfiguration()
-			result, err := h.request.NewSession(checkout, conf.Name)
+	if strings.HasPrefix(req.URL.Path, "/s/") {
+		if checkout, application, found := h.query.GetMatchingCheckout(req.URL.Path[3:]); found {
+			result, err := h.request.NewSession(checkout, application)
 			if err != nil {
 				return nil
 			}
-
 			return result.Session
-
 		}
 	}
 	return nil

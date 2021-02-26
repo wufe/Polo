@@ -65,7 +65,7 @@ func main() {
 
 	// HTTP
 	proxy := proxy.NewHandler(dev, devServer)
-	routing := routing.NewHandler(dev, proxy, sesStorage, appStorage, requestService, staticService)
+	routing := routing.NewHandler(dev, proxy, sesStorage, appStorage, queryService, requestService, staticService)
 	rest := rest.NewHandler(dev, staticService, routing, proxy, queryService, requestService)
 
 	// Startup
