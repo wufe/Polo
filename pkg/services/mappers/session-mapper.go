@@ -9,6 +9,7 @@ func MapSession(model *models.Session) *output.Session {
 	if model == nil {
 		return nil
 	}
+	conf := model.GetConfiguration()
 	model.Lock()
 	session := &output.Session{
 		UUID:              model.UUID,
@@ -28,6 +29,7 @@ func MapSession(model *models.Session) *output.Session {
 		Variables:         model.Variables,
 		Logs:              MapSessionLogs(model.Logs),
 		Metrics:           MapMetrics(model.Metrics),
+		Configuration:     MapConfiguration(conf),
 	}
 	model.Unlock()
 	session.ReplacesSession = MapReplaces(model.Replaces())
@@ -47,4 +49,10 @@ func MapReplaces(model *models.Session) string {
 		return ""
 	}
 	return model.UUID
+}
+
+func MapConfiguration(model models.ApplicationConfiguration) output.SessionConfiguration {
+	return output.SessionConfiguration{
+		IsDefault: model.IsDefault,
+	}
 }

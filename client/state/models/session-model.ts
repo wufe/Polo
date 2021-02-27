@@ -1,8 +1,10 @@
 import { APIPayload, APIRequestResult } from "@/api/common";
 import { IAPISession, IAPISessionLogsAndStatus, killSessionAPI, retrieveLogsAndStatusAPI, retrieveSessionAgeAPI, trackSessionAPI, untrackSessionAPI } from "@/api/session";
 import { flow, Instance, types } from "mobx-state-tree";
-import { string } from "mobx-state-tree/dist/internal";
-import { ApplicationModel } from "./application-model";
+
+export const SessionConfigurationModel = types.model({
+    isDefault: types.boolean,
+});
 
 export enum SessionLogType {
     TRACE    = 'trace',
@@ -66,6 +68,7 @@ export const SessionModel = types.model({
     folder           : types.string,
     replacesSession  : types.optional(types.string, ''),
     beingReplaced    : types.optional(types.boolean, false),
+    configuration    : SessionConfigurationModel,
 }).actions(self => {
     const track = flow(function* track() {
         const trackRequest: APIPayload<void> = yield trackSessionAPI(self.uuid);

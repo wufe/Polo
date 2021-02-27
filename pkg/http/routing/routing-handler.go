@@ -16,6 +16,7 @@ import (
 	"github.com/wufe/polo/pkg/http/proxy"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/services"
+	"github.com/wufe/polo/pkg/services/mappers"
 	"github.com/wufe/polo/pkg/storage"
 )
 
@@ -167,9 +168,7 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 				bodyIndexPattern := regexp.MustCompile(`<body([^>]*?)>`)
 
 				if bodyIndex := bodyIndexPattern.FindStringIndex(stringBody); len(bodyIndex) > 1 {
-					session.Lock()
-					serializedSession, err := json.Marshal(session)
-					session.Unlock()
+					serializedSession, err := json.Marshal(mappers.MapSession(session))
 					if err != nil {
 						serializedSession = []byte(`{}`)
 					}
