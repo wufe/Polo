@@ -10,8 +10,11 @@ import (
 	"github.com/wufe/polo/pkg/models"
 )
 
+// ForwardRules defines a set of rules applied to a proxied request
+// A ruleset is composed of change to http headers and url rewrites.
 type ForwardRules func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request)
 
+// BuildDefaultForwardRules builds the rule set given the application configuration
 func BuildDefaultForwardRules(conf *models.ApplicationConfiguration, variables models.Variables) (ForwardRules, error) {
 
 	target := conf.Target
