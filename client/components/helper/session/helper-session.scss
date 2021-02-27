@@ -50,7 +50,6 @@
             
             top: 50%;
             transform: translateY(-50%);
-            right: 5px;
 
             svg {
                 transition: transform .3s linear;
@@ -206,9 +205,20 @@
 
     .__checkout {
         padding: 2px 10px;
-        white-space: nowrap;
-        display: flex;
-        align-items: center;
+        > span {
+            display: flex;    
+            align-items: center;
+            white-space: nowrap;
+            flex-wrap: nowrap;
+        }
+        &-title {
+            padding-left: 4px;
+            display: inline-block;
+            max-width: 300px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     }
 }
 

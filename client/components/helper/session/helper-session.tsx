@@ -47,7 +47,7 @@ export const HelperSession = (props: TProps) => {
         <div className={`__visible ${open && '--open'}`} onClick={() => setOpen(open => !open)}>
             <div className="__content">
                 <div className="__checkout">
-                    <span>On checkout <b className="__checkout-title">{props.session.checkout}</b></span>
+                    <span>On <b className="__checkout-title" title={props.session.checkout}>{props.session.checkout}</b></span>
                 </div>
                 {maxAgeVisible && <div className="__info">
                     <SessionMaxAge />
