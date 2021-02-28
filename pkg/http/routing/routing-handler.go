@@ -76,11 +76,17 @@ func (h *Handler) RouteReverseProxyRequests() http.Handler {
 			session, path := h.tryGetSessionByRequestURL(r)
 			if session != nil {
 				usingSmartURL = true
-			} else {
+			}
+			if session == nil {
 				// If smart url detection does not returns a session
 				// we use session tracking cookie value to find
 				// an existing session with that UUID
 				session = h.detectSession(r)
+			}
+			if session == nil && !strings.HasPrefix(r.URL.Path, "/_polo_") {
+				// FEATURE: Main branch serve
+				// Retrieves default session
+				session = h.getMainSession(r)
 			}
 
 			if session == nil {
@@ -144,6 +150,27 @@ func (h *Handler) detectSession(req *http.Request) *models.Session {
 		session = h.sessionStorage.GetByUUID(replaced)
 	}
 	return session
+}
+
+// getMainSession retrieves a session of the default application
+// which is marked as "main"
+// Used for retrieving a default session if no session is being tracked
+func (h *Handler) getMainSession(req *http.Request) *models.Session {
+	sessions := h.sessionStorage.GetAllAliveSessions()
+	for _, s := range sessions {
+		conf := s.GetConfiguration()
+		// Its application is marked as "default"
+		if conf.IsDefault {
+			s.RLock()
+			checkout := s.Checkout
+			s.RUnlock()
+			// Its branch is marked as "main"
+			if conf.Branches.BranchIsMain(checkout) {
+				return s
+			}
+		}
+	}
+	return nil
 }
 
 func getHostURL(full *url.URL) *url.URL {

@@ -11,16 +11,15 @@ import (
 )
 
 type ApplicationConfiguration struct {
-	BranchConfiguration   `yaml:",inline"` // Base configuration, common for all branches
+	SharedConfiguration   `yaml:",inline"` // Base configuration, common for branches and root application configuration
 	utils.RWLocker        `json:"-"`
-	Name                  string                     `json:"name"`
-	Fetch                 Fetch                      `json:"fetch"`
-	Watch                 Watch                      `json:"watch"`
-	IsDefault             bool                       `yaml:"is_default" json:"isDefault"`
-	MaxConcurrentSessions int                        `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
-	Branches              []BranchConfigurationMatch `yaml:"branches"`
-	UseFolderCopy         bool                       `yaml:"use_folder_copy" json:"useFolderCopy"`
-	CleanOnExit           *bool                      `yaml:"clean_on_exit" json:"cleanOnExit" default:"true"`
+	Name                  string   `json:"name"`
+	Fetch                 Fetch    `json:"fetch"`
+	IsDefault             bool     `yaml:"is_default" json:"isDefault"`
+	MaxConcurrentSessions int      `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
+	Branches              Branches `yaml:"branches"`
+	UseFolderCopy         bool     `yaml:"use_folder_copy" json:"useFolderCopy"`
+	CleanOnExit           *bool    `yaml:"clean_on_exit" json:"cleanOnExit" default:"true"`
 }
 
 func NewApplicationConfiguration(configuration *ApplicationConfiguration) (*ApplicationConfiguration, error) {
@@ -31,9 +30,6 @@ func NewApplicationConfiguration(configuration *ApplicationConfiguration) (*Appl
 	if configuration.CleanOnExit == nil {
 		cleanOnExit := true
 		configuration.CleanOnExit = &cleanOnExit
-	}
-	if configuration.Watch == nil {
-		configuration.Watch = []string{}
 	}
 	if configuration.Remote == "" {
 		return nil, errors.New("application.remote (required) not defined; put the git repository URL")
@@ -156,7 +152,7 @@ func NewApplicationConfiguration(configuration *ApplicationConfiguration) (*Appl
 	return configuration, nil
 }
 
-func (a *ApplicationConfiguration) OverrideWith(override BranchConfiguration) {
+func (a *ApplicationConfiguration) OverrideWith(override SharedConfiguration) {
 	if override.Host != "" {
 		a.Host = override.Host
 	}
@@ -226,25 +222,6 @@ type Forward struct {
 	To      string  `json:"to"`
 	Host    string  `json:"host"`
 	Headers Headers `json:"headers"`
-}
-
-type Watch []string
-
-func (w *Watch) ToSlice() []string {
-	ret := []string{}
-	for _, e := range *w {
-		ret = append(ret, e)
-	}
-	return ret
-}
-
-func (w *Watch) Contains(obj string) bool {
-	for _, o := range *w {
-		if o == obj {
-			return true
-		}
-	}
-	return false
 }
 
 type Fetch struct {

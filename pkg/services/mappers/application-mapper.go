@@ -28,7 +28,6 @@ func MapApplicationConfiguration(model models.ApplicationConfiguration) output.A
 		Target:                model.Target,
 		Host:                  model.Host,
 		Fetch:                 MapFetch(model.Fetch),
-		Watch:                 model.Watch,
 		Helper:                MapHelper(model.Helper),
 		IsDefault:             model.IsDefault,
 		Forwards:              MapForwards(model.Forwards),

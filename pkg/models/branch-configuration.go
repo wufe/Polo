@@ -1,31 +1,44 @@
 package models
 
+import (
+	"regexp"
+
+	log "github.com/sirupsen/logrus"
+)
+
 type BranchConfigurationMatch struct {
+	SharedConfiguration `yaml:",inline"`
 	BranchConfiguration `yaml:",inline"`
 	Test                string `yaml:"test"`
 }
 
 type BranchConfiguration struct {
-	Remote      string            `json:"remote"`
-	Target      string            `json:"target"`
-	Host        string            `json:"host"`
-	Helper      Helper            `json:"helper"`
-	Forwards    []Forward         `json:"forwards"`
-	Headers     Headers           `json:"headers"`
-	Healthcheck Healthcheck       `json:"healthCheck"`
-	Startup     Startup           `json:"startup"`
-	Recycle     Recycle           `json:"recycle"`
-	Commands    Commands          `json:"commands"`
-	Port        PortConfiguration `yaml:"port" json:"port"`
-	Warmup      Warmups
+	Main  bool `yaml:"main"`
+	Watch bool `yaml:"watch"`
 }
 
-type Warmups struct {
-	MaxRetries    int      `yaml:"max_retries"`
-	RetryInterval int      `yaml:"retry_interval"`
-	URLs          []Warmup `yaml:"urls"`
+type Branches []BranchConfigurationMatch
+
+func (branches Branches) BranchIsBeingWatched(branch string) bool {
+	foundBranch, ok := branches.findBranchConfiguration(branch)
+	return ok && foundBranch.Watch
 }
 
-type Warmup struct {
-	RequestConfiguration `yaml:",inline"`
+func (branches Branches) BranchIsMain(branch string) bool {
+	foundBranch, ok := branches.findBranchConfiguration(branch)
+	return ok && foundBranch.Main
+}
+
+func (branches Branches) findBranchConfiguration(name string) (BranchConfigurationMatch, bool) {
+	for _, b := range branches {
+		test, err := regexp.Compile(b.Test)
+		if err != nil {
+			log.Errorf("Could not compile branch test regexp: %s", err.Error())
+			continue
+		}
+		if test.MatchString(name) {
+			return b, true
+		}
+	}
+	return BranchConfigurationMatch{}, false
 }

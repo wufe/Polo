@@ -200,11 +200,11 @@ func (session *Session) getMatchingConfiguration() ApplicationConfiguration {
 	}
 	checkout := session.Checkout
 	found := false
-	var matchingConf BranchConfiguration
+	var matchingConf SharedConfiguration
 	for _, conf := range branches {
 		testRE := regexp.MustCompile(conf.Test)
 		if testRE.MatchString(checkout) {
-			matchingConf = conf.BranchConfiguration
+			matchingConf = conf.SharedConfiguration
 			found = true
 			break
 		}

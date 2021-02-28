@@ -25,7 +25,7 @@ export const HelperSession = (props: TProps) => {
     const detach = async () => {
         const untrack = await untrackSessionAPI();
         if (untrack.result === APIRequestResult.SUCCEEDED) {
-            location.href = '/';
+            location.href = '/_polo_/';
         }
     }
 

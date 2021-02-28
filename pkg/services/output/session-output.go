@@ -25,5 +25,8 @@ type Session struct {
 }
 
 type SessionConfiguration struct {
+	// Application configuration
 	IsDefault bool `json:"isDefault"`
+	// Branch configuration
+	Watch bool `json:"watch"`
 }

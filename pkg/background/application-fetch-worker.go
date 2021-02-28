@@ -52,7 +52,6 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 
 	conf := application.GetConfiguration()
 	appName := conf.Name
-	watch := conf.Watch
 
 	objectsToHashMap := make(map[string]string)
 	hashToObjectsMap := make(map[string]*models.RemoteObject)
@@ -72,7 +71,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 		}
 	}(hashToObjectsMap)
 
-	registerHash, watchResults := w.registerObjectHash(objectsToHashMap, watch)
+	registerHash, watchResults := w.registerObjectHash(objectsToHashMap, conf.Branches)
 
 	gitClient := versioning.GetGitClient(application)
 
@@ -239,12 +238,12 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 	}
 }
 
-func (w *ApplicationFetchWorker) registerObjectHash(objectsToHashMap map[string]string, watch models.Watch) (func(refName string, hash string), *map[string]string) {
+func (w *ApplicationFetchWorker) registerObjectHash(objectsToHashMap map[string]string, branches models.Branches) (func(refName string, hash string), *map[string]string) {
 	watchResults := make(map[string]string)
 	watchedHashes := make(map[string]bool)
 	return func(refName, hash string) {
 		objectsToHashMap[refName] = hash
-		if watch.Contains(refName) {
+		if branches.BranchIsBeingWatched(refName) {
 			if _, ok := watchedHashes[hash]; !ok {
 				watchResults[refName] = hash
 				watchedHashes[hash] = true

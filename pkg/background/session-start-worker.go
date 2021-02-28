@@ -37,7 +37,7 @@ func (w *SessionStartWorker) MarkSessionAsStarted(session *models.Session) {
 	session.SetStatus(models.SessionStatusStarted)
 	session.ResetStartupRetriesCount()
 	conf := session.GetConfiguration()
-	if conf.Watch.Contains(session.Checkout) {
+	if conf.Branches.BranchIsBeingWatched(session.Checkout) {
 		session.SetMaxAge(-1)
 	} else {
 		session.SetMaxAge(conf.Recycle.InactivityTimeout)
