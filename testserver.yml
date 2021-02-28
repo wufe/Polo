@@ -3,54 +3,21 @@ global:
 applications:
   - name: test-server
     remote: "https://github.com/wufe/polo-testserver"
-    target: "http://127.0.0.1:{{port}}"
-    host: "my.app.host.dev"
-    helper:
-      position: bottom-right
-    fetch:
-      interval: 30
-    watch:
-      - main
-      # - feature/my-watched-feature
     is_default: true
-    headers:
-      replace: []
-    startup:
-      retries: 3
-    forwards:
-      - pattern: /github/(.+?)/(.+?)/?$
-        to: https://github.com/$2/$1
-      - pattern: /testserver/(.+?)/(.+?)/?(\?(.+?))?$
-        to: /$2/$1$3
-        host: test.bembi.dev
-        headers:
-          set:
-            - Origin=test.bembi.dev
-          add:
-            - X-Added=header
-          del:
-            - asd
     commands:
       start:
         - command: docker build --no-cache -t polo-testserver:{{commit}} .
         - command: docker run -p {{port}}:3000 -d polo-testserver:{{commit}}
           output_variable: container_id
-        
+        - command: docker image prune -f
       stop:
         - command: "docker kill {{container_id}}"
           continue_on_error: true
     recycle:
       inactivity_timeout: 6000
-    warmup:
-      retry_interval: 5
-      max_retries: 2
-      urls:
-        - url: http://localhost:{{port}}/asd
-          timeout: 1
-    healthcheck:
-      max_retries: 1
-      retry_interval: 5
-      retry_timeout: 10
     branches:
-      - test: feature
-        host: feature.host.dev
+      - test: ^dev$
+        watch: true
+        main: true
+      - test: feature/my-watched-feature
+        watch: true
