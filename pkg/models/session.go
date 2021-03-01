@@ -424,3 +424,10 @@ func (session *Session) ResetVariables() {
 	defer session.Unlock()
 	session.Variables = make(map[string]string)
 }
+
+// IsAlive thread-safely retrieves if the session is alive or not
+func (session *Session) IsAlive() bool {
+	session.RLock()
+	defer session.RUnlock()
+	return session.Status.IsAlive()
+}

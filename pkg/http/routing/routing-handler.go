@@ -83,7 +83,7 @@ func (h *Handler) RouteReverseProxyRequests() http.Handler {
 				// an existing session with that UUID
 				session = h.detectSession(r)
 			}
-			if !strings.HasPrefix(r.URL.Path, "/_polo_") && (session == nil || !session.Status.IsAlive()) {
+			if !strings.HasPrefix(r.URL.Path, "/_polo_") && (session == nil || !session.IsAlive()) {
 				// FEATURE: Main branch serve
 				// Retrieves default session
 				session = h.getMainSession(r)
@@ -93,7 +93,6 @@ func (h *Handler) RouteReverseProxyRequests() http.Handler {
 				UntrackSession(w)
 				temporaryRedirect(w, "/_polo_/")
 			} else {
-				h.sessionStorage.Update(session)
 				builder = h.buildSessionEnhancerProxy(session)
 
 				switch session.Status {
@@ -120,6 +119,9 @@ func (h *Handler) RouteReverseProxyRequests() http.Handler {
 					temporaryRedirect(w, "/_polo_/")
 				}
 
+				if session.IsAlive() {
+					h.sessionStorage.Update(session)
+				}
 			}
 		}
 	})
