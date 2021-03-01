@@ -38,6 +38,7 @@ export const HelperSession = (props: TProps) => {
         setOpen(false);
     }
     const copyFullLink = () => {
+        if (location.pathname === '/') return copyLink();
         copy(`${location.origin}/s/${props.session.checkout}${location.pathname}`);
         setOpen(false);
     }
