@@ -71,7 +71,14 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 		}
 	}(hashToObjectsMap)
 
-	registerHash, watchResults := w.registerObjectHash(objectsToHashMap, conf.Branches)
+	aliveRefs := []string{}
+	for _, s := range w.sessionStorage.GetAllAliveSessions() {
+		s.RLock()
+		ref := s.Checkout
+		s.RUnlock()
+		aliveRefs = append(aliveRefs, ref)
+	}
+	registerHash, watchResults := w.registerObjectHash(objectsToHashMap, conf.Branches, aliveRefs)
 
 	gitClient := versioning.GetGitClient(application)
 
@@ -238,12 +245,23 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 	}
 }
 
-func (w *ApplicationFetchWorker) registerObjectHash(objectsToHashMap map[string]string, branches models.Branches) (func(refName string, hash string), *map[string]string) {
+func (w *ApplicationFetchWorker) registerObjectHash(objectsToHashMap map[string]string, branches models.Branches, aliveRefs []string) (func(refName string, hash string), *map[string]string) {
 	watchResults := make(map[string]string)
 	watchedHashes := make(map[string]bool)
+
+	aliveContains := func(ref string) bool {
+		for _, r := range aliveRefs {
+			if r == ref {
+				return true
+			}
+		}
+		return false
+	}
+
 	return func(refName, hash string) {
 		objectsToHashMap[refName] = hash
-		if branches.BranchIsBeingWatched(refName) {
+		// If the branch is being watched or the branch is being served from an alive session
+		if branches.BranchIsBeingWatched(refName) || aliveContains(refName) {
 			if _, ok := watchedHashes[hash]; !ok {
 				watchResults[refName] = hash
 				watchedHashes[hash] = true
