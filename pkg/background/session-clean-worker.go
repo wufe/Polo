@@ -69,6 +69,18 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 				}
 			}
 
+			if session.GetKillReason() == models.KillReasonStopped {
+				// FEATURE: Hot swap
+				// Check if the killed session should have been replaced by another session
+				for _, s := range w.sessionStorage.GetAllAliveSessions() {
+					// If so, tell this session that it is not a replacement anymore
+					if s.Replaces() == session {
+						s.IsReplacementFor(nil)
+						w.sessionStorage.Update(s)
+					}
+				}
+			}
+
 		}
 	}()
 }
