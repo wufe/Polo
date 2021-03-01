@@ -109,9 +109,6 @@ func (s *QueryService) GetMatchingCheckout(rawInput string) (checkout string, ap
 			return rawInput, defaultApp.GetConfiguration().Name, "", true
 		} else if strings.HasPrefix(rawInput, k+"/") {
 			// In case the url is formed like /s/<branch>/<path>
-			// Here we return
-			// replaceRegex := regexp.MustCompile(fmt.Sprintf(`^(%s)/(.+?)$`, k))
-			// path := replaceRegex.ReplaceAllString(rawInput, "$2")
 			path := strings.Replace(rawInput, fmt.Sprintf(`%s/`, k), "", 1)
 			return k, defaultApp.GetConfiguration().Name, path, true
 		}
