@@ -1,5 +1,6 @@
 import { APIRequestResult } from '@/api/common';
-import { ISession, SessionStatus } from '@/state/models';
+import { ISession } from '@/state/models';
+import { SessionStatus } from '@/state/models/session-model-enums';
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 import loading from '../../../../assets/loading.svg';
@@ -45,8 +46,8 @@ export const ApplicationSessions = observer((props: TProps) => {
                     
                 </span>
                 <span className="leading-none text-sm mr-3 flex-grow px-2 lg:px-10 flex-1 whitespace-nowrap overflow-hidden overflow-ellipsis">{session.checkout}</span>
-                {session.maxAge > noExpirationAgeValue && <span className="leading-none text-xs uppercase text-gray-500 px-2 lg:px-10">
-                    <span className="hidden lg:inline-block pr-1">Expires in </span><span>{session.maxAge}s</span>
+                {session.age > noExpirationAgeValue && <span className="leading-none text-xs uppercase text-gray-500 px-2 lg:px-10">
+                    <span className="hidden lg:inline-block pr-1">Expires in </span><span>{session.age}s</span>
                 </span>}
                 <span className="leading-none lg:px-10 text-center whitespace-nowrap">
                     <span className="leading-none text-sm underline cursor-pointer inline-block mx-3 hover:text-nord14" onClick={() => attachToSession(session)}>Enter</span>

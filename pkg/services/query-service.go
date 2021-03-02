@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/wufe/polo/pkg/models"
+	"github.com/wufe/polo/pkg/services/mappers"
+	"github.com/wufe/polo/pkg/services/output"
 	"github.com/wufe/polo/pkg/storage"
 )
 
@@ -31,7 +33,7 @@ func (s *QueryService) GetAllAliveSessions() []*models.Session {
 	return s.sessionStorage.GetAllAliveSessions()
 }
 
-func (s *QueryService) GetSession(uuid string) *models.Session {
+func (s *QueryService) GetAliveSession(uuid string) *models.Session {
 	var foundSession *models.Session
 	for _, session := range s.sessionStorage.GetAllAliveSessions() {
 		if session.UUID == uuid {
@@ -42,16 +44,16 @@ func (s *QueryService) GetSession(uuid string) *models.Session {
 	return foundSession
 }
 
-func (s *QueryService) GetSessionAge(uuid string) (int, error) {
-	session := s.GetSession(uuid)
+func (s *QueryService) GetSessionStatus(uuid string) (output.SessionStatus, error) {
+	session := s.sessionStorage.GetByUUID(uuid)
 	if session == nil {
-		return 0, ErrSessionNotFound
+		return output.SessionStatus{}, ErrSessionNotFound
 	}
-	return session.GetMaxAge(), nil
+	return mappers.MapSessionStatus(session), nil
 }
 
 func (s *QueryService) GetSessionMetrics(uuid string) ([]models.Metric, error) {
-	session := s.GetSession(uuid)
+	session := s.GetAliveSession(uuid)
 	if session == nil {
 		return nil, ErrSessionNotFound
 	}
@@ -59,7 +61,7 @@ func (s *QueryService) GetSessionMetrics(uuid string) ([]models.Metric, error) {
 }
 
 func (s *QueryService) GetSessionLogsAndStatus(uuid string, lastLogUUID string) ([]models.Log, models.SessionStatus, error) {
-	session := s.GetSession(uuid)
+	session := s.GetAliveSession(uuid)
 	if session == nil {
 		return nil, models.SessionStatusStarting, ErrSessionNotFound
 	}

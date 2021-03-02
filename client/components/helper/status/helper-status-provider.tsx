@@ -1,35 +1,54 @@
 import { APIRequestResult } from '@/api/common';
-import { IAPISession, retrieveSessionAgeAPI } from '@/api/session';
-import React, { useEffect, useRef, useState } from 'react';
+import { IAPISession, retrieveSessionStatusAPI } from '@/api/session';
+import Session from '@/components/manager/session/session';
+import { SessionStatus, SessionKillReason } from '@/state/models/session-model-enums';
+import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { HelperStatus, HelperStatusContext } from '../contexts';
 
 export const noExpirationAgeValue = -1;
 export const expiredAgeValue = 0;
 
-const useAgeRetrieval = (maxAge: number, initial: number, uuid: string) => {
-    const [age, setAge] = useState(initial);
+type TInitialSessionStatus = {
+    age       : number;
+    status    : SessionStatus;
+    killReason: SessionKillReason;
+    replacedBy: string;
+}
+
+const useStatusRetrieval = (uuid: string, initial: TInitialSessionStatus) => {
+    const [status, setStatus] = useState(initial);
     const ageDecrementTimeout = useRef<NodeJS.Timeout | null>();
     const realAgeRetrievalTimeout = useRef<NodeJS.Timeout | null>();
 
     useEffect(() => {
         const ageRetrieval = async () => {
-            const age = await retrieveSessionAgeAPI(uuid);
-            if (age.result === APIRequestResult.FAILED) {
-                setAge(() => 0);
+            const status = await retrieveSessionStatusAPI(uuid);
+            if (status.result === APIRequestResult.FAILED) {
+                setStatus(s => ({ ...s, age: 0 }));
             } else {
-                setAge(() => age.payload);
+                setStatus(() => status.payload);
                 realAgeRetrievalTimeout.current = setTimeout(() => ageRetrieval(), 10000);
             }
         };
 
-        if (maxAge > noExpirationAgeValue && maxAge > expiredAgeValue) {
+        if (status.age > noExpirationAgeValue && status.age > expiredAgeValue) {
             ageRetrieval();
 
             ageDecrementTimeout.current = setInterval(() => {
-                setAge(age => age > 0 ? age - 1 : age);
+                setStatus(s => ({
+                    ...s,
+                    age: s.age > 0 ? s.age - 1 : s.age
+                }));
             }, 1000);
         } else {
-            setAge(1);
+            // Here status.age is at most min(noExpirationAgeValue, expiredAgeValue).
+            //
+            // It means that if noExpirationAgeValue is set to -1 and expiredAgeValue is 0,
+            // the status.age value is <= -1.
+            // 
+            // Age is being set to 1 just to avoid triggering "HelperStatus.EXPIRED"
+            // in HelperStatusProvider component.
+            setStatus(s => ({...s, age: 1 }));
         }
 
         return () => {
@@ -39,24 +58,39 @@ const useAgeRetrieval = (maxAge: number, initial: number, uuid: string) => {
     }, [uuid]);
 
     useEffect(() => {
-        setAge(initial);
+        setStatus(initial);
     }, [initial]);
 
-    return { age };
+    useEffect(() => {
+        if (status.status === SessionStatus.STOPPED) {
+            clearTimeout(realAgeRetrievalTimeout.current);
+            clearInterval(ageDecrementTimeout.current);
+            setStatus(s => ({
+                ...s,
+               age: 0 
+            }));
+        }
+    }, [status.status]);
+
+    return status;
 }
 
-export const HelperStatusProvider = (props: React.PropsWithChildren<{ uuid: string, maxAge: number, age: number }>) => {
-    const [status, setStatus] = useState(HelperStatus.RUNNING);
+export const HelperStatusProvider = (props: React.PropsWithChildren<{ uuid: string, initial: TInitialSessionStatus }>) => {
+    const [helperStatus, setHelperStatus] = useState(HelperStatus.RUNNING);
 
-    const { age } = useAgeRetrieval(props.maxAge, props.age, props.uuid);
+    const { age, killReason, replacedBy, status } = useStatusRetrieval(props.uuid, props.initial);
 
     useEffect(() => {
         if (age === 0) {
-            setStatus(HelperStatus.EXPIRED);
+            if (killReason === SessionKillReason.REPLACED) {
+                setHelperStatus(HelperStatus.REPLACED);
+            } else {
+                setHelperStatus(HelperStatus.EXPIRED);
+            }
         }
     }, [age])
 
-    return <HelperStatusContext.Provider value={{ status, age }}>
+    return <HelperStatusContext.Provider value={{ helperStatus, age, replacedBy, status, killReason }}>
         {props.children}
     </HelperStatusContext.Provider>
 }

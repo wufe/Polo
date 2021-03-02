@@ -1,6 +1,7 @@
 import { APIPayload, APIRequestResult } from "@/api/common";
-import { IAPISession, IAPISessionLogsAndStatus, killSessionAPI, retrieveLogsAndStatusAPI, retrieveSessionAgeAPI, trackSessionAPI, untrackSessionAPI } from "@/api/session";
+import { IAPISession, IAPISessionLogsAndStatus, killSessionAPI, retrieveLogsAndStatusAPI, retrieveSessionStatusAPI, trackSessionAPI, untrackSessionAPI } from "@/api/session";
 import { flow, Instance, types } from "mobx-state-tree";
+import { SessionStatus, SessionKillReason } from "./session-model-enums";
 
 export const SessionConfigurationModel = types.model({
     isDefault: types.boolean,
@@ -42,14 +43,6 @@ export const castAPISessionToSessionModel = (apiSession: IAPISession): ISession 
     return session;
 }
 
-export enum SessionStatus {
-    STARTING     = 'starting',
-    STARTED      = 'started',
-    START_FAILED = 'start_failed',
-    STOPPING     = 'stopping',
-    DEGRADED     = 'degraded',
-}
-
 export const SessionModel = types.model({
     uuid             : types.string,
     name             : types.string,
@@ -64,11 +57,13 @@ export const SessionModel = types.model({
     commitDate       : types.string,
     logs             : types.map(SessionLogModel),
     checkout         : types.string,
-    maxAge           : types.number,
+    age              : types.number,
     folder           : types.string,
     replacesSession  : types.optional(types.string, ''),
     beingReplaced    : types.optional(types.boolean, false),
     configuration    : SessionConfigurationModel,
+    killReason       : types.enumeration<SessionKillReason>(Object.values(SessionKillReason)),
+    replacedBy       : types.string,
 }).actions(self => {
     const track = flow(function* track() {
         const trackRequest: APIPayload<void> = yield trackSessionAPI(self.uuid);
@@ -81,9 +76,9 @@ export const SessionModel = types.model({
     });
 
     const retrieveAge = flow(function* retrieveAge() {
-        const age: APIPayload<number> = yield retrieveSessionAgeAPI(self.uuid);
+        const age: APIPayload<number> = yield retrieveSessionStatusAPI(self.uuid);
         if (age.result === APIRequestResult.SUCCEEDED) {
-            self.maxAge = age.payload;
+            self.age = age.payload;
         }
         return age;
     });

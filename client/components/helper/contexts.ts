@@ -1,8 +1,16 @@
+import { SessionStatus, SessionKillReason } from '@/state/models/session-model-enums';
 import { createContext } from 'react';
 
 export enum HelperStatus {
-    RUNNING = 'running',
-    EXPIRED = 'expired',
+    RUNNING  = 'running',
+    EXPIRED  = 'expired',
+    REPLACED = 'replaced',
 }
 
-export const HelperStatusContext = createContext<{ status: HelperStatus; age: number }>({ status: HelperStatus.RUNNING, age: 0 });
+export const HelperStatusContext = createContext<{
+    helperStatus: HelperStatus;
+    age: number;
+    status: SessionStatus;
+    killReason: SessionKillReason;
+    replacedBy: string;
+}>({ helperStatus: HelperStatus.RUNNING, age: 0, status: SessionStatus.NONE, replacedBy: '', killReason: SessionKillReason.NONE });

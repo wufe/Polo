@@ -15,12 +15,18 @@ export const HelperApp = (props: TProps) => {
     if (!props.session)
         return null;
 
+    const { age, status, killReason, replacedBy } = props.session;
+
     return <HelperStatusProvider
         uuid={props.session.uuid}
-        maxAge={props.session.maxAge}
-        age={props.session.maxAge}>
+        initial={{
+            age,
+            status,
+            killReason,
+            replacedBy
+        }}>
         <HelperStatusContext.Consumer>
-            {({ status }) => <HelperOverlay status={status} />}
+            {({ helperStatus }) => <HelperOverlay helperStatus={helperStatus} />}
         </HelperStatusContext.Consumer>
         <div className="session-helper__component">
             <HelperSession session={props.session} />

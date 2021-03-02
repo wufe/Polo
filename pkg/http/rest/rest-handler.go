@@ -36,7 +36,7 @@ func NewHandler(isDev bool, static *services.StaticService, routing *routing.Han
 	router.POST("/_polo_/api/session/", h.addSession(request))
 	router.GET("/_polo_/api/session/:uuid", h.getSession(query))
 	router.DELETE("/_polo_/api/session/:uuid", h.deleteSession(request))
-	router.GET("/_polo_/api/session/:uuid/age", h.getSessionAge(query))
+	router.GET("/_polo_/api/session/:uuid/status", h.getSessionStatus(query))
 	router.GET("/_polo_/api/session/:uuid/metrics", h.getSessionMetrics(query))
 	router.POST("/_polo_/api/session/:uuid/track", h.trackSession(query))
 	router.DELETE("/_polo_/api/session/:uuid/track", h.untrackSession())
@@ -94,7 +94,7 @@ func (rest *Handler) getSessions(query *services.QueryService) func(w http.Respo
 func (rest *Handler) getSession(query *services.QueryService) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		uuid := p.ByName("uuid")
-		session := query.GetSession(uuid)
+		session := query.GetAliveSession(uuid)
 
 		content, status := okOrNotFound(mappers.MapSession(session), 200)
 
@@ -104,10 +104,10 @@ func (rest *Handler) getSession(query *services.QueryService) func(w http.Respon
 	}
 }
 
-func (rest *Handler) getSessionAge(query *services.QueryService) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (rest *Handler) getSessionStatus(query *services.QueryService) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		uuid := p.ByName("uuid")
-		age, err := query.GetSessionAge(uuid)
+		age, err := query.GetSessionStatus(uuid)
 
 		var c []byte
 		var s int
@@ -185,7 +185,7 @@ func (rest *Handler) getSessionLogsAndStatus(query *services.QueryService) func(
 func (rest *Handler) trackSession(query *services.QueryService) func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		uuid := p.ByName("uuid")
-		session := query.GetSession(uuid)
+		session := query.GetAliveSession(uuid)
 
 		var c []byte
 		var s int

@@ -1,17 +1,12 @@
 import { APIRequestResult } from '@/api/common';
-import { IAPISession, retrieveSessionAgeAPI, untrackSessionAPI } from '@/api/session';
+import { IAPISession, retrieveSessionStatusAPI, untrackSessionAPI } from '@/api/session';
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { HelperStatus, HelperStatusContext } from '../contexts';
 import { expiredAgeValue, noExpirationAgeValue } from '../status/helper-status-provider';
+import { SessionAge } from './helper-session-age';
 import './helper-session.scss';
 import { useClipboard } from './use-clipboard';
-
-export const SessionMaxAge = () => {
-    return <HelperStatusContext.Consumer>
-        {({ age }) => <>Expires in <b>{age}s</b></>}
-    </HelperStatusContext.Consumer>
-}
 
 type TProps = {
     session: IAPISession;
@@ -29,9 +24,9 @@ export const HelperSession = (props: TProps) => {
         }
     }
 
-    const maxAgeVisible =
-        props.session.maxAge > noExpirationAgeValue &&
-        props.session.maxAge > expiredAgeValue;
+    const age =
+        props.session.age > noExpirationAgeValue &&
+        props.session.age > expiredAgeValue;
 
     const copyPermalink = () => {
         let pathname = location.pathname;
@@ -47,8 +42,8 @@ export const HelperSession = (props: TProps) => {
                 <div className="__checkout">
                     <span>On <b className="__checkout-title" title={props.session.checkout}>{props.session.checkout}</b></span>
                 </div>
-                {maxAgeVisible && <div className="__info">
-                    <SessionMaxAge />
+                {age && <div className="__info">
+                    <SessionAge />
                 </div>}
             </div>
             <span className="__icon-container">

@@ -1,6 +1,6 @@
 import { APIRequestResult } from '@/api/common';
 import { IApp } from '@/state/models';
-import { SessionStatus } from '@/state/models/session-model';
+import { SessionStatus } from '@/state/models/session-model-enums';
 import { observer } from 'mobx-react-lite';
 import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';

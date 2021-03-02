@@ -15,17 +15,17 @@ const setStyleToSiblings = (setStyle: (style: CSSStyleDeclaration) => void) => {
 
 const idleStatus = HelperStatus.EXPIRED;
 
-export const HelperOverlay = memo((props: { status: HelperStatus }) => {
+export const HelperOverlay = memo((props: { helperStatus: HelperStatus }) => {
 
     useLayoutEffect(() => {
-        if (props.status === idleStatus) {
+        if (props.helperStatus === idleStatus) {
             setStyleToSiblings(style => style.filter = 'blur(5px)');
         } else {
             setStyleToSiblings(style => style.filter = '');
         }
-    }, [props.status]);
+    }, [props.helperStatus]);
 
-    if (props.status !== idleStatus)
+    if (props.helperStatus !== idleStatus)
         return null;
 
     return <>
@@ -37,4 +37,4 @@ export const HelperOverlay = memo((props: { status: HelperStatus }) => {
             <a className="__link" href="/_polo_/">Return to dashboard</a>
         </div>
     </>;
-}, (prev, next) => prev.status === next.status);
+}, (prev, next) => prev.helperStatus === next.helperStatus);
