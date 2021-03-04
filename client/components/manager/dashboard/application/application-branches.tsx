@@ -21,12 +21,12 @@ export const ApplicationBranches = observer((props: TProps) => {
             {sortBranches(Array.from(props.branches.values())).map((branch, key) =>
                 <div
                     className="flex flex-col" key={key}>
-                    <div className="flex items-end lg:items-center pt-1 pb-2 px-2 lg:px-6 cursor-pointer dark:hover:bg-nord-1" onClick={() => toggleBranch(branch.name)}>
+                    <div className="flex items-end lg:items-center pt-1 pb-2 px-2 lg:px-6 cursor-pointer lg:dark:hover:bg-nord-1" onClick={() => toggleBranch(branch.name)}>
                         <div className="flex-1">
-                            <div className="text-xs text-gray-500 uppercase">Name</div>
-                            <div className="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis" title={branch.name}>{branch.name}</div>
+                            <div className="text-xs text-gray-500 uppercase hidden lg:block">Name</div>
+                            <div className="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis text-center lg:text-left py-5 lg:py-0" title={branch.name}>{branch.name}</div>
                         </div>
-                        <span className="text-center col-span-2">
+                        <span className="text-center col-span-2 hidden lg:inline-block">
                             <span className="text-sm underline cursor-pointer inline-block mx-3 hover:text-blue-400" onClick={() => props.onSessionCreationSubmission(branch.name)}>Create session</span>
                         </span>
                     </div>
@@ -43,6 +43,9 @@ export const ApplicationBranches = observer((props: TProps) => {
                             <div className="col-span-7">
                                 <div className="text-xs text-gray-500 uppercase">Date</div>
                                 <div className="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis">{dayjs(branch.date).format('DD MMM HH:mm')}</div>
+                            </div>
+                            <div className="py-2 lg:hidden text-center col-span-12">
+                                <span className="leading-none text-sm underline cursor-pointer inline-block mx-3 hover:text-nord14 border border-nord14 rounded-md py-2 px-10" onClick={() => props.onSessionCreationSubmission(branch.name)}>Create session</span>
                             </div>
                         </div>
                         

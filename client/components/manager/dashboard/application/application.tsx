@@ -51,23 +51,23 @@ export const Application = observer((props: TProps) => {
         max-w-5xl
         ${!props.isOpen ? ' max-h-20 overflow-hidden dark:hover:bg-nord3' : ''}`}
         >
-        <div className={`h-20 flex flex-col lg:flex-row items-stretch lg:items-center justify-between relative lg:-mx-6 px-2 lg:px-12 lg:pr-12 ${props.toggleEnabled ? 'cursor-pointer' : ''}`} onClick={props.onToggle}>
-            <h3 className="text-mg font-normal leading-10 uppercase col-span-3 overflow-hidden overflow-ellipsis whitespace-nowrap text-center lg:text-left" title={props.application.configuration.name}>{props.application.configuration.name}</h3>
-            <div className="col-span-4 lg:px-10">
-                <div className="text-xs text-gray-500 uppercase">Remote:</div>
+        <div className={`flex flex-col lg:flex-row items-stretch lg:items-center justify-between relative lg:-mx-6 px-2 lg:px-12 lg:pr-12 ${props.toggleEnabled ? 'cursor-pointer' : ''}`} onClick={props.onToggle}>
+            <h3 className="h-20 flex justify-center lg:justify-start items-center text-mg font-normal leading-10 uppercase col-span-3 overflow-hidden overflow-ellipsis whitespace-nowrap text-center lg:text-left" title={props.application.configuration.name}>{props.application.configuration.name}</h3>
+            <div className="col-span-4 lg:px-10 hidden lg:block">
+                <div className="text-xs text-gray-500 uppercase my-3 lg:my-0">Remote:</div>
                 <div
                     className="text-sm overflow-hidden overflow-ellipsis whitespace-nowrap"
                     title={props.application.configuration.remote}>{props.application.configuration.remote}</div>
             </div>
-            {props.isOpen && props.toggleEnabled && <svg width={16} height={16} className="absolute right-10 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {props.isOpen && props.toggleEnabled && <svg width={16} height={16} className="hidden lg:block absolute right-10 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>}
-            {!props.isOpen && props.toggleEnabled && <svg width={16} height={16} className="absolute right-10 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {!props.isOpen && props.toggleEnabled && <svg width={16} height={16} className="hidden lg:block absolute right-10 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>}
         </div>
 
-        <div className="py-4 px-2 lg:px-6">
+        <div className="py-4 px-2 lg:px-6 hidden lg:block">
             <div className="col-span-2">
                 <h4 className="my-1 text-xs text-gray-500 uppercase">Target:</h4>
                 <div

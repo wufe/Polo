@@ -32,9 +32,9 @@ export const ApplicationSessions = observer((props: TProps) => {
             .map((session, key) =>
             <div
                 key={key}
-                className="flex items-end py-1">
-                <span className="loading-none flex flex-nowrap lg:w-24">
-                    <span className="lg:w-5 text-center inline-block">
+                className="flex flex-col lg:flex-row lg:items-center py-1 my-5 lg:my-0">
+                <span className="flex flex-nowrap lg:w-24">
+                    <span className="w-5 text-center inline-block">
                         {
                             (
                                 session.status === SessionStatus.STARTING ||
@@ -42,16 +42,15 @@ export const ApplicationSessions = observer((props: TProps) => {
                             ) &&
                             <img src={loading} width={12} height={12} className="mr-1" />}
                     </span>
-                    <span className="leading-none text-xs uppercase font-bold" style={{ color: colorByStatus(session.status) }}>{session.status}</span>
-                    
+                    <span className="text-xs uppercase font-bold" style={{ color: colorByStatus(session.status) }}>{session.status}</span>
                 </span>
-                <span className="leading-none text-sm mr-3 flex-grow px-2 lg:px-10 flex-1 whitespace-nowrap overflow-hidden overflow-ellipsis">{session.checkout}</span>
-                {session.age > noExpirationAgeValue && <span className="leading-none text-xs uppercase text-gray-500 px-2 lg:px-10">
+                <span className="inline-block py-3 lg:py:0 text-center lg:text-left text-sm mr-3 flex-grow px-2 lg:px-10 flex-1 whitespace-nowrap overflow-hidden overflow-ellipsis">{session.checkout}</span>
+                {session.age > noExpirationAgeValue && <span className="text-xs uppercase text-gray-500 px-2 lg:px-10">
                     <span className="hidden lg:inline-block pr-1">Expires in </span><span>{session.age}s</span>
                 </span>}
-                <span className="leading-none lg:px-10 text-center whitespace-nowrap">
-                    <span className="leading-none text-sm underline cursor-pointer inline-block mx-3 hover:text-nord14" onClick={() => attachToSession(session)}>Enter</span>
-                    <span className="leading-none text-sm underline cursor-pointer inline-block mx-3 hover:text-nord11" onClick={() => killSession(session)}>Delete</span>
+                <span className="lg:px-10 text-center whitespace-nowrap my-3 lg:my-0">
+                    <span className="leading-none text-sm underline cursor-pointer inline-block mx-3 hover:text-nord14 border border-nord14 rounded-md py-2 px-10" onClick={() => attachToSession(session)}>Enter</span>
+                    <span className="leading-none text-sm underline cursor-pointer inline-block mx-3 hover:text-nord11 border border-nord11 rounded-md py-2 px-10" onClick={() => killSession(session)}>Delete</span>
                 </span>
             </div>)}
     </>;
