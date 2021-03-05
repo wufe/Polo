@@ -16,6 +16,7 @@ module.exports = {
       'mono': ['Courier New']
     },
     minWidth: {
+      "0": "0",
       "16": "4rem"
     }
   },

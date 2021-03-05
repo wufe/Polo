@@ -22,7 +22,7 @@ export const ApplicationBranches = observer((props: TProps) => {
                 <div
                     className="flex flex-col" key={key}>
                     <div className="flex items-end lg:items-center pt-1 pb-2 px-2 lg:px-6 cursor-pointer lg:dark:hover:bg-nord-1" onClick={() => toggleBranch(branch.name)}>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                             <div className="text-xs text-gray-500 uppercase hidden lg:block">Name</div>
                             <div className="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis text-center lg:text-left py-5 lg:py-0" title={branch.name}>{branch.name}</div>
                         </div>
