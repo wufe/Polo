@@ -1,11 +1,8 @@
-package mappers
+package models
 
-import (
-	"github.com/wufe/polo/pkg/models"
-	"github.com/wufe/polo/pkg/services/output"
-)
+import "github.com/wufe/polo/pkg/models/output"
 
-func MapApplication(model *models.Application) *output.Application {
+func MapApplication(model *Application) *output.Application {
 	if model == nil {
 		return nil
 	}
@@ -21,7 +18,7 @@ func MapApplication(model *models.Application) *output.Application {
 	}
 }
 
-func MapApplicationConfiguration(model models.ApplicationConfiguration) output.ApplicationConfiguration {
+func MapApplicationConfiguration(model ApplicationConfiguration) output.ApplicationConfiguration {
 	return output.ApplicationConfiguration{
 		Name:                  model.Name,
 		Remote:                model.Remote,
@@ -44,7 +41,7 @@ func MapApplicationConfiguration(model models.ApplicationConfiguration) output.A
 	}
 }
 
-func MapWarmups(model models.Warmups) output.Warmups {
+func MapWarmups(model Warmups) output.Warmups {
 	urls := []output.Warmup{}
 	for _, u := range model.URLs {
 		urls = append(urls, output.Warmup{
@@ -61,7 +58,7 @@ func MapWarmups(model models.Warmups) output.Warmups {
 	}
 }
 
-func MapApplications(models []*models.Application) []output.Application {
+func MapApplications(models []*Application) []output.Application {
 	ret := []output.Application{}
 	for _, a := range models {
 		ret = append(ret, *MapApplication(a))
@@ -69,19 +66,19 @@ func MapApplications(models []*models.Application) []output.Application {
 	return ret
 }
 
-func MapFetch(model models.Fetch) output.Fetch {
+func MapFetch(model Fetch) output.Fetch {
 	return output.Fetch{
 		Interval: model.Interval,
 	}
 }
 
-func MapHelper(model models.Helper) output.Helper {
+func MapHelper(model Helper) output.Helper {
 	return output.Helper{
 		Position: string(model.Position),
 	}
 }
 
-func MapForward(model models.Forward) output.Forward {
+func MapForward(model Forward) output.Forward {
 	return output.Forward{
 		Pattern: model.Pattern,
 		To:      model.To,
@@ -90,7 +87,7 @@ func MapForward(model models.Forward) output.Forward {
 	}
 }
 
-func MapForwards(models []models.Forward) []output.Forward {
+func MapForwards(models []Forward) []output.Forward {
 	ret := []output.Forward{}
 	for _, f := range models {
 		ret = append(ret, MapForward(f))
@@ -98,7 +95,7 @@ func MapForwards(models []models.Forward) []output.Forward {
 	return ret
 }
 
-func MapHeaders(model models.Headers) output.Headers {
+func MapHeaders(model Headers) output.Headers {
 	add := []string{}
 	set := []string{}
 	replace := []string{}
@@ -119,7 +116,7 @@ func MapHeaders(model models.Headers) output.Headers {
 	}
 }
 
-func MapHealthcheck(model models.Healthcheck) output.Healthcheck {
+func MapHealthcheck(model Healthcheck) output.Healthcheck {
 	return output.Healthcheck{
 		Method:        model.Method,
 		URL:           model.URL,
@@ -130,20 +127,20 @@ func MapHealthcheck(model models.Healthcheck) output.Healthcheck {
 	}
 }
 
-func MapStartup(model models.Startup) output.Startup {
+func MapStartup(model Startup) output.Startup {
 	return output.Startup{
 		Timeout: model.Timeout,
 		Retries: model.Retries,
 	}
 }
 
-func MapRecycle(model models.Recycle) output.Recycle {
+func MapRecycle(model Recycle) output.Recycle {
 	return output.Recycle{
 		InactivityTimeout: model.InactivityTimeout,
 	}
 }
 
-func MapCommand(model models.Command) output.Command {
+func MapCommand(model Command) output.Command {
 	return output.Command{
 		Command:             model.Command,
 		Environment:         model.Environment,
@@ -155,7 +152,7 @@ func MapCommand(model models.Command) output.Command {
 	}
 }
 
-func MapCommands(model models.Commands) output.Commands {
+func MapCommands(model Commands) output.Commands {
 	start := []output.Command{}
 	stop := []output.Command{}
 	for _, s := range model.Start {
@@ -170,13 +167,13 @@ func MapCommands(model models.Commands) output.Commands {
 	}
 }
 
-func MapPort(model models.PortConfiguration) output.PortConfiguration {
+func MapPort(model PortConfiguration) output.PortConfiguration {
 	return output.PortConfiguration{
 		Except: model.Except,
 	}
 }
 
-func MapBranch(model models.Branch) output.Branch {
+func MapBranch(model Branch) output.Branch {
 	return output.Branch{
 		Name:    model.Name,
 		Hash:    model.Hash,
@@ -186,7 +183,7 @@ func MapBranch(model models.Branch) output.Branch {
 	}
 }
 
-func MapBranches(model map[string]*models.Branch) map[string]output.Branch {
+func MapBranches(model map[string]*Branch) map[string]output.Branch {
 	ret := make(map[string]output.Branch)
 	for k, v := range model {
 		ret[k] = MapBranch(*v)

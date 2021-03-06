@@ -6,17 +6,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"regexp"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/http/proxy"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/services"
-	"github.com/wufe/polo/pkg/services/mappers"
 	"github.com/wufe/polo/pkg/storage"
 )
 
@@ -199,7 +198,7 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 				bodyIndexPattern := regexp.MustCompile(`<body([^>]*?)>`)
 
 				if bodyIndex := bodyIndexPattern.FindStringIndex(stringBody); len(bodyIndex) > 1 {
-					serializedSession, err := json.Marshal(mappers.MapSession(session))
+					serializedSession, err := json.Marshal(models.MapSession(session))
 					if err != nil {
 						serializedSession = []byte(`{}`)
 					}

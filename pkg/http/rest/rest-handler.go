@@ -13,7 +13,6 @@ import (
 	"github.com/wufe/polo/pkg/http/routing"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/services"
-	"github.com/wufe/polo/pkg/services/mappers"
 )
 
 type Handler struct {
@@ -69,7 +68,7 @@ func (rest *Handler) getApplications(query *services.QueryService) func(w http.R
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		content, status := buildResponse(ResponseObjectWithResult{
 			ResponseObject{"Ok"},
-			mappers.MapApplications(query.GetAllApplications()),
+			models.MapApplications(query.GetAllApplications()),
 		}, 200)
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(status)
@@ -82,7 +81,7 @@ func (rest *Handler) getSessions(query *services.QueryService) func(w http.Respo
 
 		content, status := buildResponse(ResponseObjectWithResult{
 			ResponseObject{"Ok"},
-			mappers.MapSessions(query.GetAllAliveSessions()),
+			models.MapSessions(query.GetAllAliveSessions()),
 		}, 200)
 
 		w.Header().Add("Content-Type", "application/json")
@@ -96,7 +95,7 @@ func (rest *Handler) getSession(query *services.QueryService) func(w http.Respon
 		uuid := p.ByName("uuid")
 		session := query.GetAliveSession(uuid)
 
-		content, status := okOrNotFound(mappers.MapSession(session), 200)
+		content, status := okOrNotFound(models.MapSession(session), 200)
 
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(status)
