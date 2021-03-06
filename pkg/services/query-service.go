@@ -65,16 +65,14 @@ func (s *QueryService) GetSessionLogsAndStatus(uuid string, lastLogUUID string) 
 		return nil, models.SessionStatusStarting, ErrSessionNotFound
 	}
 
-	session.Lock()
-	defer session.Unlock()
-
-	logs := session.Logs
+	sessionLogs := session.GetLogs()
+	retLogs := sessionLogs
 	if lastLogUUID != "" && lastLogUUID != "<none>" {
-		logs = []models.Log{}
+		retLogs = []models.Log{}
 		afterLastLog := false
-		for _, log := range session.Logs {
+		for _, log := range sessionLogs {
 			if afterLastLog {
-				logs = append(logs, log)
+				retLogs = append(retLogs, log)
 			}
 			if log.UUID == lastLogUUID {
 				afterLastLog = true
@@ -82,7 +80,7 @@ func (s *QueryService) GetSessionLogsAndStatus(uuid string, lastLogUUID string) 
 		}
 	}
 
-	return logs, session.Status, nil
+	return retLogs, session.Status, nil
 }
 
 // GetMatchingCheckout

@@ -10,7 +10,7 @@ func MapSession(model *Session) *output.Session {
 	}
 	conf := model.GetConfiguration()
 	status := MapSessionStatus(model)
-	model.Lock()
+	model.RLock()
 	session := &output.Session{
 		UUID:              model.UUID,
 		Name:              model.Name,
@@ -25,12 +25,12 @@ func MapSession(model *Session) *output.Session {
 		Checkout:          model.Checkout,
 		Folder:            model.Folder,
 		Variables:         model.Variables,
-		Logs:              mapSessionLogs(model.Logs),
+		Logs:              mapSessionLogs(model.logs),
 		Metrics:           mapMetrics(model.Metrics),
 		Configuration:     mapConfiguration(conf),
 		SessionStatus:     status,
 	}
-	model.Unlock()
+	model.RUnlock()
 	session.ReplacesSession = mapReplaces(model.Replaces())
 	return session
 }

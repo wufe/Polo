@@ -81,7 +81,6 @@ type Session struct {
 	Application     *Application `json:"-"`
 	configuration   ApplicationConfiguration
 	Status          SessionStatus `json:"status"`
-	Logs            []Log         `json:"-"`
 	CommitID        string        `json:"commitID"` // The object to be checked out (branch/tag/commit id)
 	Checkout        string        `json:"checkout"`
 	Commit          object.Commit `json:"commit"`
@@ -89,6 +88,7 @@ type Session struct {
 	Variables       Variables     `json:"variables"`
 	Metrics         []Metric      `json:"metrics"`
 	Context         *contextStore `json:"-"`
+	logs            []Log
 	shortUUID       string
 	inactiveAt      time.Time
 	maxAge          int
@@ -124,8 +124,8 @@ func NewSession(
 		session.ApplicationName = session.Application.GetConfiguration().Name
 	}
 	session.Status = SessionStatusStarting
-	if session.Logs == nil {
-		session.Logs = []Log{}
+	if session.logs == nil {
+		session.logs = []Log{}
 	}
 	if len(session.Variables) == 0 {
 		session.Variables = make(map[string]string)
@@ -227,8 +227,8 @@ func (session *Session) LogCritical(message string) {
 	session.Lock()
 	log.Errorf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
 	defer session.Unlock()
-	session.Logs = append(
-		session.Logs,
+	session.logs = append(
+		session.logs,
 		NewLog(message, LogTypeCritical),
 	)
 }
@@ -238,8 +238,8 @@ func (session *Session) LogError(message string) {
 	session.Lock()
 	log.Errorf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
 	defer session.Unlock()
-	session.Logs = append(
-		session.Logs,
+	session.logs = append(
+		session.logs,
 		NewLog(message, LogTypeError),
 	)
 }
@@ -249,8 +249,8 @@ func (session *Session) LogWarn(message string) {
 	session.Lock()
 	log.Warnf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
 	defer session.Unlock()
-	session.Logs = append(
-		session.Logs,
+	session.logs = append(
+		session.logs,
 		NewLog(message, LogTypeWarn),
 	)
 }
@@ -260,8 +260,8 @@ func (session *Session) LogInfo(message string) {
 	session.Lock()
 	log.Infof(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
 	defer session.Unlock()
-	session.Logs = append(
-		session.Logs,
+	session.logs = append(
+		session.logs,
 		NewLog(message, LogTypeInfo),
 	)
 }
@@ -271,8 +271,8 @@ func (session *Session) LogDebug(message string) {
 	session.Lock()
 	log.Debugf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
 	defer session.Unlock()
-	session.Logs = append(
-		session.Logs,
+	session.logs = append(
+		session.logs,
 		NewLog(message, LogTypeDebug),
 	)
 }
@@ -282,8 +282,8 @@ func (session *Session) LogTrace(message string) {
 	session.Lock()
 	log.Tracef(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
 	defer session.Unlock()
-	session.Logs = append(
-		session.Logs,
+	session.logs = append(
+		session.logs,
 		NewLog(message, LogTypeTrace),
 	)
 }
@@ -293,8 +293,8 @@ func (session *Session) LogStdin(message string) {
 	session.Lock()
 	log.Infof(fmt.Sprintf("\t\t[%s (stdin)>]: %s", session.shortUUID, message))
 	defer session.Unlock()
-	session.Logs = append(
-		session.Logs,
+	session.logs = append(
+		session.logs,
 		NewLog(message, LogTypeStdin),
 	)
 }
@@ -304,8 +304,8 @@ func (session *Session) LogStdout(message string) {
 	session.Lock()
 	log.Infof(fmt.Sprintf("\t\t[%s (stdout)>]: %s", session.shortUUID, message))
 	defer session.Unlock()
-	session.Logs = append(
-		session.Logs,
+	session.logs = append(
+		session.logs,
 		NewLog(message, LogTypeStdout),
 	)
 }
@@ -315,8 +315,8 @@ func (session *Session) LogStderr(message string) {
 	session.Lock()
 	log.Infof(fmt.Sprintf("\t\t[%s (stderr)>]: %s", session.shortUUID, message))
 	defer session.Unlock()
-	session.Logs = append(
-		session.Logs,
+	session.logs = append(
+		session.logs,
 		NewLog(message, LogTypeStderr),
 	)
 }
@@ -341,8 +341,8 @@ func (session *Session) SetStatus(status SessionStatus) {
 
 // GetStatus allows to get the session status thread-safely
 func (session *Session) GetStatus() SessionStatus {
-	session.Lock()
-	defer session.Unlock()
+	session.RLock()
+	defer session.RUnlock()
 	return session.Status
 }
 
@@ -355,8 +355,8 @@ func (session *Session) DecreaseMaxAge() {
 
 // GetMaxAge allows to retrieve the session max-age thread-safely
 func (session *Session) GetMaxAge() int {
-	session.Lock()
-	defer session.Unlock()
+	session.RLock()
+	defer session.RUnlock()
 	return session.maxAge
 }
 
@@ -369,8 +369,8 @@ func (session *Session) SetMaxAge(age int) {
 
 // GetInactiveAt retrieves the inactive-at value for the session thread-safely
 func (session *Session) GetInactiveAt() time.Time {
-	session.Lock()
-	defer session.Unlock()
+	session.RLock()
+	defer session.RUnlock()
 	return session.inactiveAt
 }
 
@@ -383,8 +383,8 @@ func (session *Session) SetInactiveAt(at time.Time) {
 
 // GetStartupRetriesCount retrieves the current count of startup retries thread-safely
 func (session *Session) GetStartupRetriesCount() int {
-	session.Lock()
-	defer session.Unlock()
+	session.RLock()
+	defer session.RUnlock()
 	return session.startupRetries
 }
 
@@ -405,8 +405,8 @@ func (session *Session) ResetStartupRetriesCount() {
 // GetKillReason returns the reason why the session has been killed thread-safely.
 // Returns KillReasonNone if the session has not been killed
 func (session *Session) GetKillReason() KillReason {
-	session.Lock()
-	defer session.Unlock()
+	session.RLock()
+	defer session.RUnlock()
 	return session.killReason
 }
 
@@ -436,4 +436,10 @@ func (session *Session) IsAlive() bool {
 	session.RLock()
 	defer session.RUnlock()
 	return session.Status.IsAlive()
+}
+
+func (session *Session) GetLogs() []Log {
+	session.RLock()
+	defer session.RUnlock()
+	return session.logs
 }

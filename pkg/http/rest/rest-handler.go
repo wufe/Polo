@@ -241,9 +241,7 @@ func (rest *Handler) addSession(req *services.RequestService) func(w http.Respon
 			write(serverError(err.Error()))
 			return
 		}
-		response.Session.Lock()
-		write(ok(response.Session))
-		response.Session.Unlock()
+		write(ok(response.Session.ToOutput()))
 	}
 }
 
