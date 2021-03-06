@@ -198,7 +198,7 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 				bodyIndexPattern := regexp.MustCompile(`<body([^>]*?)>`)
 
 				if bodyIndex := bodyIndexPattern.FindStringIndex(stringBody); len(bodyIndex) > 1 {
-					serializedSession, err := json.Marshal(models.MapSession(session))
+					serializedSession, err := json.Marshal(session.ToOutput())
 					if err != nil {
 						serializedSession = []byte(`{}`)
 					}

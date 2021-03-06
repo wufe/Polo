@@ -95,7 +95,7 @@ func (rest *Handler) getSession(query *services.QueryService) func(w http.Respon
 		uuid := p.ByName("uuid")
 		session := query.GetAliveSession(uuid)
 
-		content, status := okOrNotFound(models.MapSession(session), 200)
+		content, status := okOrNotFound(session.ToOutput(), 200)
 
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(status)

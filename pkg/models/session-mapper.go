@@ -25,32 +25,32 @@ func MapSession(model *Session) *output.Session {
 		Checkout:          model.Checkout,
 		Folder:            model.Folder,
 		Variables:         model.Variables,
-		Logs:              MapSessionLogs(model.Logs),
-		Metrics:           MapMetrics(model.Metrics),
-		Configuration:     MapConfiguration(conf),
+		Logs:              mapSessionLogs(model.Logs),
+		Metrics:           mapMetrics(model.Metrics),
+		Configuration:     mapConfiguration(conf),
 		SessionStatus:     status,
 	}
 	model.Unlock()
-	session.ReplacesSession = MapReplaces(model.Replaces())
+	session.ReplacesSession = mapReplaces(model.Replaces())
 	return session
 }
 
 func MapSessions(models []*Session) []output.Session {
 	ret := []output.Session{}
 	for _, s := range models {
-		ret = append(ret, *MapSession(s))
+		ret = append(ret, s.ToOutput())
 	}
 	return ret
 }
 
-func MapReplaces(model *Session) string {
+func mapReplaces(model *Session) string {
 	if model == nil {
 		return ""
 	}
 	return model.UUID
 }
 
-func MapConfiguration(model ApplicationConfiguration) output.SessionConfiguration {
+func mapConfiguration(model ApplicationConfiguration) output.SessionConfiguration {
 	return output.SessionConfiguration{
 		IsDefault: model.IsDefault,
 	}
@@ -80,7 +80,7 @@ func MapSessionLog(log Log) output.SessionLog {
 	}
 }
 
-func MapSessionLogs(logs []Log) []output.SessionLog {
+func mapSessionLogs(logs []Log) []output.SessionLog {
 	ret := []output.SessionLog{}
 	for _, log := range logs {
 		ret = append(ret, MapSessionLog(log))
@@ -95,7 +95,7 @@ func MapMetric(model Metric) output.Metric {
 	}
 }
 
-func MapMetrics(models []Metric) []output.Metric {
+func mapMetrics(models []Metric) []output.Metric {
 	ret := []output.Metric{}
 	for _, met := range models {
 		ret = append(ret, output.Metric{

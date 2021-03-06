@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing/object"
 	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/models/output"
 	"github.com/wufe/polo/pkg/utils"
 )
 
@@ -138,6 +139,11 @@ func NewSession(
 		session.configuration = session.getMatchingConfiguration()
 	}
 	return session
+}
+
+// ToOutput converts this model into an output model
+func (session *Session) ToOutput() output.Session {
+	return *MapSession(session)
 }
 
 // IsReplacementFor thread-safely sets the session which will be replaced

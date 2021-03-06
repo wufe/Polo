@@ -2,7 +2,7 @@ package models
 
 import "github.com/wufe/polo/pkg/models/output"
 
-func MapApplication(model *Application) *output.Application {
+func mapApplication(model *Application) *output.Application {
 	if model == nil {
 		return nil
 	}
@@ -11,37 +11,37 @@ func MapApplication(model *Application) *output.Application {
 	defer model.RUnlock()
 	return &output.Application{
 		Status:        string(model.Status),
-		Configuration: MapApplicationConfiguration(conf),
+		Configuration: mapApplicationConfiguration(conf),
 		Folder:        model.Folder,
 		BaseFolder:    model.BaseFolder,
-		BranchesMap:   MapBranches(model.BranchesMap),
+		BranchesMap:   mapBranches(model.BranchesMap),
 	}
 }
 
-func MapApplicationConfiguration(model ApplicationConfiguration) output.ApplicationConfiguration {
+func mapApplicationConfiguration(model ApplicationConfiguration) output.ApplicationConfiguration {
 	return output.ApplicationConfiguration{
 		Name:                  model.Name,
 		Remote:                model.Remote,
 		Target:                model.Target,
 		Host:                  model.Host,
-		Fetch:                 MapFetch(model.Fetch),
-		Helper:                MapHelper(model.Helper),
+		Fetch:                 mapFetch(model.Fetch),
+		Helper:                mapHelper(model.Helper),
 		IsDefault:             model.IsDefault,
-		Forwards:              MapForwards(model.Forwards),
-		Headers:               MapHeaders(model.Headers),
-		Healthcheck:           MapHealthcheck(model.Healthcheck),
-		Startup:               MapStartup(model.Startup),
-		Recycle:               MapRecycle(model.Recycle),
-		Commands:              MapCommands(model.Commands),
+		Forwards:              mapForwards(model.Forwards),
+		Headers:               mapHeaders(model.Headers),
+		Healthcheck:           mapHealthcheck(model.Healthcheck),
+		Startup:               mapStartup(model.Startup),
+		Recycle:               mapRecycle(model.Recycle),
+		Commands:              mapCommands(model.Commands),
 		MaxConcurrentSessions: model.MaxConcurrentSessions,
-		Port:                  MapPort(model.Port),
+		Port:                  mapPort(model.Port),
 		UseFolderCopy:         model.UseFolderCopy,
 		CleanOnExit:           *model.CleanOnExit,
-		Warmup:                MapWarmups(model.Warmup),
+		Warmup:                mapWarmups(model.Warmup),
 	}
 }
 
-func MapWarmups(model Warmups) output.Warmups {
+func mapWarmups(model Warmups) output.Warmups {
 	urls := []output.Warmup{}
 	for _, u := range model.URLs {
 		urls = append(urls, output.Warmup{
@@ -61,18 +61,18 @@ func MapWarmups(model Warmups) output.Warmups {
 func MapApplications(models []*Application) []output.Application {
 	ret := []output.Application{}
 	for _, a := range models {
-		ret = append(ret, *MapApplication(a))
+		ret = append(ret, a.ToOutput())
 	}
 	return ret
 }
 
-func MapFetch(model Fetch) output.Fetch {
+func mapFetch(model Fetch) output.Fetch {
 	return output.Fetch{
 		Interval: model.Interval,
 	}
 }
 
-func MapHelper(model Helper) output.Helper {
+func mapHelper(model Helper) output.Helper {
 	return output.Helper{
 		Position: string(model.Position),
 	}
@@ -83,11 +83,11 @@ func MapForward(model Forward) output.Forward {
 		Pattern: model.Pattern,
 		To:      model.To,
 		Host:    model.Host,
-		Headers: MapHeaders(model.Headers),
+		Headers: mapHeaders(model.Headers),
 	}
 }
 
-func MapForwards(models []Forward) []output.Forward {
+func mapForwards(models []Forward) []output.Forward {
 	ret := []output.Forward{}
 	for _, f := range models {
 		ret = append(ret, MapForward(f))
@@ -95,7 +95,7 @@ func MapForwards(models []Forward) []output.Forward {
 	return ret
 }
 
-func MapHeaders(model Headers) output.Headers {
+func mapHeaders(model Headers) output.Headers {
 	add := []string{}
 	set := []string{}
 	replace := []string{}
@@ -116,7 +116,7 @@ func MapHeaders(model Headers) output.Headers {
 	}
 }
 
-func MapHealthcheck(model Healthcheck) output.Healthcheck {
+func mapHealthcheck(model Healthcheck) output.Healthcheck {
 	return output.Healthcheck{
 		Method:        model.Method,
 		URL:           model.URL,
@@ -127,14 +127,14 @@ func MapHealthcheck(model Healthcheck) output.Healthcheck {
 	}
 }
 
-func MapStartup(model Startup) output.Startup {
+func mapStartup(model Startup) output.Startup {
 	return output.Startup{
 		Timeout: model.Timeout,
 		Retries: model.Retries,
 	}
 }
 
-func MapRecycle(model Recycle) output.Recycle {
+func mapRecycle(model Recycle) output.Recycle {
 	return output.Recycle{
 		InactivityTimeout: model.InactivityTimeout,
 	}
@@ -152,7 +152,7 @@ func MapCommand(model Command) output.Command {
 	}
 }
 
-func MapCommands(model Commands) output.Commands {
+func mapCommands(model Commands) output.Commands {
 	start := []output.Command{}
 	stop := []output.Command{}
 	for _, s := range model.Start {
@@ -167,7 +167,7 @@ func MapCommands(model Commands) output.Commands {
 	}
 }
 
-func MapPort(model PortConfiguration) output.PortConfiguration {
+func mapPort(model PortConfiguration) output.PortConfiguration {
 	return output.PortConfiguration{
 		Except: model.Except,
 	}
@@ -183,7 +183,7 @@ func MapBranch(model Branch) output.Branch {
 	}
 }
 
-func MapBranches(model map[string]*Branch) map[string]output.Branch {
+func mapBranches(model map[string]*Branch) map[string]output.Branch {
 	ret := make(map[string]output.Branch)
 	for k, v := range model {
 		ret[k] = MapBranch(*v)

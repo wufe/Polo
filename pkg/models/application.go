@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/wufe/polo/pkg/models/output"
 	"github.com/wufe/polo/pkg/utils"
 )
 
@@ -102,6 +103,11 @@ func initForwards(forwards []Forward) ([]CompiledForwardPattern, error) {
 		)
 	}
 	return compiled, nil
+}
+
+// ToOutput converts this model into an output model
+func (a *Application) ToOutput() output.Application {
+	return *mapApplication(a)
 }
 
 func (a *Application) WithLock(f func(*Application)) {

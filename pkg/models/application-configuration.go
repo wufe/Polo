@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/wufe/polo/pkg/models/output"
 	"github.com/wufe/polo/pkg/utils"
 )
 
@@ -206,6 +207,11 @@ func (a *ApplicationConfiguration) OverrideWith(override SharedConfiguration) {
 	if len(override.Port.Except) > 0 {
 		a.Port.Except = override.Port.Except
 	}
+}
+
+// ToOutput converts this model into an output model
+func (a ApplicationConfiguration) ToOutput() output.ApplicationConfiguration {
+	return mapApplicationConfiguration(a)
 }
 
 func ConfigurationAreEqual(c1 ApplicationConfiguration, c2 ApplicationConfiguration) bool {
