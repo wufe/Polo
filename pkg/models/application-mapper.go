@@ -58,6 +58,7 @@ func mapWarmups(model Warmups) output.Warmups {
 	}
 }
 
+// MapApplications converts an application model to an output model
 func MapApplications(models []*Application) []output.Application {
 	ret := []output.Application{}
 	for _, a := range models {

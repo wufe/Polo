@@ -11,6 +11,9 @@ import (
 	"github.com/wufe/polo/pkg/utils"
 )
 
+// ApplicationConfiguration contains the configuration of the application
+// Usually its retrieval methods override the SharedConfiguration struct
+// with the checkout-specific configuration
 type ApplicationConfiguration struct {
 	SharedConfiguration   `yaml:",inline"` // Base configuration, common for branches and root application configuration
 	utils.RWLocker        `json:"-"`

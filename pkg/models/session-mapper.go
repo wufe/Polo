@@ -58,16 +58,13 @@ func mapConfiguration(model ApplicationConfiguration) output.SessionConfiguratio
 
 // MapSessionStatus maps a session to a status output model
 func MapSessionStatus(model *Session) output.SessionStatus {
-	age := model.GetMaxAge()
-	killReason := model.GetKillReason()
-	replacedBy := model.GetReplacedBy()
 	model.RLock()
 	defer model.RUnlock()
 	return output.SessionStatus{
 		Status:     string(model.Status),
-		Age:        age,
-		KillReason: string(killReason),
-		ReplacedBy: replacedBy,
+		Age:        model.maxAge,
+		KillReason: string(model.killReason),
+		ReplacedBy: model.replacedByUUID,
 	}
 }
 
