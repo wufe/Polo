@@ -146,17 +146,17 @@ func (session *Session) ToOutput() output.Session {
 	return *MapSession(session)
 }
 
-// IsReplacementFor thread-safely sets the session which will be replaced
+// SetReplaces thread-safely sets the session which will be replaced
 // when this session will go online
-func (session *Session) IsReplacementFor(previous *Session) {
+func (session *Session) SetReplaces(previous *Session) {
 	session.Lock()
 	defer session.Unlock()
 	session.replaces = previous
 }
 
-// Replaces thread-safely retrieves the session which will be replaced
+// GetReplaces thread-safely retrieves the session which will be replaced
 // when this session will go online
-func (session *Session) Replaces() *Session {
+func (session *Session) GetReplaces() *Session {
 	session.RLock()
 	defer session.RUnlock()
 	return session.replaces

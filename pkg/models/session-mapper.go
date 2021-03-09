@@ -31,7 +31,7 @@ func MapSession(model *Session) *output.Session {
 		SessionStatus:     status,
 	}
 	model.RUnlock()
-	session.ReplacesSession = mapReplaces(model.Replaces())
+	session.ReplacesSession = mapReplaces(model.GetReplaces())
 	return session
 }
 

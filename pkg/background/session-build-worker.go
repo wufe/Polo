@@ -122,7 +122,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 	}
 
 	if isAReplacement {
-		session.IsReplacementFor(input.PreviousSession)
+		session.SetReplaces(input.PreviousSession)
 	}
 
 	// Getting configuration matching this session

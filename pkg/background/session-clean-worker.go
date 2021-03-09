@@ -73,9 +73,9 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 				// FEATURE: Hot swap
 				// Check if the killed session should have been replaced by another session
 				for _, replacement := range w.sessionStorage.GetAllAliveSessions() {
-					if replacement.Replaces() == session {
+					if replacement.GetReplaces() == session {
 						// If so, tell this session that it is not a replacement anymore
-						replacement.IsReplacementFor(nil)
+						replacement.SetReplaces(nil)
 						// And destroy it too
 						replacement.SetKillReason(models.KillReasonStopped)
 						w.mediator.DestroySession.Enqueue(replacement, nil)
