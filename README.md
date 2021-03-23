@@ -7,6 +7,8 @@
     <br /><br />
 </p>
 
+[![CodeQL](https://github.com/Wufe/Polo/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/Wufe/Polo/actions/workflows/codeql-analysis.yml)
+
 ## What is Polo  
 
 Polo is a **git-based reverse proxy**.
