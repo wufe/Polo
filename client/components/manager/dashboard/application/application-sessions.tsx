@@ -4,6 +4,7 @@ import { SessionStatus } from '@/state/models/session-model-enums';
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 import loading from '../../../../assets/loading.svg';
+import './application-sessions.scss';
 
 export const noExpirationAgeValue = -1;
 
@@ -32,7 +33,8 @@ export const ApplicationSessions = observer((props: TProps) => {
             .map((session, key) =>
             <div
                 key={key}
-                className="flex flex-col lg:flex-row lg:items-center py-1 my-5 lg:my-0">
+                className="flex flex-col lg:flex-row lg:items-center py-1 my-5 lg:my-0
+                    application-sessions">
                 <span className="flex flex-nowrap lg:w-24">
                     <span className="w-5 text-center inline-block">
                         {
@@ -49,8 +51,8 @@ export const ApplicationSessions = observer((props: TProps) => {
                     <span className="hidden lg:inline-block pr-1">Expires in </span><span>{session.age}s</span>
                 </span>}
                 <span className="lg:px-10 text-center whitespace-nowrap my-3 lg:my-0">
-                    <span className="leading-none text-sm underline cursor-pointer inline-block mx-3 hover:text-nord14 border border-nord14 rounded-md py-2 px-10" onClick={() => attachToSession(session)}>Enter</span>
-                    <span className="leading-none text-sm underline cursor-pointer inline-block mx-3 hover:text-nord11 border border-nord11 rounded-md py-2 px-10" onClick={() => killSession(session)}>Delete</span>
+                    <span className="__button --success border-nord14 " onClick={() => attachToSession(session)}>Enter</span>
+                    <span className="__button --danger" onClick={() => killSession(session)}>Delete</span>
                 </span>
             </div>)}
     </>;

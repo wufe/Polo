@@ -57,10 +57,18 @@ module.exports = [
                 {
                     test: /\.s[ac]ss$/,
                     use: [
-                        MiniCssExtractPlugin.loader,
+                        isProduction ? MiniCssExtractPlugin.loader : 'style-loader',
                         'css-loader',
                         'postcss-loader',
                         'sass-loader'
+                    ]
+                },
+                {
+                    test: /\.css$/,
+                    use: [
+                        isProduction ? MiniCssExtractPlugin.loader : 'style-loader',
+                        'css-loader',
+                        'postcss-loader'
                     ]
                 },
                 { test: /\.(png|svg)$/, loader: 'file-loader' },
@@ -75,7 +83,7 @@ module.exports = [
             ].filter(Boolean)
         },
         plugins: [
-            isDevelopment && new webpack.HotModuleReplacementPlugin(),
+            // isDevelopment && new webpack.HotModuleReplacementPlugin(),
             isDevelopment && new ReactRefreshWebpackPlugin(),
             new ForkTsCheckerWebpackPlugin({
                 typescript: {
