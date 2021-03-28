@@ -14,7 +14,7 @@ type TProps = {
 }
 export const CommitModal = (props: TProps) => {
     return <DefaultModal name={props.name}>
-        <div className="overflow-hidden rounded-md text-nord0 dark:text-nord4 flex flex-col">
+        <div className="overflow-hidden lg:rounded-md text-nord0 dark:text-nord4 flex flex-col">
             <div className="mb-6">
                 <div className="text-base lg:text-lg font-bold whitespace-nowrap overflow-hidden overflow-ellipsis">{props.title}</div>
             </div>

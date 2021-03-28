@@ -17,7 +17,7 @@ export const ApplicationSessionModal = (props: TProps) => {
         <div className="application-session-modal">
             <div className="__header">
                 <div className="text-base lg:text-lg font-bold whitespace-nowrap overflow-hidden overflow-ellipsis">{props.session.checkout}</div>
-                <div className="text-xs text-gray-500 opacity-80">{props.session.uuid}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 opacity-80">{props.session.uuid}</div>
             </div>
             <div className="__list">
                 <div className="__item" onClick={props.onEnterSessionSelect}>
