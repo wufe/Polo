@@ -45,7 +45,7 @@ export const Application = observer((props: TProps) => {
         application`}>
         <div>
             <h3 className="text-xl lg:text-2xl leading-5 font-bold overflow-hidden overflow-ellipsis whitespace-nowrap" title={props.application.configuration.name}>{props.application.configuration.name}</h3>
-            <span className="text-gray-400 text-sm">test-server.yml</span>
+            <span className="text-gray-400 text-sm">{props.application.filename}</span>
         </div>
         
         {props.sessions && props.sessions.length > 0 && <div className="py-4">

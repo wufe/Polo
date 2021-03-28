@@ -4,6 +4,7 @@ import "time"
 
 type Application struct {
 	Status        string                   `json:"status"`
+	Filename      string                   `json:"filename"`
 	Configuration ApplicationConfiguration `json:"configuration"`
 	Folder        string                   `json:"folder"`
 	BaseFolder    string                   `json:"baseFolder"`

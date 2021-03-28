@@ -1,6 +1,10 @@
 package models
 
-import "github.com/wufe/polo/pkg/models/output"
+import (
+	"path"
+
+	"github.com/wufe/polo/pkg/models/output"
+)
 
 func mapApplication(model *Application) *output.Application {
 	if model == nil {
@@ -11,6 +15,7 @@ func mapApplication(model *Application) *output.Application {
 	defer model.RUnlock()
 	return &output.Application{
 		Status:        string(model.Status),
+		Filename:      path.Base(model.Filename),
 		Configuration: mapApplicationConfiguration(conf),
 		Folder:        model.Folder,
 		BaseFolder:    model.BaseFolder,
