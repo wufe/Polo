@@ -1,6 +1,9 @@
 @import "~/client/styles/index";
 
-.checkout-build-confirmation-modal {
+.application-session-deletion-modal {
+    > .__header {
+        @apply mb-6;
+    }
     .__actions-container {
         @apply mt-5 flex justify-center;
 

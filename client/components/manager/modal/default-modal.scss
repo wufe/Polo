@@ -3,5 +3,5 @@
 .default-modal {
     @apply bg-nord6 px-6 py-5 lg:px-8 lg:py-6 shadow-lg h-full max-h-full;
     @apply flex flex-col min-h-0 relative;
-    @apply lg:min-w-80 lg:rounded-md lg:h-auto;
+    @apply lg:min-w-80 md:rounded-md lg:h-auto;
 }

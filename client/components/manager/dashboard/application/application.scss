@@ -1,8 +1,12 @@
-@import "../../../../styles/index.scss";
+@import "~/client/styles/index.scss";
 
-.application__component {
-    border: 1px solid #D1D1D1;
-    border-radius: 5px;
-    padding: 20px;
-    margin-top: 15px;
+.application {
+    .__input-container {
+        > input {
+            @apply flex-grow px-2 lg:px-3 py-1 mr-3 text-sm border rounded-sm dark:bg-gray-300 dark:text-gray-700 dark:placeholder-gray-500 bg-transparent focus:bg-nord6;
+        }
+        .__button {
+            @include button();
+        }
+    }
 }

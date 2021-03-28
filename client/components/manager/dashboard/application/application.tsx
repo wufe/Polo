@@ -41,7 +41,8 @@ export const Application = observer((props: TProps) => {
     return <div className={`
         px-0
         mx-auto
-        font-quicksand`}>
+        font-quicksand
+        application`}>
         <div>
             <h3 className="text-xl lg:text-2xl leading-5 font-bold overflow-hidden overflow-ellipsis whitespace-nowrap" title={props.application.configuration.name}>{props.application.configuration.name}</h3>
             <span className="text-gray-400 text-sm">test-server.yml</span>
@@ -76,7 +77,10 @@ export const Application = observer((props: TProps) => {
         </div>}
 
         {props.application.branchesMap.size > 0 && <div className="py-4">
-            <ApplicationCheckouts branches={props.application.branchesMap} onSessionCreationSubmission={submitSessionCreation} />
+            <ApplicationCheckouts
+                branches={props.application.branchesMap}
+                tags={props.application.tagsMap}
+                onSessionCreationSubmission={submitSessionCreation} />
         </div>}
         
         <div className="mt-7 mb-0 flex justify-center">
@@ -87,15 +91,24 @@ export const Application = observer((props: TProps) => {
             <span className="text-sm text-gray-500 opacity-80 mb-2">
                 Or write down the commit you want to build.
             </span>
-            <div className="flex">
+            <div className="flex items-center __input-container">
                 <input
-                    className="flex-grow px-1 lg:px-3 py-1 mr-3 text-sm border rounded-sm dark:bg-gray-300 dark:text-gray-700 dark:placeholder-gray-500"
+                    className=""
                     type="text"
-                    placeholder="Checkout a commit, a branch or a tag.."
+                    placeholder="Commit, branch or tag"
                     value={newSessionCheckout}
                     onChange={e => onCheckoutChange(e.target.value)}
                     onKeyUp={e => e.key === 'Enter' && submitSessionCreation(newSessionCheckout)} />
-                <button className="px-5 py-1 text-sm border rounded-sm hover:text-gray-50 dark:border-gray-500 hover:bg-blue-400 hover:border-blue-600" onClick={e => submitSessionCreation(newSessionCheckout)}>Create</button>
+                <div className="__button --success --small" onClick={e => submitSessionCreation(newSessionCheckout)}>
+                    <span>Create</span>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                </div>
             </div>
         </div>
     </div>;

@@ -4,10 +4,13 @@ import React from 'react';
 import './application-session-modal.scss';
 
 type TProps = {
-    name: string;
-    session: ISession;
-    onCommitMessageSelect: () => void;
-    onEnterSessionSelect: () => void;
+    name                   : string;
+    session                : ISession;
+    onCommitMessageSelect  : () => void;
+    onEnterSessionSelect   : () => void;
+    onSessionDeletionSelect: () => void;
+    onCopyPermalinkSelect  : () => void;
+    onShowLogsSelect       : () => void;
 }
 export const ApplicationSessionModal = (props: TProps) => {
     return <DefaultModal name={props.name}>
@@ -30,7 +33,7 @@ export const ApplicationSessionModal = (props: TProps) => {
                 <div className="flex justify-center my-2">
                     <div className="border-t border-gray-500 w-full opacity-40" style={{height: 1}}></div>
                 </div>
-                <div className="__item">
+                <div className="__item" onClick={props.onCopyPermalinkSelect}>
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
@@ -50,7 +53,7 @@ export const ApplicationSessionModal = (props: TProps) => {
                     </svg>
                     <span>View commit message</span>
                 </div>
-                <div className="__item">
+                <div className="__item" onClick={props.onShowLogsSelect}>
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
@@ -60,7 +63,7 @@ export const ApplicationSessionModal = (props: TProps) => {
                     </svg>
                     <span>View build logs</span>
                 </div>
-                <div className="__item">
+                <div className="__item --not-implemented">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
@@ -68,9 +71,9 @@ export const ApplicationSessionModal = (props: TProps) => {
                         stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                     </svg>
-                    <span>Andanced commands</span>
+                    <span>Advanced commands</span>
                 </div>
-                <div className="__item">
+                <div className="__item --not-implemented">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
@@ -80,10 +83,10 @@ export const ApplicationSessionModal = (props: TProps) => {
                     </svg>
                     <span>Custom commands</span>
                 </div>
-                <div className="flex justify-center my-2">
+                <div className="flex justify-center my-2 hidden">
                     <div className="border-t border-gray-500 w-full opacity-40" style={{height: 1}}></div>
                 </div>
-                <div className="__item">
+                <div className="__item --not-implemented">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
@@ -96,7 +99,7 @@ export const ApplicationSessionModal = (props: TProps) => {
                 <div className="flex justify-center my-2">
                     <div className="border-t border-gray-500 w-full opacity-40" style={{height: 1}}></div>
                 </div>
-                <div className="__item">
+                <div className="__item" onClick={() => props.onSessionDeletionSelect()}>
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"

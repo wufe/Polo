@@ -26,6 +26,11 @@
         @apply hover:bg-nord4-alpha dark:hover:bg-nord6-alpha;
     }
 
+    &.--small {
+        @apply text-xs;
+        height: auto;
+    }
+
     >svg {
         @apply w-4 h-4;
     }
@@ -63,8 +68,6 @@
         }
         
     }
-
-    
 
     .__button {
         @include button();

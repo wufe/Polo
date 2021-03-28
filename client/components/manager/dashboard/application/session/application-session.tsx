@@ -10,32 +10,47 @@ dayjs.extend(duration);
 import './application-session.scss';
 import { observer } from 'mobx-react-lite';
 import { useModal } from '@/components/manager/modal/modal-hooks';
-import { ApplicationSessionCommitModal } from './modal/application-session-commit-modal';
+import { CommitModal } from '../../../shared/commit-modal';
 import { ApplicationSessionModal } from './modal/application-session-modal';
+import { ApplicationSessionDeletionModal } from './modal/application-session-deletion-modal';
+import { useClipboard } from '@/components/shared/hooks/use-clipboard';
+import { useHistory } from 'react-router-dom';
 
-export const noExpirationAgeValue = -1;
+export const validAgeValue = 1;
 
 export const ApplicationSession = observer((props: { session: ISession }) => {
 
     const { show, hide } = useModal();
+    const copy = useClipboard();
+    const history = useHistory();
     const optionsModalName = `session-${props.session.uuid}`;
     const commitMessageModalName = `${optionsModalName}-commit`;
+    const deleteSessionModalName = `${optionsModalName}-session-deletion`;
 
-    const attachToSession = async (session: ISession) => {
-        const track = await session.track();
+    const attachToSession = async () => {
+        const track = await props.session.track();
         if (track.result === APIRequestResult.SUCCEEDED) {
             location.href = '/';
         }
     }
     const killSession = async (session: ISession) => {
-        if (confirm(`You are going to delete the session. Are you sure?`)) {
-            await session.kill();
-        }
+        hide();
+        await session.kill();
+    }
+
+    const copyPermalink = () => {
+        copy(`${location.origin}/s/${props.session.checkout}`);
+        hide();
+    }
+
+    const showLogs = () => {
+        hide();
+        history.push(`/_polo_/session/${props.session.uuid}/logs`);
     }
 
     return <div
         className="application-session">
-        <div className="__content" onClick={() => attachToSession(props.session)}>
+        <div className="__content" onClick={attachToSession}>
             <div className="w-6 flex mr-2">
                 {props.session.status === SessionStatus.STARTED && <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -71,7 +86,7 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
                         </svg>
                         <span className="whitespace-nowrap">{dayjs(props.session.createdAt).fromNow()}</span>
                     </span>
-                    {props.session.age > noExpirationAgeValue && <span className="__subtitle-item">
+                    {props.session.age >= validAgeValue && <span className="__subtitle-item">
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             fill="none"
@@ -90,7 +105,7 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
                             <span className="hidden lg:inline-block pr-1">Expires in </span><span>{props.session.age}s</span>
                         </span>} */}
         <span className="text-center whitespace-nowrap flex flex-nowrap items-start">
-            <span className="__button --success --hide-on-mobile" onClick={() => attachToSession(props.session)}>
+            <span className="__button --success --hide-on-mobile" onClick={attachToSession}>
                 <span>Enter</span>
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -112,8 +127,21 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
             session={props.session}
             name={optionsModalName}
             onCommitMessageSelect={() => show(commitMessageModalName)}
-            onEnterSessionSelect={() => attachToSession(props.session)} />
-        <ApplicationSessionCommitModal session={props.session} name={commitMessageModalName} />
+            onEnterSessionSelect={attachToSession}
+            onSessionDeletionSelect={() => show(deleteSessionModalName)}
+            onCopyPermalinkSelect={() => copyPermalink()}
+            onShowLogsSelect={showLogs} />
+        <CommitModal
+            name={commitMessageModalName}
+            title={props.session.checkout}
+            commitAuthorEmail={props.session.commitAuthorEmail}
+            commitAuthorName={props.session.commitAuthorName}
+            commitDate={props.session.commitDate}
+            commitMessage={props.session.commitMessage} />
+        <ApplicationSessionDeletionModal
+            name={deleteSessionModalName}
+            session={props.session}
+            onApplicationDeletionSelected={() => killSession(props.session)} />
     </div>
 });
 

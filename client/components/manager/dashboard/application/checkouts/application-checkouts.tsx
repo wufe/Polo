@@ -6,7 +6,8 @@ import dayjs from 'dayjs';
 import { ApplicationCheckout } from '../checkout/application-checkout';
 
 type TProps = {
-    branches: IApplication['branchesMap'];
+    branches                   : IApplication['branchesMap'];
+    tags                       : IApplication['tagsMap'];
     onSessionCreationSubmission: (checkout: string) => void;
 }
 
@@ -19,13 +20,17 @@ export const ApplicationCheckouts = observer((props: TProps) => {
 
     const toggleBranch = (name: string) => setOpenBranches(b => ({...b, [name]: !b[name]}));
 
+    const checkoutsToShow = selectBranches ?
+        sortBranches(Array.from(props.branches.values())) :
+        Array.from(props.tags.values());
+
     return <>
         <h4 className="my-1 text-lg">New session</h4>
         <span className="text-sm text-gray-500 opacity-80">
             Build a new session by choosing a build point.
         </span>
         <div className="flex justify-center mt-4 mb-3">
-            <div className="border border-gray-400 dark:border-gray-600 rounded-md inline-flex flex-nowrap items-stretch text-xs">
+            <div className="border border-gray-400 dark:border-gray-600 rounded-md overflow-hidden inline-flex flex-nowrap items-stretch text-xs">
                 <div
                     onClick={() => setSelectBranches(true)}
                     className={`flex flex-nowrap items-center px-3 py-2 cursor-pointer hover:bg-nord4 dark:hover:bg-nord10
@@ -58,11 +63,12 @@ export const ApplicationCheckouts = observer((props: TProps) => {
         </div>
 
         <div className="divide-y dark:divide-gray-700">
-            {sortBranches(Array.from(props.branches.values())).map((branch, key) =>
+            {checkoutsToShow.map((checkout, key) =>
                 <ApplicationCheckout
                     key={key}
+                    type={selectBranches ? 'branch' : 'tag'}
                     onSessionCreationSubmission={props.onSessionCreationSubmission}
-                    {...branch} />
+                    {...checkout} />
                 // <div
                 //     className="flex flex-col" key={key}>
                 //     <div className="flex items-end lg:items-center pt-1 pb-2 px-2 lg:px-6 cursor-pointer lg:dark:hover:bg-nord-1" onClick={() => toggleBranch(branch.name)}>
