@@ -1,11 +1,22 @@
 import { store } from '@/state/models';
 import { IModal } from '@/state/models/modal-model';
 import { observer } from 'mobx-react-lite';
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useModal } from './modal-hooks';
 import './modal.scss';
 
 export const ModalContainer = observer((props: React.PropsWithChildren<{}>) => {
+
+    const { hide } = useModal();
+
+    useLayoutEffect(() => {
+        const listener = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') hide();
+        };
+        document.addEventListener('keydown', listener);
+        return () => document.removeEventListener('keydown', listener);
+    }, []);
 
     const disposeModal = () =>
         store.app.modal.setVisible(false);
