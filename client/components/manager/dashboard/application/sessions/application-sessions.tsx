@@ -13,8 +13,10 @@ export const ApplicationSessions = observer((props: TProps) => {
         .filter(session => !session.replacesSession);
 
     return <div className="flex flex-col items-stretch">
-        {/* <h4 className="my-1 text-xs text-gray-500 uppercase">Sessions:</h4> */}
-        <input type="text" name="" id="" placeholder="Filter sessions" className="bg-transparent border border-gray-200 dark:border-gray-500 text-sm py-2 px-3 rounded-md mb-1" />
+        <input
+            type="text"
+            placeholder="Filter sessions"
+            className="bg-transparent border border-gray-200 dark:border-gray-500 text-sm py-2 px-3 rounded-md mb-1 outline-none" />
         {visibleSessions.length && <span className="text-xs lg:text-sm text-gray-500 pl-2">{visibleSessions.length} sessions</span>}
         <div className="mt-3">
             {visibleSessions
