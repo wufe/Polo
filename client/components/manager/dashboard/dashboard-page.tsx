@@ -3,6 +3,8 @@ import { observer } from 'mobx-react-lite';
 import { IApp, IApplication } from '@/state/models';
 import { Application } from './application/application';
 import { values } from 'mobx';
+import { Link } from 'react-router-dom';
+import { Modal, ModalPortal } from '../modal/modal-portal';
 
 type TProps = {
     app: IApp;
@@ -34,16 +36,26 @@ export const Dashboard = observer((props: TProps) => {
     }
 
     return <div className="font-quicksand w-full py-8 pb-12">
-        <div className="w-10/12 mx-auto max-w-5xl">
-            <h1 className="text-4xl mb-10 font-light text-nord1 dark:text-nord5">Applications</h1>
-            {(values(props.app.applications) as any as IApplication[]).map((application, index) =>
-                <Application
-                    isOpen={!!openApplications[application.configuration.name] || !openToggleEnabled}
-                    onToggle={toggleApplication(application.configuration.name)}
-                    toggleEnabled={openToggleEnabled}
-                    key={index}
-                    sessions={props.app.sessionsByApplicationName[application.configuration.name]}
-                    application={application} />)}
+        <div className="w-full mx-auto lg:max-w-1500 px-5">
+            <div className="flex">
+                <div className="py-0 pr-5 hidden lg:block flex-shrink-0 w-3/12">
+                <div className="mb-3 text-lg lg:text-xl font-medium text-nord1 dark:text-nord5">Applications</div>
+                    {(values(props.app.applications) as any as IApplication[]).map((application, index) =>
+                        <div
+                            key={index}
+                            className="cursor-pointer bg-nord4 dark:bg-nord0 px-5 py-3 rounded-md text-sm lg:text-base">{application.configuration.name}</div>)}
+                </div>
+                <div className="flex-grow min-w-0">
+                    {(values(props.app.applications) as any as IApplication[]).map((application, index) =>
+                        <Application
+                            isOpen={!!openApplications[application.configuration.name] || !openToggleEnabled}
+                            onToggle={toggleApplication(application.configuration.name)}
+                            toggleEnabled={openToggleEnabled}
+                            key={index}
+                            sessions={props.app.sessionsByApplicationName[application.configuration.name]}
+                            application={application} />)}
+                </div>
+            </div>
         </div>
         
     </div>;

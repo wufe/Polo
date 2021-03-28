@@ -17,6 +17,7 @@ func MapSession(model *Session) *output.Session {
 		Target:            model.Target,
 		Port:              model.Port,
 		ApplicationName:   model.ApplicationName,
+		CreatedAt:         model.createdAt,
 		CommitID:          model.CommitID,
 		CommitMessage:     model.Commit.Message,
 		CommitAuthorName:  model.Commit.Author.Name,

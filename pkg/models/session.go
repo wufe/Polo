@@ -90,6 +90,7 @@ type Session struct {
 	Context         *contextStore `json:"-"`
 	logs            []Log
 	shortUUID       string
+	createdAt       time.Time
 	inactiveAt      time.Time
 	maxAge          int
 	startupRetries  int
@@ -133,6 +134,7 @@ func NewSession(
 	if session.Metrics == nil {
 		session.Metrics = []Metric{}
 	}
+	session.createdAt = time.Now()
 	session.killReason = KillReasonNone
 	session.Context = NewContextStore()
 	if session.Application != nil {

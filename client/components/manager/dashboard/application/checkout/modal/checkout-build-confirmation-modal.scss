@@ -1,0 +1,11 @@
+@import "~/client/styles/index";
+
+.checkout-build-confirmation-modal {
+    .__action-container {
+        @apply mt-5 flex justify-center;
+
+        .__button {
+            @include button();
+        }
+    }
+}

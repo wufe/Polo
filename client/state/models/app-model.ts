@@ -5,11 +5,13 @@ import { values } from "mobx";
 import { types, flow, cast, Instance, getType, applySnapshot, applyPatch } from "mobx-state-tree";
 import { ApplicationModel, IApplication } from "./application-model";
 import { SessionModel, ISession, castAPISessionToSessionModel } from "./session-model";
+import { initialModalState, ModalModel } from "./modal-model";
 
 export const AppModel = types.model({
     session     : types.maybeNull(SessionModel),
     sessions    : types.map(SessionModel),
-    applications: types.map(ApplicationModel)
+    applications: types.map(ApplicationModel),
+    modal       : ModalModel,
 })
 .actions(self => {
     const retrieveApplications = flow(function* retrieveApplications() {
@@ -64,5 +66,5 @@ export const AppModel = types.model({
 export interface IApp extends Instance<typeof AppModel> { }
 
 export const initialAppState = AppModel.create({
-    
+    modal: initialModalState
 });
