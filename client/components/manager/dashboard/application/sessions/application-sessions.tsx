@@ -26,7 +26,7 @@ export const ApplicationSessions = observer((props: TProps) => {
             placeholder="Filter sessions"
             onChange={e => setSessionsFilter(e.target.value)}
             value={sessionsFilter}
-            className="bg-transparent border border-gray-200 dark:border-gray-500 text-sm py-2 px-3 rounded-md mb-1 outline-none" />
+            className="bg-transparent border border-gray-300 dark:border-gray-500 text-sm py-2 px-3 rounded-md mb-1 outline-none" />
         {visibleSessions.length > 0 && <span className="text-xs lg:text-sm text-gray-500 pl-2">{visibleSessions.length} sessions</span>}
         <div className="mt-3">
             {visibleSessions
