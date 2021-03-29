@@ -6,7 +6,7 @@
         @apply mb-6;
     }
     > .__list {
-        @apply flex flex-col items-stretch flex-1 overflow-y-scroll;
+        @apply flex flex-col items-stretch flex-1 overflow-y-autox;
         > .__item {
             @apply text-base lg:text-sm items-center relative py-2 cursor-pointer flex;
             
