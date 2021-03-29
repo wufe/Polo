@@ -1,0 +1,17 @@
+@import "~/client/styles/index";
+
+@keyframes fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.modal {
+    @apply fixed left-0 top-0 right-0 bottom-0;
+    @apply flex justify-center items-center flex-col;
+    animation: fadein .3s;
+
+    .__content {
+        @apply w-full h-full max-h-full min-h-0;
+        @apply md:w-auto md:h-auto;
+    }
+}

@@ -1,0 +1,83 @@
+@mixin button() {
+    @apply leading-none text-xs uppercase cursor-pointer mx-1 rounded-md py-2 px-3 flex-nowrap items-center;
+    @apply lg:text-sm;
+    height: 3em;
+    transition: background .3s ease-in-out;
+
+    &:not(.--hide-on-mobile) {
+        @apply inline-flex;
+    }
+    &.--hide-on-mobile {
+        @apply hidden sm:inline-flex;
+    }
+
+    &.--success {
+        @apply hover:bg-nord14-alpha;
+        &.--outlined {
+            @apply border border-nord14-alpha;
+        }
+    }
+
+    &.--danger {
+        @apply hover:bg-nord11-alpha;
+    }
+
+    &.--ghost {
+        @apply hover:bg-nord4-alpha dark:hover:bg-nord6-alpha;
+    }
+
+    &.--small {
+        @apply text-xs;
+        height: auto;
+    }
+
+    >svg {
+        @apply w-4 h-4;
+    }
+
+    >*:not(:last-child) {
+        @apply mr-2;
+    }
+}
+
+@mixin items-list() {
+
+    @apply flex flex-row py-1;
+
+    .__content {
+        @apply flex flex-1 flex-nowrap items-start cursor-pointer min-w-0;
+
+        .__title-container {
+            @apply flex-grow min-w-0 overflow-hidden;
+
+            .__title {
+                @apply inline-block text-sm mr-3 flex-grow flex-1 whitespace-nowrap overflow-hidden overflow-ellipsis font-semibold lg:text-base;
+            }
+        }
+
+        .__subtitle-container {
+            @apply flex flex-nowrap text-xs text-gray-500 items-center;
+
+            .__subtitle-item {
+                @apply flex flex-nowrap items-center;
+
+                &:not(:last-child) {
+                    @apply mr-5;
+                }
+            }
+        }
+        
+    }
+
+    .__button {
+        @include button();
+    }
+
+    .__content {
+        &:hover {
+            .__title {
+                @apply text-nord10 underline;
+            }
+        }
+    }
+}

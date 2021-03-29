@@ -5,6 +5,7 @@ import { values } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import React, { useEffect, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import { CommitMessage } from '../shared/commit-message';
 import { SessionLogs } from './session-logs';
 import { useSessionRetrieval } from './session-retrieval-hook';
 
@@ -30,13 +31,7 @@ export const Session = observer((props: TProps) => {
         <div className="text-lg text-nord1 dark:text-nord5 mb-4 z-10 border-l pl-3 border-gray-500">
             <span>{props.session.checkout}</span>
         </div>
-        <blockquote className="relative px-2 lg:px-4 py-3 italic text-gray-500 dark:text-gray-400 z-10 bg-nord6 shadow-md dark:bg-nord-5 leading-loose">
-            <p className="text-sm pb-1">{props.session.commitMessage}</p>
-            <cite className="flex items-center">
-                <span className="mb-1 text-sm font-bold italic flex-1">~ {props.session.commitAuthorName}</span>
-                <span className="mb-1 text-xs font-light italic">({props.session.commitAuthorEmail} - {dayjs(props.session.commitDate).format('DD MMM HH:mm')})</span>
-            </cite>
-        </blockquote>
+        <CommitMessage {...props.session} />
         <SessionLogs
             logs={values(props.session.logs) as any as ISessionLog[]}
             onLogsProportionChanged={setOverlayProportions} />
