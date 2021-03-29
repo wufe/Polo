@@ -14,6 +14,7 @@ type Session struct {
 	CommitAuthorName  string               `json:"commitAuthorName"`
 	CommitAuthorEmail string               `json:"commitAuthorEmail"`
 	CommitDate        time.Time            `json:"commitDate"`
+	CreatedAt         time.Time            `json:"createdAt"`
 	Checkout          string               `json:"checkout"`
 	Folder            string               `json:"folder"`
 	Variables         map[string]string    `json:"variables"`

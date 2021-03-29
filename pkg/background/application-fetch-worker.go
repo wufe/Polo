@@ -56,7 +56,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 	objectsToHashMap := make(map[string]string)
 	hashToObjectsMap := make(map[string]*models.RemoteObject)
 	appBranches := make(map[string]*models.Branch)
-	appTags := []string{}
+	appTags := make(map[string]*models.Tag)
 	appCommits := []string{}
 	appCommitMap := make(map[string]*object.Commit)
 
@@ -120,11 +120,14 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 		}
 
 		appBranches[branchName] = &models.Branch{
-			Name:    branchName,
-			Hash:    refHash,
-			Author:  commit.Author.Email,
-			Date:    commit.Author.When,
-			Message: commit.Message,
+			CheckoutObject: models.CheckoutObject{
+				Name:        branchName,
+				Hash:        refHash,
+				Author:      commit.Author.Name,
+				AuthorEmail: commit.Author.Email,
+				Date:        commit.Author.When,
+				Message:     commit.Message,
+			},
 		}
 
 		return nil
@@ -150,7 +153,22 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 		tagName := refName[len(tagPrefix):]
 		registerHash(tagName, refHash)
 
-		appTags = appendWithoutDup(appTags, tagName)
+		commit, err := repo.CommitObject(ref.Hash())
+		if err != nil {
+			return err
+		}
+
+		// appTags = appendWithoutDup(appTags, tagName)
+		appTags[tagName] = &models.Tag{
+			CheckoutObject: models.CheckoutObject{
+				Name:        tagName,
+				Hash:        refHash,
+				Author:      commit.Author.Name,
+				AuthorEmail: commit.Author.Email,
+				Date:        commit.Author.When,
+				Message:     commit.Message,
+			},
+		}
 		registerHash(refName, refHash)
 		checkObjectExists(refHash)
 
@@ -185,7 +203,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 		a.ObjectsToHashMap = objectsToHashMap
 		a.HashToObjectsMap = hashToObjectsMap
 		a.BranchesMap = appBranches
-		a.Tags = appTags
+		a.TagsMap = appTags
 		a.Commits = appCommits
 		a.CommitMap = appCommitMap
 	})

@@ -50,6 +50,7 @@ export const SessionModel = types.model({
     port             : types.number,
     applicationName  : types.string,
     status           : types.enumeration<SessionStatus>(Object.values(SessionStatus)),
+    createdAt        : types.string,
     commitID         : types.string,
     commitMessage    : types.string,
     commitAuthorName : types.string,

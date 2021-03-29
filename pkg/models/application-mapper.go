@@ -1,6 +1,10 @@
 package models
 
-import "github.com/wufe/polo/pkg/models/output"
+import (
+	"path"
+
+	"github.com/wufe/polo/pkg/models/output"
+)
 
 func mapApplication(model *Application) *output.Application {
 	if model == nil {
@@ -11,10 +15,12 @@ func mapApplication(model *Application) *output.Application {
 	defer model.RUnlock()
 	return &output.Application{
 		Status:        string(model.Status),
+		Filename:      path.Base(model.Filename),
 		Configuration: mapApplicationConfiguration(conf),
 		Folder:        model.Folder,
 		BaseFolder:    model.BaseFolder,
 		BranchesMap:   mapBranches(model.BranchesMap),
+		TagsMap:       mapTags(model.TagsMap),
 	}
 }
 
@@ -174,13 +180,20 @@ func mapPort(model PortConfiguration) output.PortConfiguration {
 	}
 }
 
+func MapCheckoutObject(model CheckoutObject) output.CheckoutObject {
+	return output.CheckoutObject{
+		Name:        model.Name,
+		Hash:        model.Hash,
+		Author:      model.Author,
+		AuthorEmail: model.AuthorEmail,
+		Date:        model.Date,
+		Message:     model.Message,
+	}
+}
+
 func MapBranch(model Branch) output.Branch {
 	return output.Branch{
-		Name:    model.Name,
-		Hash:    model.Hash,
-		Author:  model.Author,
-		Date:    model.Date,
-		Message: model.Message,
+		CheckoutObject: MapCheckoutObject(model.CheckoutObject),
 	}
 }
 
@@ -188,6 +201,20 @@ func mapBranches(model map[string]*Branch) map[string]output.Branch {
 	ret := make(map[string]output.Branch)
 	for k, v := range model {
 		ret[k] = MapBranch(*v)
+	}
+	return ret
+}
+
+func MapTag(model Tag) output.Tag {
+	return output.Tag{
+		CheckoutObject: MapCheckoutObject(model.CheckoutObject),
+	}
+}
+
+func mapTags(model map[string]*Tag) map[string]output.Tag {
+	ret := make(map[string]output.Tag)
+	for k, v := range model {
+		ret[k] = MapTag(*v)
 	}
 	return ret
 }

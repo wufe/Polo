@@ -1,7 +1,7 @@
 global:
   port: 7777
 applications:
-  - name: test-server
+  - name: Test-server
     remote: "https://github.com/wufe/polo-testserver"
     is_default: true
     commands:
@@ -10,6 +10,7 @@ applications:
         - command: docker run -p {{port}}:3000 -d polo-testserver:{{commit}}
           output_variable: container_id
         - command: docker image prune -f
+          continue_on_error: true
       stop:
         - command: "docker kill {{container_id}}"
           continue_on_error: true

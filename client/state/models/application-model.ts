@@ -3,13 +3,22 @@ import { createNewSessionAPI } from "@/api/applications";
 import { flow, Instance, SnapshotIn, SnapshotOut, types } from "mobx-state-tree";
 import { ISession } from "./session-model";
 
+const checkoutObject = {
+    name       : types.string,
+    hash       : types.string,
+    author     : types.string,
+    authorEmail: types.string,
+    date       : types.string,
+    message    : types.string,
+};
+
 export const ApplicationBranchModel = types.model({
-    name   : types.string,
-    hash   : types.string,
-    author : types.string,
-    date   : types.string,
-    message: types.string,
-})
+    ...checkoutObject
+});
+
+export const ApplicationTagModel = types.model({
+    ...checkoutObject
+});
 
 export interface IApplicationBranchModel extends Instance<typeof ApplicationBranchModel> {}
 
@@ -22,9 +31,11 @@ export const ApplicationConfigurationModel = types.model({
 })
 
 export const ApplicationModel = types.model({
+    filename     : types.string,
     configuration: ApplicationConfigurationModel,
     folder       : types.string,
-    branchesMap  : types.map(ApplicationBranchModel)
+    branchesMap  : types.map(ApplicationBranchModel),
+    tagsMap      : types.map(ApplicationTagModel),
 })
 .actions(self => {
 

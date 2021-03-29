@@ -6,7 +6,7 @@ import { HelperStatus, HelperStatusContext } from '../contexts';
 import { expiredAgeValue, noExpirationAgeValue } from '../status/helper-status-provider';
 import { SessionAge } from './helper-session-age';
 import './helper-session.scss';
-import { useClipboard } from './use-clipboard';
+import { useClipboard } from '../../shared/hooks/use-clipboard';
 
 type TProps = {
     session: IAPISession;

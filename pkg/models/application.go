@@ -26,7 +26,7 @@ type Application struct {
 	ObjectsToHashMap        map[string]string         `json:"-"`
 	HashToObjectsMap        map[string]*RemoteObject  `json:"-"`
 	BranchesMap             map[string]*Branch        `json:"branchesMap"`
-	Tags                    []string                  `json:"-"`
+	TagsMap                 map[string]*Tag           `json:"tagsMap"`
 	Commits                 []string                  `json:"-"`
 	CommitMap               map[string]*object.Commit `json:"-"`
 	CompiledForwardPatterns []CompiledForwardPattern  `json:"-"`
@@ -54,12 +54,21 @@ type RemoteObject struct {
 	Tags     []string
 }
 
+type CheckoutObject struct {
+	Name        string `json:"name"`
+	Hash        string `json:"hash"`
+	Author      string `json:"author"`
+	AuthorEmail string
+	Date        time.Time `json:"date"`
+	Message     string    `json:"message"`
+}
+
+type Tag struct {
+	CheckoutObject
+}
+
 type Branch struct {
-	Name    string    `json:"name"`
-	Hash    string    `json:"hash"`
-	Author  string    `json:"author"`
-	Date    time.Time `json:"date"`
-	Message string    `json:"message"`
+	CheckoutObject
 }
 
 func NewApplication(configuration *ApplicationConfiguration, filename string) (*Application, error) {
@@ -80,7 +89,7 @@ func NewApplication(configuration *ApplicationConfiguration, filename string) (*
 	application.ObjectsToHashMap = make(map[string]string)
 	application.HashToObjectsMap = make(map[string]*RemoteObject)
 	application.BranchesMap = make(map[string]*Branch)
-	application.Tags = []string{}
+	application.TagsMap = make(map[string]*Tag)
 	application.Commits = []string{}
 	application.CommitMap = make(map[string]*object.Commit)
 	application.SetConfiguration(*configuration)
