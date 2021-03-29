@@ -2,14 +2,16 @@ import React from 'react';
 import dayjs from 'dayjs';
 
 type TProps = {
-    commitMessage: string;
-    commitAuthorName: string;
+    commitMessage    : string;
+    commitAuthorName : string;
     commitAuthorEmail: string;
-    commitDate: string;
+    commitDate       : string;
+    maxHeight?       : boolean;
 };
 export const CommitMessage = (props: TProps) => {
+
     return <blockquote className="relative px-2 lg:px-4 py-3 italic text-gray-500 dark:text-gray-400 z-10 bg-nord6 shadow-md dark:bg-nord-5 leading-loose">
-        <p className="text-sm pb-1 flex flex-col min-h-0 max-h-32 overflow-y-auto">
+        <p className={`text-sm pb-1 flex flex-col min-h-0 ${!!props.maxHeight ? 'max-h-32' : ''} overflow-y-auto`}>
             {props.commitMessage
                 .split('\n')
                 .map((line, key) =>
