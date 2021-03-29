@@ -11,9 +11,6 @@ import { ApplicationSessions } from './sessions/application-sessions';
 import './application.scss';
 
 type TProps = {
-    isOpen       : boolean;
-    onToggle     : () => void;
-    toggleEnabled: boolean;
     sessions     : ISession[] | null;
     application  : IApplication;
 }
