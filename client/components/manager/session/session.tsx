@@ -31,7 +31,7 @@ export const Session = observer((props: TProps) => {
         <div className="text-lg text-nord1 dark:text-nord5 mb-4 z-10 border-l pl-3 border-gray-500">
             <span>{props.session.checkout}</span>
         </div>
-        <CommitMessage {...props.session} />
+        <CommitMessage {...props.session} maxHeight />
         <SessionLogs
             logs={values(props.session.logs) as any as ISessionLog[]}
             onLogsProportionChanged={setOverlayProportions} />
