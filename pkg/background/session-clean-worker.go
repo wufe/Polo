@@ -32,6 +32,9 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 			killReason := session.GetKillReason()
 			session.LogInfo("Cleaning up session")
 			session.SetStatus(sessionToClean.Status)
+			// Even though this session is going to be deleted,
+			// we are going to persist the status change
+			w.sessionStorage.Update(sessionToClean.Session)
 			w.sessionStorage.Delete(session)
 			session.LogInfo("Session cleaned up")
 			conf := session.GetConfiguration()
