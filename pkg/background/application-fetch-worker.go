@@ -253,9 +253,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 				}
 			}
 
-			if lastSession == nil ||
-				lastSession.GetKillReason() != models.KillReasonStopped {
-
+			if lastSession == nil || !lastSession.GetKillReason().PreventsRebuild() {
 				log.Infof("[APP:%s][WATCH] Auto-start on %s", appName, ref)
 				buildSession(w.mediator, nil)
 			}

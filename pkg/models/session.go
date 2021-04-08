@@ -68,6 +68,13 @@ func (status SessionStatus) IsAlive() bool {
 // KillReason states the reason why a session has been killed
 type KillReason string
 
+// PreventsRebuild checks if the reason why this session has been killed
+// prevents another build with the same checkout to be built
+func (reason KillReason) PreventsRebuild() bool {
+	return reason == KillReasonStopped ||
+		reason == KillReasonBuildFailed
+}
+
 // Session is a process on which an application is available.
 // When a session is started it gets built starting from a branch,
 // and when all is ready the reverse proxy will start pointing to it.
@@ -141,6 +148,12 @@ func NewSession(
 		session.configuration = session.getMatchingConfiguration()
 	}
 	return session
+}
+
+func (session *Session) GetCreatedAt() time.Time {
+	session.RLock()
+	defer session.RUnlock()
+	return session.createdAt
 }
 
 // ToOutput converts this model into an output model
