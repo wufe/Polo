@@ -49,11 +49,16 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
         history.push(`/_polo_/session/${props.session.uuid}/logs`);
     }
 
+    const showLoadingIcon = props.session.status === SessionStatus.STARTING ||
+        props.session.beingReplaced;
+
+    const showStartedIcon = props.session.status === SessionStatus.STARTED && !showLoadingIcon;
+
     return <div
         className="application-session">
         <div className="__content" onClick={attachToSession}>
             <div className="w-6 flex mr-2">
-                {props.session.status === SessionStatus.STARTED && 
+                {showStartedIcon && 
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 20 20"
@@ -61,19 +66,8 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
                         className="w-6 h-6 mt-0.5">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>}
-                {(props.session.status === SessionStatus.STARTING ||
-                    props.session.beingReplaced) &&
-                    <img src={loading} className="w-4 mt-1 ml-1" />}
+                {showLoadingIcon && <img src={loading} className="w-4 mt-1 ml-1" />}
             </div>
-            {/* <span className="w-5 text-center inline-block">
-                {
-                    (
-                        props.session.status === SessionStatus.STARTING ||
-                        props.session.beingReplaced
-                    ) &&
-                    <img src={loading} width={12} height={12} className="mr-1" />}
-            </span> */}
-            {/* <span className="text-xs uppercase font-bold" style={{ color: colorByStatus(props.session.status) }}>{props.session.status}</span> */}
             <div className="__title-container">
                 <span
                     className="__title">
