@@ -44,7 +44,9 @@ func (s *Session) LoadSessions(application *Application) {
 				if err != nil {
 					return err
 				}
-				sessions = append(sessions, models.NewSession(&session))
+				if session.Status.IsAlive() {
+					sessions = append(sessions, models.NewSession(&session))
+				}
 				return nil
 			})
 			if err != nil {
