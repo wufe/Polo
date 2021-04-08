@@ -16,9 +16,11 @@ applications:
           continue_on_error: true
     recycle:
       inactivity_timeout: 6000
+    startup:
+      retries: 5
     branches:
       - test: ^dev$
         watch: true
         main: true
       - test: feature/my-watched-feature
-        watch: true
+        watch: false

@@ -29,12 +29,11 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 		for {
 			sessionToClean := <-w.mediator.CleanSession.Chan
 			session := sessionToClean.Session
+			killReason := session.GetKillReason()
 			session.LogInfo("Cleaning up session")
 			session.SetStatus(sessionToClean.Status)
 			w.sessionStorage.Delete(session)
 			session.LogInfo("Session cleaned up")
-
-			killReason := session.GetKillReason()
 			conf := session.GetConfiguration()
 			appStartupRetries := conf.Startup.Retries
 			appCleanOnExit := *conf.CleanOnExit
