@@ -13,6 +13,7 @@ import (
 	"github.com/wufe/polo/pkg/http/routing"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/services"
+	"github.com/wufe/polo/pkg/utils"
 )
 
 type Handler struct {
@@ -20,11 +21,11 @@ type Handler struct {
 	Router *httprouter.Router
 }
 
-func NewHandler(isDev bool, static *services.StaticService, routing *routing.Handler, proxy *proxy.Handler, query *services.QueryService, request *services.RequestService) *Handler {
+func NewHandler(environment utils.Environment, static *services.StaticService, routing *routing.Handler, proxy *proxy.Handler, query *services.QueryService, request *services.RequestService) *Handler {
 	router := httprouter.New()
 
 	h := &Handler{
-		isDev:  isDev,
+		isDev:  environment.IsDev(),
 		Router: router,
 	}
 
@@ -41,7 +42,7 @@ func NewHandler(isDev bool, static *services.StaticService, routing *routing.Han
 	router.DELETE("/_polo_/api/session/:uuid/track", h.untrackSession())
 	router.GET("/_polo_/api/session/:uuid/logs/:last_log", h.getSessionLogsAndStatus(query))
 	router.GET("/_polo_/api/ping", h.ping())
-	if !isDev {
+	if !environment.IsDev() {
 		router.GET("/_polo_/public/*filepath", h.serveStatic(static))
 	}
 

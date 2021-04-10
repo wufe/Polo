@@ -5,17 +5,14 @@ import (
 
 	"github.com/dgraph-io/badger/v3"
 	log "github.com/sirupsen/logrus"
-	"github.com/wufe/polo/pkg/utils"
 )
 
 type Database struct {
 	DB *badger.DB
 }
 
-func NewDB() *Database {
-	exeFolder := utils.GetExecutableFolder()
-
-	options := badger.DefaultOptions(filepath.Join(exeFolder, "./db"))
+func NewDB(folder string) *Database {
+	options := badger.DefaultOptions(filepath.Join(folder, "./db"))
 	options.Logger = nil
 	db, err := badger.Open(options)
 	if err != nil {

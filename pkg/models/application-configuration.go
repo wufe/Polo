@@ -26,8 +26,8 @@ type ApplicationConfiguration struct {
 	CleanOnExit           *bool    `yaml:"clean_on_exit" json:"cleanOnExit" default:"true"`
 }
 
-func NewApplicationConfiguration(configuration *ApplicationConfiguration) (*ApplicationConfiguration, error) {
-	configuration.RWLocker = utils.GetMutex()
+func NewApplicationConfiguration(configuration *ApplicationConfiguration, environment utils.Environment) (*ApplicationConfiguration, error) {
+	configuration.RWLocker = utils.GetMutex(environment)
 	if configuration.Name == "" {
 		return nil, errors.New("application.name (required) not defined")
 	}

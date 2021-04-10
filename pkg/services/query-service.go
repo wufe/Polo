@@ -7,6 +7,7 @@ import (
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/models/output"
 	"github.com/wufe/polo/pkg/storage"
+	"github.com/wufe/polo/pkg/utils"
 )
 
 type QueryService struct {
@@ -15,9 +16,9 @@ type QueryService struct {
 	applicationStorage *storage.Application
 }
 
-func NewQueryService(isDev bool, storage *storage.Session, applicationStorage *storage.Application) *QueryService {
+func NewQueryService(environment utils.Environment, storage *storage.Session, applicationStorage *storage.Application) *QueryService {
 	s := &QueryService{
-		isDev:              isDev,
+		isDev:              environment.IsDev(),
 		sessionStorage:     storage,
 		applicationStorage: applicationStorage,
 	}

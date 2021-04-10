@@ -13,8 +13,8 @@ type RWLocker interface {
 	RUnlock()
 }
 
-func GetMutex() RWLocker {
-	if IsDev() && IsDebugRace() {
+func GetMutex(environment Environment) RWLocker {
+	if environment.IsDev() && environment.IsDebugRace() {
 		return &deadlock.RWMutex{}
 	} else {
 		return &sync.RWMutex{}

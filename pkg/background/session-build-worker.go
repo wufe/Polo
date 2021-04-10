@@ -27,6 +27,7 @@ type SessionBuildWorker struct {
 	applicationStorage *storage.Application
 	sessionStorage     *storage.Session
 	mediator           *Mediator
+	environment        utils.Environment
 }
 
 func NewSessionBuildWorker(
@@ -34,12 +35,14 @@ func NewSessionBuildWorker(
 	applicationStorage *storage.Application,
 	sessionStorage *storage.Session,
 	mediator *Mediator,
+	environment utils.Environment,
 ) *SessionBuildWorker {
 	worker := &SessionBuildWorker{
 		global:             globalConfiguration,
 		applicationStorage: applicationStorage,
 		sessionStorage:     sessionStorage,
 		mediator:           mediator,
+		environment:        environment,
 	}
 
 	worker.startAcceptingNewSessionRequests()
@@ -103,7 +106,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 
 	var session *models.Session
 	if recyclingPreviousSession {
-		session = models.NewSession(input.PreviousSession)
+		session = models.NewSession(input.PreviousSession, w.environment)
 		session.ResetVariables()
 		session.IncStartupRetriesCount()
 	} else {
@@ -118,7 +121,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 			Application: input.Application,
 			CommitID:    input.Checkout,
 			Checkout:    input.Checkout,
-		})
+		}, w.environment)
 	}
 
 	if isAReplacement {

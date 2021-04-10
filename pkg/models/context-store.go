@@ -16,9 +16,9 @@ type contextAndCancel struct {
 	Cancel  context.CancelFunc
 }
 
-func NewContextStore() *contextStore {
+func NewContextStore(environment utils.Environment) *contextStore {
 	return &contextStore{
-		RWLocker: utils.GetMutex(),
+		RWLocker: utils.GetMutex(environment),
 		contexts: make(map[string]*contextAndCancel),
 	}
 }

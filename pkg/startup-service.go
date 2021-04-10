@@ -12,10 +12,11 @@ import (
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/services"
 	"github.com/wufe/polo/pkg/storage"
+	"github.com/wufe/polo/pkg/utils"
 )
 
 type Startup struct {
-	isDev         bool
+	environment   utils.Environment
 	configuration *models.RootConfiguration
 	applications  []*models.Application
 	handler       *rest.Handler
@@ -26,7 +27,7 @@ type Startup struct {
 }
 
 func NewStartup(
-	isDev bool,
+	environment utils.Environment,
 	configuration *models.RootConfiguration,
 	applications []*models.Application,
 	handler *rest.Handler,
@@ -35,7 +36,7 @@ func NewStartup(
 	sesStorage *storage.Session,
 	mediator *background.Mediator) *Startup {
 	return &Startup{
-		isDev:         isDev,
+		environment:   environment,
 		configuration: configuration,
 		applications:  applications,
 		handler:       handler,
@@ -88,7 +89,7 @@ func (s *Startup) watchApplications(ctx context.Context) {
 					return
 				default:
 					time.Sleep(2 * time.Second)
-					rootConfig, err := storage.UnmarshalConfiguration(filename)
+					rootConfig, err := storage.UnmarshalConfiguration(filename, s.environment)
 					if err != nil {
 						continue
 					}
@@ -115,7 +116,7 @@ func (s *Startup) watchApplications(ctx context.Context) {
 }
 
 func (s *Startup) loadSessions() {
-	s.sesStorage.LoadSessions(s.appStorage)
+	s.sesStorage.LoadSessions(s.appStorage, s.environment)
 }
 
 func (s *Startup) startSessions() {

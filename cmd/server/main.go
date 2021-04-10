@@ -16,26 +16,24 @@ import (
 )
 
 func main() {
-
-	dev := utils.IsDev()
-	devServer := utils.DevServerURL()
-
+	environment := utils.DetectEnvironment()
 	// Configuration (.yml)
-	configuration, applications := storage.LoadConfigurations()
+	configuration, applications := storage.LoadConfigurations(environment)
 
 	// Instance
-	existingInstance, _ := storage.DetectInstance()
+	existingInstance, _ := storage.DetectInstance(environment)
 	if existingInstance == nil {
-		storage.NewInstance(fmt.Sprint(configuration.Global.Port)).Persist()
+		storage.NewInstance(fmt.Sprint(configuration.Global.Port)).Persist(environment)
 	} else {
 		log.Infof("Detected existing instance on host %s", existingInstance.Host)
 		return
 	}
 
 	// Storage
-	database := storage.NewDB()
-	appStorage := storage.NewApplication()
-	sesStorage := storage.NewSession(database)
+	folder := environment.GetExecutableFolder()
+	database := storage.NewDB(folder)
+	appStorage := storage.NewApplication(environment)
+	sesStorage := storage.NewSession(database, environment)
 
 	mediator := background.NewMediator(
 		queues.NewSessionBuild(),
@@ -49,7 +47,7 @@ func main() {
 	)
 
 	// Workers
-	background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator)
+	background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, environment)
 	background.NewSessionStartWorker(sesStorage, mediator)
 	background.NewSessionCleanWorker(sesStorage, mediator)
 	background.NewSessionFilesystemWorker(mediator)
@@ -59,16 +57,16 @@ func main() {
 	background.NewApplicationFetchWorker(sesStorage, mediator)
 
 	// Services
-	staticService := services.NewStaticService(dev, devServer)
-	queryService := services.NewQueryService(dev, sesStorage, appStorage)
-	requestService := services.NewRequestService(dev, sesStorage, appStorage, mediator)
+	staticService := services.NewStaticService(environment)
+	queryService := services.NewQueryService(environment, sesStorage, appStorage)
+	requestService := services.NewRequestService(environment, sesStorage, appStorage, mediator)
 
 	// HTTP
-	proxy := proxy.NewHandler(dev, devServer)
-	routing := routing.NewHandler(dev, proxy, sesStorage, appStorage, queryService, requestService, staticService)
-	rest := rest.NewHandler(dev, staticService, routing, proxy, queryService, requestService)
+	proxy := proxy.NewHandler(environment)
+	routing := routing.NewHandler(environment, proxy, sesStorage, appStorage, queryService, requestService, staticService)
+	rest := rest.NewHandler(environment, staticService, routing, proxy, queryService, requestService)
 
 	// Startup
-	pkg.NewStartup(dev, configuration, applications, rest, staticService, appStorage, sesStorage, mediator).Start()
+	pkg.NewStartup(environment, configuration, applications, rest, staticService, appStorage, sesStorage, mediator).Start()
 
 }
