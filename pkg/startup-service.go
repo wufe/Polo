@@ -50,11 +50,15 @@ func NewStartup(
 func (s *Startup) Start() {
 	s.loadApplications()
 	s.storeApplications()
-	s.watchApplications(context.Background())
+	if !s.environment.IsTest() {
+		s.watchApplications(context.Background())
+	}
 	s.loadSessions()
 	s.startSessions()
-	s.static.LoadSessionHelper()
-	s.startServer()
+	if !s.environment.IsTest() {
+		s.static.LoadSessionHelper()
+		s.startServer()
+	}
 }
 
 func (s *Startup) loadApplications() {

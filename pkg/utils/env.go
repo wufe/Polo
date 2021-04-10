@@ -7,6 +7,7 @@ import (
 )
 
 type Environment interface {
+	IsTest() bool
 	IsDev() bool
 	IsDebugRace() bool
 	DevServerURL() string
@@ -17,6 +18,10 @@ type environmentImpl struct{}
 
 func DetectEnvironment() Environment {
 	return &environmentImpl{}
+}
+
+func (e *environmentImpl) IsTest() bool {
+	return false
 }
 
 func (e *environmentImpl) IsDev() bool {

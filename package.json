@@ -28,7 +28,8 @@
 		"build:release": "run-s clean build:client:prod build:server:prod:restore build:server:prod:statik build:release:windows build:release:macos build:release:linux",
 		"build:release:windows": "cross-env GOOS=windows GOARCH=amd64 go build -o release/polo-windows-amd64.exe cmd/server/main.go",
 		"build:release:macos": "cross-env GOOS=darwin GOARCH=amd64 go build -o release/polo-darwin-amd64 cmd/server/main.go",
-		"build:release:linux": "cross-env GOOS=linux GOARCH=amd64 go build -o release/polo-linux-amd64 cmd/server/main.go"
+		"build:release:linux": "cross-env GOOS=linux GOARCH=amd64 go build -o release/polo-linux-amd64 cmd/server/main.go",
+		"test": "cross-env GO_ENV=development GO_CWD=$(pwd) go test -v ./cmd/tests/..."
 	},
 	"devDependencies": {
 		"@babel/core": "^7.12.10",
