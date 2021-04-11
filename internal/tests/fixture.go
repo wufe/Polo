@@ -14,11 +14,18 @@ import (
 	"github.com/wufe/polo/pkg/storage"
 )
 
-func Fixture() {
+func Fixture(configuration *models.RootConfiguration) {
 	environment := utils_fixture.BuildTestEnvironment()
 
-	configuration := &models.RootConfiguration{}
 	applications := []*models.Application{}
+
+	for _, conf := range configuration.ApplicationConfigurations {
+		application, err := models.NewApplication(conf, "", environment)
+		if err != nil {
+			panic(err)
+		}
+		applications = append(applications, application)
+	}
 
 	// Storage
 	database := storage_fixture.NewDB(environment.GetExecutableFolder(), &storage_fixture.FixtureDBOptions{
