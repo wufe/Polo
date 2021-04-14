@@ -136,10 +136,10 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 
 	// Tags
 	tags, err := repo.Tags()
+	defaultApplicationErrorLog(appName, err)
 	if err != nil {
 		return
 	}
-	defaultApplicationErrorLog(appName, err)
 
 	tagPrefix := "refs/tags/"
 	err = tags.ForEach(func(ref *plumbing.Reference) error {
@@ -173,6 +173,47 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 		checkObjectExists(refHash)
 
 		hashToObjectsMap[refHash].Tags = appendWithoutDup(hashToObjectsMap[refHash].Tags, tagName)
+
+		return nil
+	})
+
+	// Annotated tags
+	tagObjects, err := repo.TagObjects()
+	defaultApplicationErrorLog(appName, err)
+	if err != nil {
+		return
+	}
+
+	err = tagObjects.ForEach(func(ref *object.Tag) error {
+		refName := ref.Name
+		refHash := ref.Hash.String()
+
+		tagName := refName
+
+		registerHash(tagName, refHash)
+
+		commit, err := ref.Commit()
+		if err != nil {
+			return err
+		}
+
+		// appTags = appendWithoutDup(appTags, tagName)
+		appTags[tagName] = &models.Tag{
+			CheckoutObject: models.CheckoutObject{
+				Name:        tagName,
+				Hash:        refHash,
+				Author:      commit.Author.Name,
+				AuthorEmail: commit.Author.Email,
+				Date:        commit.Author.When,
+				Message:     commit.Message,
+			},
+		}
+		registerHash(refName, refHash)
+		checkObjectExists(refHash)
+
+		hashToObjectsMap[refHash].Tags = appendWithoutDup(hashToObjectsMap[refHash].Tags, tagName)
+
+		appCommitMap[refHash] = commit
 
 		return nil
 	})
