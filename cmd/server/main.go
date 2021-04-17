@@ -10,6 +10,7 @@ import (
 	"github.com/wufe/polo/pkg/http/proxy"
 	"github.com/wufe/polo/pkg/http/rest"
 	"github.com/wufe/polo/pkg/http/routing"
+	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/services"
 	"github.com/wufe/polo/pkg/storage"
 	"github.com/wufe/polo/pkg/utils"
@@ -18,13 +19,13 @@ import (
 func main() {
 	environment := utils.DetectEnvironment()
 
-	var mutexBuilder utils.MutexBuilder
-	mutexBuilder = func() utils.RWLocker {
-		return utils.GetMutex(environment)
-	}
+	// Factories
+	var mutexBuilder utils.MutexBuilder = func() utils.RWLocker { return utils.GetMutex(environment) }
+	sessionBuilder := models.NewSessionBuilder(mutexBuilder)
+	applicationBuilder := models.NewApplicationBuilder(mutexBuilder)
 
 	// Configuration (.yml)
-	configuration, applications := storage.LoadConfigurations(environment, mutexBuilder)
+	configuration, applications := storage.LoadConfigurations(environment, applicationBuilder)
 
 	// Instance
 	existingInstance, _ := storage.DetectInstance(environment)
@@ -53,7 +54,7 @@ func main() {
 	)
 
 	// Workers
-	background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, mutexBuilder)
+	background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, sessionBuilder)
 	background.NewSessionStartWorker(sesStorage, mediator)
 	background.NewSessionCleanWorker(sesStorage, mediator)
 	background.NewSessionFilesystemWorker(mediator)
@@ -81,7 +82,8 @@ func main() {
 		appStorage,
 		sesStorage,
 		mediator,
-		mutexBuilder,
+		applicationBuilder,
+		sessionBuilder,
 	).Start(&pkg.StartupOptions{
 		WatchApplications: true,
 		LoadSessionHelper: true,

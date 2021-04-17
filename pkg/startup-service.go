@@ -12,18 +12,18 @@ import (
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/services"
 	"github.com/wufe/polo/pkg/storage"
-	"github.com/wufe/polo/pkg/utils"
 )
 
 type Startup struct {
-	configuration *models.RootConfiguration
-	applications  []*models.Application
-	handler       *rest.Handler
-	static        *services.StaticService
-	appStorage    *storage.Application
-	sesStorage    *storage.Session
-	mediator      *background.Mediator
-	mutexBuilder  utils.MutexBuilder
+	configuration      *models.RootConfiguration
+	applications       []*models.Application
+	handler            *rest.Handler
+	static             *services.StaticService
+	appStorage         *storage.Application
+	sesStorage         *storage.Session
+	mediator           *background.Mediator
+	applicationBuilder *models.ApplicationBuilder
+	sessionBuilder     *models.SessionBuilder
 }
 
 type StartupOptions struct {
@@ -40,17 +40,19 @@ func NewStartup(
 	appStorage *storage.Application,
 	sesStorage *storage.Session,
 	mediator *background.Mediator,
-	mutexBuilder utils.MutexBuilder,
+	applicationBuilder *models.ApplicationBuilder,
+	sessionBuilder *models.SessionBuilder,
 ) *Startup {
 	return &Startup{
-		configuration: configuration,
-		applications:  applications,
-		handler:       handler,
-		static:        static,
-		appStorage:    appStorage,
-		sesStorage:    sesStorage,
-		mediator:      mediator,
-		mutexBuilder:  mutexBuilder,
+		configuration:      configuration,
+		applications:       applications,
+		handler:            handler,
+		static:             static,
+		appStorage:         appStorage,
+		sesStorage:         sesStorage,
+		mediator:           mediator,
+		applicationBuilder: applicationBuilder,
+		sessionBuilder:     sessionBuilder,
 	}
 }
 
@@ -109,7 +111,7 @@ func (s *Startup) watchApplications(ctx context.Context) {
 					return
 				default:
 					time.Sleep(2 * time.Second)
-					rootConfig, err := storage.UnmarshalConfiguration(filename, s.mutexBuilder)
+					rootConfig, err := storage.UnmarshalConfiguration(filename, s.applicationBuilder)
 					if err != nil {
 						continue
 					}
@@ -136,7 +138,7 @@ func (s *Startup) watchApplications(ctx context.Context) {
 }
 
 func (s *Startup) loadSessions() {
-	s.sesStorage.LoadSessions(s.appStorage, s.mutexBuilder)
+	s.sesStorage.LoadSessions(s.appStorage, s.sessionBuilder)
 }
 
 func (s *Startup) startSessions() {

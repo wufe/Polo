@@ -71,7 +71,7 @@ type Branch struct {
 	CheckoutObject
 }
 
-func NewApplication(configuration *ApplicationConfiguration, filename string, mutexBuilder utils.MutexBuilder) (*Application, error) {
+func newApplication(configuration *ApplicationConfiguration, filename string, mutexBuilder utils.MutexBuilder) (*Application, error) {
 	application := &Application{
 		Filename: filename,
 		RWLocker: mutexBuilder(),

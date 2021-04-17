@@ -121,9 +121,9 @@ func (v Variables) ApplyTo(str string) string {
 	return str
 }
 
-// NewSession builds a session starting from a pre-built one.
+// newSession builds a session starting from a pre-built one.
 // It is useful to set variable that needs to be set at initialization time
-func NewSession(
+func newSession(
 	session *Session,
 	mutexBuilder utils.MutexBuilder,
 ) *Session {

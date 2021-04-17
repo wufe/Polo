@@ -18,15 +18,15 @@ import (
 func Fixture(configuration *models.RootConfiguration) {
 	environment := utils_fixture.BuildTestEnvironment()
 
-	var mutexBuilder utils.MutexBuilder
-	mutexBuilder = func() utils.RWLocker {
-		return utils.GetMutex(environment)
-	}
+	// Factories
+	var mutexBuilder utils.MutexBuilder = func() utils.RWLocker { return utils.GetMutex(environment) }
+	sessionBuilder := models.NewSessionBuilder(mutexBuilder)
+	applicationBuilder := models.NewApplicationBuilder(mutexBuilder)
 
 	applications := []*models.Application{}
 
 	for _, conf := range configuration.ApplicationConfigurations {
-		application, err := models.NewApplication(conf, "", mutexBuilder)
+		application, err := applicationBuilder.Build(conf, "")
 		if err != nil {
 			panic(err)
 		}
@@ -52,7 +52,7 @@ func Fixture(configuration *models.RootConfiguration) {
 	)
 
 	// Workers
-	background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, mutexBuilder)
+	background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, sessionBuilder)
 	background.NewSessionStartWorker(sesStorage, mediator)
 	background.NewSessionCleanWorker(sesStorage, mediator)
 	background.NewSessionFilesystemWorker(mediator)
@@ -80,7 +80,8 @@ func Fixture(configuration *models.RootConfiguration) {
 		appStorage,
 		sesStorage,
 		mediator,
-		mutexBuilder,
+		applicationBuilder,
+		sessionBuilder,
 	).Start(&pkg.StartupOptions{
 		WatchApplications: false,
 		LoadSessionHelper: false,

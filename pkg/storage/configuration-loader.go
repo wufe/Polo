@@ -12,12 +12,12 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func LoadConfigurations(environment utils.Environment, mutexBuilder utils.MutexBuilder) (*models.RootConfiguration, []*models.Application) {
+func LoadConfigurations(environment utils.Environment, applicationBuilder *models.ApplicationBuilder) (*models.RootConfiguration, []*models.Application) {
 	dir := environment.GetExecutableFolder()
 
 	files := getYamlFiles(dir)
 
-	return unmarshalConfigurations(files, mutexBuilder)
+	return unmarshalConfigurations(files, applicationBuilder)
 
 }
 
@@ -41,14 +41,14 @@ func getYamlFiles(root string) []string {
 	return files
 }
 
-func unmarshalConfigurations(files []string, mutexBuilder utils.MutexBuilder) (*models.RootConfiguration, []*models.Application) {
+func unmarshalConfigurations(files []string, applicationBuilder *models.ApplicationBuilder) (*models.RootConfiguration, []*models.Application) {
 	rootConfiguration := &models.RootConfiguration{
 		ApplicationConfigurations: []*models.ApplicationConfiguration{},
 	}
 	applications := []*models.Application{}
 	for _, file := range files {
 		log.Infof("Found configuration file %s", file)
-		root, err := UnmarshalConfiguration(file, mutexBuilder)
+		root, err := UnmarshalConfiguration(file, applicationBuilder)
 		if err != nil {
 			continue
 		}
@@ -58,7 +58,7 @@ func unmarshalConfigurations(files []string, mutexBuilder utils.MutexBuilder) (*
 		if root.ApplicationConfigurations != nil {
 			for _, conf := range root.ApplicationConfigurations {
 
-				builtApplication, err := models.NewApplication(conf, file, mutexBuilder)
+				builtApplication, err := applicationBuilder.Build(conf, file)
 				if err != nil {
 					log.Errorf("Application %s configuration error: %s", conf.Name, err.Error())
 				} else {
@@ -86,7 +86,7 @@ func unmarshalConfigurations(files []string, mutexBuilder utils.MutexBuilder) (*
 	return rootConfiguration, applications
 }
 
-func UnmarshalConfiguration(file string, mutexBuilder utils.MutexBuilder) (models.RootConfiguration, error) {
+func UnmarshalConfiguration(file string, applicationBuilder *models.ApplicationBuilder) (models.RootConfiguration, error) {
 	content, err := ioutil.ReadFile(file)
 	if err != nil {
 		log.Errorln(fmt.Sprintf("Could not retrieve content of file %s", file), err)
@@ -100,7 +100,7 @@ func UnmarshalConfiguration(file string, mutexBuilder utils.MutexBuilder) (model
 	}
 	if root.ApplicationConfigurations != nil {
 		for i, c := range root.ApplicationConfigurations {
-			root.ApplicationConfigurations[i], err = models.NewApplicationConfiguration(c, mutexBuilder)
+			root.ApplicationConfigurations[i], err = applicationBuilder.BuildConfiguration(c)
 			if err != nil {
 				log.Errorln(err)
 				return root, err

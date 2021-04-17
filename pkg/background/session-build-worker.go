@@ -27,7 +27,7 @@ type SessionBuildWorker struct {
 	applicationStorage *storage.Application
 	sessionStorage     *storage.Session
 	mediator           *Mediator
-	mutexBuilder       utils.MutexBuilder
+	sessionBuilder     *models.SessionBuilder
 }
 
 func NewSessionBuildWorker(
@@ -35,14 +35,14 @@ func NewSessionBuildWorker(
 	applicationStorage *storage.Application,
 	sessionStorage *storage.Session,
 	mediator *Mediator,
-	mutexBuilder utils.MutexBuilder,
+	sessionBuilder *models.SessionBuilder,
 ) *SessionBuildWorker {
 	worker := &SessionBuildWorker{
 		global:             globalConfiguration,
 		applicationStorage: applicationStorage,
 		sessionStorage:     sessionStorage,
 		mediator:           mediator,
-		mutexBuilder:       mutexBuilder,
+		sessionBuilder:     sessionBuilder,
 	}
 
 	worker.startAcceptingNewSessionRequests()
@@ -106,13 +106,13 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 
 	var session *models.Session
 	if recyclingPreviousSession {
-		session = models.NewSession(input.PreviousSession, w.mutexBuilder)
+		session = w.sessionBuilder.Build(input.PreviousSession)
 		session.ResetVariables()
 		session.IncStartupRetriesCount()
 	} else {
 		sessionUUID := uuid.NewString()
 
-		session = models.NewSession(&models.Session{
+		session = w.sessionBuilder.Build(&models.Session{
 			UUID:        sessionUUID,
 			Name:        appName,
 			Port:        0,
@@ -121,7 +121,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 			Application: input.Application,
 			CommitID:    input.Checkout,
 			Checkout:    input.Checkout,
-		}, w.mutexBuilder)
+		})
 	}
 
 	if isAReplacement {
