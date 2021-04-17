@@ -71,13 +71,13 @@ type Branch struct {
 	CheckoutObject
 }
 
-func NewApplication(configuration *ApplicationConfiguration, filename string, environment utils.Environment) (*Application, error) {
+func NewApplication(configuration *ApplicationConfiguration, filename string, mutexBuilder utils.MutexBuilder) (*Application, error) {
 	application := &Application{
 		Filename: filename,
-		RWLocker: utils.GetMutex(environment),
+		RWLocker: mutexBuilder(),
 		Status:   ApplicationStatusLoading,
 	}
-	configuration, err := NewApplicationConfiguration(configuration, environment)
+	configuration, err := NewApplicationConfiguration(configuration, mutexBuilder)
 	if err != nil {
 		return nil, err
 	}

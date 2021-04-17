@@ -17,8 +17,14 @@ import (
 
 func main() {
 	environment := utils.DetectEnvironment()
+
+	var mutexBuilder utils.MutexBuilder
+	mutexBuilder = func() utils.RWLocker {
+		return utils.GetMutex(environment)
+	}
+
 	// Configuration (.yml)
-	configuration, applications := storage.LoadConfigurations(environment)
+	configuration, applications := storage.LoadConfigurations(environment, mutexBuilder)
 
 	// Instance
 	existingInstance, _ := storage.DetectInstance(environment)
@@ -47,7 +53,7 @@ func main() {
 	)
 
 	// Workers
-	background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, environment)
+	background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, mutexBuilder)
 	background.NewSessionStartWorker(sesStorage, mediator)
 	background.NewSessionCleanWorker(sesStorage, mediator)
 	background.NewSessionFilesystemWorker(mediator)
@@ -67,6 +73,19 @@ func main() {
 	rest := rest.NewHandler(environment, staticService, routing, proxy, queryService, requestService)
 
 	// Startup
-	pkg.NewStartup(environment, configuration, applications, rest, staticService, appStorage, sesStorage, mediator).Start()
+	pkg.NewStartup(
+		configuration,
+		applications,
+		rest,
+		staticService,
+		appStorage,
+		sesStorage,
+		mediator,
+		mutexBuilder,
+	).Start(&pkg.StartupOptions{
+		WatchApplications: true,
+		LoadSessionHelper: true,
+		StartServer:       true,
+	})
 
 }

@@ -12,15 +12,21 @@ import (
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/services"
 	"github.com/wufe/polo/pkg/storage"
+	"github.com/wufe/polo/pkg/utils"
 )
 
 func Fixture(configuration *models.RootConfiguration) {
 	environment := utils_fixture.BuildTestEnvironment()
 
+	var mutexBuilder utils.MutexBuilder
+	mutexBuilder = func() utils.RWLocker {
+		return utils.GetMutex(environment)
+	}
+
 	applications := []*models.Application{}
 
 	for _, conf := range configuration.ApplicationConfigurations {
-		application, err := models.NewApplication(conf, "", environment)
+		application, err := models.NewApplication(conf, "", mutexBuilder)
 		if err != nil {
 			panic(err)
 		}
@@ -46,7 +52,7 @@ func Fixture(configuration *models.RootConfiguration) {
 	)
 
 	// Workers
-	background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, environment)
+	background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, mutexBuilder)
 	background.NewSessionStartWorker(sesStorage, mediator)
 	background.NewSessionCleanWorker(sesStorage, mediator)
 	background.NewSessionFilesystemWorker(mediator)
@@ -66,5 +72,18 @@ func Fixture(configuration *models.RootConfiguration) {
 	rest := rest.NewHandler(environment, staticService, routing, proxy, queryService, requestService)
 
 	// Startup
-	pkg.NewStartup(environment, configuration, applications, rest, staticService, appStorage, sesStorage, mediator).Start()
+	pkg.NewStartup(
+		configuration,
+		applications,
+		rest,
+		staticService,
+		appStorage,
+		sesStorage,
+		mediator,
+		mutexBuilder,
+	).Start(&pkg.StartupOptions{
+		WatchApplications: false,
+		LoadSessionHelper: false,
+		StartServer:       false,
+	})
 }

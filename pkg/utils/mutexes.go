@@ -20,3 +20,5 @@ func GetMutex(environment Environment) RWLocker {
 		return &sync.RWMutex{}
 	}
 }
+
+type MutexBuilder func() RWLocker

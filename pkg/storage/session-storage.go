@@ -30,7 +30,7 @@ func NewSession(db *Database, environment utils.Environment) *Session {
 
 // LoadSessions given an application, restores its sessions
 // retrieving them from the database
-func (s *Session) LoadSessions(application *Application, environment utils.Environment) {
+func (s *Session) LoadSessions(application *Application, mutexBuilder utils.MutexBuilder) {
 	sessions := []*models.Session{}
 	err := s.database.DB.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
@@ -45,7 +45,7 @@ func (s *Session) LoadSessions(application *Application, environment utils.Envir
 					return err
 				}
 				if session.Status.IsAlive() {
-					sessions = append(sessions, models.NewSession(&session, environment))
+					sessions = append(sessions, models.NewSession(&session, mutexBuilder))
 				}
 				return nil
 			})

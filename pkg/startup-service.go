@@ -16,7 +16,6 @@ import (
 )
 
 type Startup struct {
-	environment   utils.Environment
 	configuration *models.RootConfiguration
 	applications  []*models.Application
 	handler       *rest.Handler
@@ -24,19 +23,26 @@ type Startup struct {
 	appStorage    *storage.Application
 	sesStorage    *storage.Session
 	mediator      *background.Mediator
+	mutexBuilder  utils.MutexBuilder
+}
+
+type StartupOptions struct {
+	WatchApplications bool
+	LoadSessionHelper bool
+	StartServer       bool
 }
 
 func NewStartup(
-	environment utils.Environment,
 	configuration *models.RootConfiguration,
 	applications []*models.Application,
 	handler *rest.Handler,
 	static *services.StaticService,
 	appStorage *storage.Application,
 	sesStorage *storage.Session,
-	mediator *background.Mediator) *Startup {
+	mediator *background.Mediator,
+	mutexBuilder utils.MutexBuilder,
+) *Startup {
 	return &Startup{
-		environment:   environment,
 		configuration: configuration,
 		applications:  applications,
 		handler:       handler,
@@ -44,19 +50,29 @@ func NewStartup(
 		appStorage:    appStorage,
 		sesStorage:    sesStorage,
 		mediator:      mediator,
+		mutexBuilder:  mutexBuilder,
 	}
 }
 
-func (s *Startup) Start() {
+func (s *Startup) Start(options *StartupOptions) {
+	if options == nil {
+		options = &StartupOptions{
+			WatchApplications: true,
+			LoadSessionHelper: true,
+			StartServer:       true,
+		}
+	}
 	s.loadApplications()
 	s.storeApplications()
-	if !s.environment.IsTest() {
+	if options.WatchApplications {
 		s.watchApplications(context.Background())
 	}
 	s.loadSessions()
 	s.startSessions()
-	if !s.environment.IsTest() {
+	if options.LoadSessionHelper {
 		s.static.LoadSessionHelper()
+	}
+	if options.StartServer {
 		s.startServer()
 	}
 }
@@ -93,7 +109,7 @@ func (s *Startup) watchApplications(ctx context.Context) {
 					return
 				default:
 					time.Sleep(2 * time.Second)
-					rootConfig, err := storage.UnmarshalConfiguration(filename, s.environment)
+					rootConfig, err := storage.UnmarshalConfiguration(filename, s.mutexBuilder)
 					if err != nil {
 						continue
 					}
@@ -120,7 +136,7 @@ func (s *Startup) watchApplications(ctx context.Context) {
 }
 
 func (s *Startup) loadSessions() {
-	s.sesStorage.LoadSessions(s.appStorage, s.environment)
+	s.sesStorage.LoadSessions(s.appStorage, s.mutexBuilder)
 }
 
 func (s *Startup) startSessions() {

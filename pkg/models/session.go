@@ -125,10 +125,10 @@ func (v Variables) ApplyTo(str string) string {
 // It is useful to set variable that needs to be set at initialization time
 func NewSession(
 	session *Session,
-	environment utils.Environment,
+	mutexBuilder utils.MutexBuilder,
 ) *Session {
 	session.shortUUID = strings.Split(session.UUID, "-")[0]
-	session.RWLocker = utils.GetMutex(environment)
+	session.RWLocker = mutexBuilder()
 	if session.ApplicationName == "" {
 		session.ApplicationName = session.Application.GetConfiguration().Name
 	}
@@ -144,7 +144,7 @@ func NewSession(
 	}
 	session.createdAt = time.Now()
 	session.killReason = KillReasonNone
-	session.Context = NewContextStore(environment)
+	session.Context = NewContextStore(mutexBuilder)
 	if session.Application != nil {
 		session.configuration = session.getMatchingConfiguration()
 	}
