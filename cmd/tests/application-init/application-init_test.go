@@ -1,7 +1,6 @@
-package session_handling
+package application_init
 
 import (
-	"os"
 	"sync"
 	"testing"
 	"time"
@@ -10,25 +9,18 @@ import (
 	"github.com/wufe/polo/pkg/models"
 )
 
-func Test_SessionHandling(t *testing.T) {
+func Test_ApplicationInit(t *testing.T) {
 
-	applications := tests.Fixture(&models.RootConfiguration{
-		Global: models.GlobalConfiguration{
-			SessionsFolder: os.Getenv("GO_CWD") + "/.sessions",
-		},
-		ApplicationConfigurations: []*models.ApplicationConfiguration{
-			&models.ApplicationConfiguration{
-				SharedConfiguration: models.SharedConfiguration{
-					Remote: "https://github.com/wufe/polo-testserver",
-					Commands: models.Commands{
-						Start: []models.Command{},
-						Stop:  []models.Command{},
-					},
-				},
-				Name:      "TestServer",
-				IsDefault: true,
+	applications := tests.Fixture(&models.ApplicationConfiguration{
+		SharedConfiguration: models.SharedConfiguration{
+			Remote: "https://github.com/wufe/polo-testserver",
+			Commands: models.Commands{
+				Start: []models.Command{},
+				Stop:  []models.Command{},
 			},
 		},
+		Name:      "TestServer",
+		IsDefault: true,
 	})
 	firstApplicationBus := applications[0].GetEventBus()
 

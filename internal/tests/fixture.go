@@ -16,8 +16,18 @@ import (
 	"github.com/wufe/polo/pkg/utils"
 )
 
-func Fixture(configuration *models.RootConfiguration) []*models.Application {
+func Fixture(applicationConfiguration *models.ApplicationConfiguration) []*models.Application {
+
 	environment := utils_fixture.BuildTestEnvironment()
+
+	configuration := &models.RootConfiguration{
+		Global: models.GlobalConfiguration{
+			SessionsFolder: environment.GetExecutableFolder() + "/.sessions",
+		},
+		ApplicationConfigurations: []*models.ApplicationConfiguration{
+			applicationConfiguration,
+		},
+	}
 
 	// Factories
 	var mutexBuilder utils.MutexBuilder = func() utils.RWLocker { return utils.GetMutex(environment) }
