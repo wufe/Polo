@@ -1,11 +1,11 @@
 package application_init
 
 import (
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/wufe/polo/internal/tests"
+	"github.com/wufe/polo/internal/tests/events_assertions"
 	"github.com/wufe/polo/pkg/models"
 )
 
@@ -24,32 +24,15 @@ func Test_ApplicationInit(t *testing.T) {
 	})
 	firstApplicationBus := applications[0].GetEventBus()
 
-	initialized := false
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func(ch <-chan models.ApplicationEvent) {
-		defer wg.Done()
-		for {
-			select {
-			case ev, ok := <-ch:
-				if !ok {
-					return
-				}
-				switch ev.EventType {
-				case models.ApplicationEventTypeFetchCompleted:
-					initialized = true
-					return
-				}
-			case <-time.After(10 * time.Second):
-				initialized = false
-				return
-			}
-		}
-	}(firstApplicationBus.GetChan())
-	wg.Wait()
-
-	if !initialized {
-		t.Errorf("expected application to get initialized, but timeout was reached")
-	}
+	events_assertions.AssertApplicationEvents(
+		firstApplicationBus.GetChan(),
+		[]models.ApplicationEventType{
+			models.ApplicationEventTypeInitializationStarted,
+			models.ApplicationEventTypeFetchStarted,
+			models.ApplicationEventTypeFetchCompleted,
+			models.ApplicationEventTypeInitializationCompleted,
+		},
+		t,
+		10*time.Second,
+	)
 }
