@@ -50,6 +50,7 @@ func (b *SessionLifetimeEventBus) GetChan() <-chan SessionBuildEvent {
 		for {
 			ev, ok := <-sourceCh
 			if !ok {
+				close(destCh)
 				return
 			}
 			sessionEv, ok := ev.(SessionBuildEvent)

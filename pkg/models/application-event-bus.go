@@ -45,6 +45,7 @@ func (b *ApplicationEventBus) GetChan() <-chan ApplicationEvent {
 		for {
 			ev, ok := <-sourceCh
 			if !ok {
+				close(destCh)
 				return
 			}
 			appEv, ok := ev.(ApplicationEvent)
