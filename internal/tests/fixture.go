@@ -23,7 +23,7 @@ func Fixture(configuration *models.RootConfiguration) {
 	var mutexBuilder utils.MutexBuilder = func() utils.RWLocker { return utils.GetMutex(environment) }
 	pubSubBuilder := communication.NewPubSubBuilder(mutexBuilder)
 	sessionBuilder := models.NewSessionBuilder(mutexBuilder, pubSubBuilder)
-	applicationBuilder := models.NewApplicationBuilder(mutexBuilder)
+	applicationBuilder := models.NewApplicationBuilder(mutexBuilder, pubSubBuilder)
 
 	applications := []*models.Application{}
 

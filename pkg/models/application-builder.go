@@ -1,19 +1,24 @@
 package models
 
-import "github.com/wufe/polo/pkg/utils"
+import (
+	"github.com/wufe/polo/pkg/background/communication"
+	"github.com/wufe/polo/pkg/utils"
+)
 
 type ApplicationBuilder struct {
-	mutexBuilder utils.MutexBuilder
+	mutexBuilder  utils.MutexBuilder
+	pubSubBuilder *communication.PubSubBuilder
 }
 
-func NewApplicationBuilder(mutexBuilder utils.MutexBuilder) *ApplicationBuilder {
+func NewApplicationBuilder(mutexBuilder utils.MutexBuilder, pubSubBuilder *communication.PubSubBuilder) *ApplicationBuilder {
 	return &ApplicationBuilder{
-		mutexBuilder: mutexBuilder,
+		mutexBuilder:  mutexBuilder,
+		pubSubBuilder: pubSubBuilder,
 	}
 }
 
 func (b *ApplicationBuilder) Build(configuration *ApplicationConfiguration, filename string) (*Application, error) {
-	return newApplication(configuration, filename, b.mutexBuilder)
+	return newApplication(configuration, filename, b.mutexBuilder, b.pubSubBuilder)
 }
 
 func (b *ApplicationBuilder) BuildConfiguration(configuration *ApplicationConfiguration) (*ApplicationConfiguration, error) {

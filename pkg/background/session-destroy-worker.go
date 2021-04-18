@@ -33,7 +33,6 @@ func (w *SessionDestroyWorker) startAcceptingDestroyRequests() {
 }
 
 func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback func(*models.Session)) {
-	// TODO: Close session event bus here
 	if !session.Status.IsAlive() {
 		return
 	}

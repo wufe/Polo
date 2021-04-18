@@ -24,7 +24,7 @@ func main() {
 	var mutexBuilder utils.MutexBuilder = func() utils.RWLocker { return utils.GetMutex(environment) }
 	pubSubBuilder := communication.NewPubSubBuilder(mutexBuilder)
 	sessionBuilder := models.NewSessionBuilder(mutexBuilder, pubSubBuilder)
-	applicationBuilder := models.NewApplicationBuilder(mutexBuilder)
+	applicationBuilder := models.NewApplicationBuilder(mutexBuilder, pubSubBuilder)
 
 	// Configuration (.yml)
 	configuration, applications := storage.LoadConfigurations(environment, applicationBuilder)

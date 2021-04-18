@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/wufe/polo/pkg/background/communication"
 	"github.com/wufe/polo/pkg/models/output"
 	"github.com/wufe/polo/pkg/utils"
 )
@@ -30,6 +31,7 @@ type Application struct {
 	Commits                 []string                  `json:"-"`
 	CommitMap               map[string]*object.Commit `json:"-"`
 	CompiledForwardPatterns []CompiledForwardPattern  `json:"-"`
+	bus                     *ApplicationEventBus
 }
 
 type ApplicationStatus string
@@ -71,11 +73,17 @@ type Branch struct {
 	CheckoutObject
 }
 
-func newApplication(configuration *ApplicationConfiguration, filename string, mutexBuilder utils.MutexBuilder) (*Application, error) {
+func newApplication(
+	configuration *ApplicationConfiguration,
+	filename string,
+	mutexBuilder utils.MutexBuilder,
+	pubSubBuilder *communication.PubSubBuilder,
+) (*Application, error) {
 	application := &Application{
 		Filename: filename,
 		RWLocker: mutexBuilder(),
 		Status:   ApplicationStatusLoading,
+		bus:      NewApplicationEventBus(pubSubBuilder),
 	}
 	configuration, err := NewApplicationConfiguration(configuration, mutexBuilder)
 	if err != nil {
@@ -165,4 +173,10 @@ func (a *Application) SetConfiguration(conf ApplicationConfiguration) {
 	a.Lock()
 	defer a.Unlock()
 	a.configuration = conf
+}
+
+func (a *Application) GetEventBus() *ApplicationEventBus {
+	a.RLock()
+	defer a.RUnlock()
+	return a.bus
 }

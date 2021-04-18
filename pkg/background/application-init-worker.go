@@ -38,6 +38,8 @@ func (w *ApplicationInitWorker) startAcceptingInitRequests() {
 }
 
 func (w *ApplicationInitWorker) InitApplication(application *models.Application) error {
+	bus := application.GetEventBus()
+	bus.PublishEvent(models.ApplicationEventTypeInitializationStarted, application)
 	conf := application.GetConfiguration()
 	name := conf.Name
 	remote := conf.Remote
