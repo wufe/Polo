@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing/object"
 	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/background/communication"
 	"github.com/wufe/polo/pkg/models/output"
 	"github.com/wufe/polo/pkg/utils"
 )
@@ -57,6 +58,10 @@ const (
 // SessionStatus is the status of the session
 type SessionStatus string
 
+func (status SessionStatus) String() string {
+	return string(status)
+}
+
 // IsAlive states whether the session is started or about be started
 func (status SessionStatus) IsAlive() bool {
 	return status != SessionStatusStartFailed &&
@@ -105,6 +110,8 @@ type Session struct {
 	// If set, states that this session replaces a previous one
 	replaces       *Session
 	replacedByUUID string
+	diagnostics    []DiagnosticsData
+	bus            *SessionLifetimeEventBus
 }
 
 // Variables are those variables used by a single session.
@@ -126,9 +133,11 @@ func (v Variables) ApplyTo(str string) string {
 func newSession(
 	session *Session,
 	mutexBuilder utils.MutexBuilder,
+	pubSubBuilder *communication.PubSubBuilder,
 ) *Session {
 	session.shortUUID = strings.Split(session.UUID, "-")[0]
 	session.RWLocker = mutexBuilder()
+	session.bus = NewSessionBuildEventBus(pubSubBuilder)
 	if session.ApplicationName == "" {
 		session.ApplicationName = session.Application.GetConfiguration().Name
 	}
@@ -147,6 +156,9 @@ func newSession(
 	session.Context = NewContextStore(mutexBuilder)
 	if session.Application != nil {
 		session.configuration = session.getMatchingConfiguration()
+	}
+	if session.diagnostics == nil {
+		session.diagnostics = []DiagnosticsData{}
 	}
 	return session
 }
@@ -352,7 +364,17 @@ func (session *Session) MarkAsBeingRequested() {
 func (session *Session) SetStatus(status SessionStatus) {
 	session.Lock()
 	defer session.Unlock()
+	previousStatus := session.Status
 	session.Status = status
+	session.diagnostics = append(session.diagnostics, DiagnosticsData{
+		Action: DiagonsticsActionReplacement,
+		When:   time.Now(),
+		Field:  "status",
+		Value: PrevNextDiagnosticsValue{
+			Previous: previousStatus.String(),
+			Next:     status.String(),
+		},
+	})
 }
 
 // GetStatus allows to get the session status thread-safely
@@ -458,4 +480,16 @@ func (session *Session) GetLogs() []Log {
 	session.RLock()
 	defer session.RUnlock()
 	return session.logs
+}
+
+func (session *Session) GetDiagnosticsData() []DiagnosticsData {
+	session.RLock()
+	defer session.RUnlock()
+	return session.diagnostics
+}
+
+func (session *Session) GetEventBus() *SessionLifetimeEventBus {
+	session.RLock()
+	defer session.RUnlock()
+	return session.bus
 }

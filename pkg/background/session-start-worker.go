@@ -27,13 +27,14 @@ func NewSessionStartWorker(
 func (w *SessionStartWorker) startAcceptingSessionStartRequests() {
 	go func() {
 		for {
-			session := <-w.mediator.StartSession.Chan
-			w.MarkSessionAsStarted(session)
+			request := <-w.mediator.StartSession.Chan
+			w.MarkSessionAsStarted(request.Session)
 		}
 	}()
 }
 
 func (w *SessionStartWorker) MarkSessionAsStarted(session *models.Session) {
+	session.GetEventBus().PublishEvent(models.SessionBuildEventTypeStarted, session)
 	session.SetStatus(models.SessionStatusStarted)
 	session.ResetStartupRetriesCount()
 	conf := session.GetConfiguration()

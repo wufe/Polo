@@ -8,6 +8,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/background"
+	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/http/rest"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/services"
@@ -143,7 +144,9 @@ func (s *Startup) loadSessions() {
 
 func (s *Startup) startSessions() {
 	for _, session := range s.sesStorage.GetAllAliveSessions() {
-		s.mediator.HealthcheckSession.Enqueue(session)
+		s.mediator.HealthcheckSession.Enqueue(queues.SessionHealthcheckInput{
+			Session: session,
+		})
 	}
 }
 

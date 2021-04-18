@@ -5,6 +5,7 @@ import (
 	"github.com/wufe/polo/internal/tests/utils_fixture"
 	"github.com/wufe/polo/pkg"
 	"github.com/wufe/polo/pkg/background"
+	"github.com/wufe/polo/pkg/background/communication"
 	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/http/proxy"
 	"github.com/wufe/polo/pkg/http/rest"
@@ -20,7 +21,8 @@ func Fixture(configuration *models.RootConfiguration) {
 
 	// Factories
 	var mutexBuilder utils.MutexBuilder = func() utils.RWLocker { return utils.GetMutex(environment) }
-	sessionBuilder := models.NewSessionBuilder(mutexBuilder)
+	pubSubBuilder := communication.NewPubSubBuilder(mutexBuilder)
+	sessionBuilder := models.NewSessionBuilder(mutexBuilder, pubSubBuilder)
 	applicationBuilder := models.NewApplicationBuilder(mutexBuilder)
 
 	applications := []*models.Application{}
@@ -52,7 +54,7 @@ func Fixture(configuration *models.RootConfiguration) {
 	)
 
 	// Workers
-	background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, sessionBuilder)
+	background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, sessionBuilder, pubSubBuilder)
 	background.NewSessionStartWorker(sesStorage, mediator)
 	background.NewSessionCleanWorker(sesStorage, mediator)
 	background.NewSessionFilesystemWorker(mediator)

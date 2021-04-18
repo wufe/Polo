@@ -5,18 +5,22 @@ import (
 )
 
 type SessionHealthcheckQueue struct {
-	RequestChan  chan *models.Session
+	RequestChan  chan SessionHealthcheckInput
 	ResponseChan chan struct{}
+}
+
+type SessionHealthcheckInput struct {
+	Session *models.Session
 }
 
 func NewSessionHealthCheck() SessionHealthcheckQueue {
 	return SessionHealthcheckQueue{
-		RequestChan:  make(chan *models.Session),
+		RequestChan:  make(chan SessionHealthcheckInput),
 		ResponseChan: make(chan struct{}),
 	}
 }
 
-func (q *SessionHealthcheckQueue) Enqueue(session *models.Session) struct{} {
-	q.RequestChan <- session
+func (q *SessionHealthcheckQueue) Enqueue(input SessionHealthcheckInput) struct{} {
+	q.RequestChan <- input
 	return <-q.ResponseChan
 }
