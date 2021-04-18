@@ -557,7 +557,7 @@ MigrationBackup/
 
 /main
 /public
-/.sessions
+.sessions
 *.yml
 /polo
 

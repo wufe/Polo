@@ -20,7 +20,7 @@ applications:
       retries: 5
     branches:
       - test: ^dev$
-        watch: true
-        main: true
+        watch: false
+        main: false
       - test: feature/my-watched-feature
         watch: false

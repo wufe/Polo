@@ -16,9 +16,9 @@ type contextAndCancel struct {
 	Cancel  context.CancelFunc
 }
 
-func NewContextStore() *contextStore {
+func NewContextStore(mutexBuilder utils.MutexBuilder) *contextStore {
 	return &contextStore{
-		RWLocker: utils.GetMutex(),
+		RWLocker: mutexBuilder(),
 		contexts: make(map[string]*contextAndCancel),
 	}
 }

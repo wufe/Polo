@@ -1,10 +1,13 @@
 package queues
 
-import "github.com/wufe/polo/pkg/models"
+import (
+	"github.com/wufe/polo/pkg/models"
+)
 
 const (
-	SessionBuildResultSucceeded SessionBuildResultType = "succeeded"
-	SessionBuildResultFailed    SessionBuildResultType = "failed"
+	SessionBuildResultSucceeded    SessionBuildResultType = "succeeded"
+	SessionBuildResultAlreadyBuilt SessionBuildResultType = "already_built"
+	SessionBuildResultFailed       SessionBuildResultType = "failed"
 )
 
 type SessionBuildQueue struct {
@@ -30,6 +33,7 @@ type SessionBuildResult struct {
 	Result        SessionBuildResultType
 	Session       *models.Session
 	FailingReason string
+	EventBus      *models.SessionLifetimeEventBus
 }
 
 func (q *SessionBuildQueue) Enqueue(checkout string, app *models.Application, prevSession *models.Session) *SessionBuildResult {

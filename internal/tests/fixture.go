@@ -1,9 +1,8 @@
-package main
+package tests
 
 import (
-	"fmt"
-
-	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/internal/tests/storage_fixture"
+	"github.com/wufe/polo/internal/tests/utils_fixture"
 	"github.com/wufe/polo/pkg"
 	"github.com/wufe/polo/pkg/background"
 	"github.com/wufe/polo/pkg/background/communication"
@@ -17,8 +16,18 @@ import (
 	"github.com/wufe/polo/pkg/utils"
 )
 
-func main() {
-	environment := utils.DetectEnvironment()
+func Fixture(applicationConfiguration *models.ApplicationConfiguration) []*models.Application {
+
+	environment := utils_fixture.BuildTestEnvironment()
+
+	configuration := &models.RootConfiguration{
+		Global: models.GlobalConfiguration{
+			SessionsFolder: environment.GetExecutableFolder() + "/.sessions",
+		},
+		ApplicationConfigurations: []*models.ApplicationConfiguration{
+			applicationConfiguration,
+		},
+	}
 
 	// Factories
 	var mutexBuilder utils.MutexBuilder = func() utils.RWLocker { return utils.GetMutex(environment) }
@@ -26,21 +35,20 @@ func main() {
 	sessionBuilder := models.NewSessionBuilder(mutexBuilder, pubSubBuilder)
 	applicationBuilder := models.NewApplicationBuilder(mutexBuilder, pubSubBuilder)
 
-	// Configuration (.yml)
-	configuration, applications := storage.LoadConfigurations(environment, applicationBuilder)
+	applications := []*models.Application{}
 
-	// Instance
-	existingInstance, _ := storage.DetectInstance(environment)
-	if existingInstance == nil {
-		storage.NewInstance(fmt.Sprint(configuration.Global.Port)).Persist(environment)
-	} else {
-		log.Infof("Detected existing instance on host %s", existingInstance.Host)
-		return
+	for _, conf := range configuration.ApplicationConfigurations {
+		application, err := applicationBuilder.Build(conf, "")
+		if err != nil {
+			panic(err)
+		}
+		applications = append(applications, application)
 	}
 
 	// Storage
-	folder := environment.GetExecutableFolder()
-	database := storage.NewDB(folder)
+	database := storage_fixture.NewDB(environment.GetExecutableFolder(), &storage_fixture.FixtureDBOptions{
+		Clean: true,
+	})
 	appStorage := storage.NewApplication(environment)
 	sesStorage := storage.NewSession(database, environment)
 
@@ -87,9 +95,10 @@ func main() {
 		applicationBuilder,
 		sessionBuilder,
 	).Start(&pkg.StartupOptions{
-		WatchApplications: true,
-		LoadSessionHelper: true,
-		StartServer:       true,
+		WatchApplications: false,
+		LoadSessionHelper: false,
+		StartServer:       false,
 	})
 
+	return applications
 }

@@ -86,6 +86,8 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 				}
 			}
 
+			bus := session.GetEventBus()
+			bus.Close()
 		}
 	}()
 }

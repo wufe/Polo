@@ -6,15 +6,33 @@ import (
 	"path/filepath"
 )
 
-func IsDev() bool {
+type Environment interface {
+	IsTest() bool
+	IsDev() bool
+	IsDebugRace() bool
+	DevServerURL() string
+	GetExecutableFolder() string
+}
+
+type environmentImpl struct{}
+
+func DetectEnvironment() Environment {
+	return &environmentImpl{}
+}
+
+func (e *environmentImpl) IsTest() bool {
+	return false
+}
+
+func (e *environmentImpl) IsDev() bool {
 	return os.Getenv("GO_ENV") == "development"
 }
 
-func IsDebugRace() bool {
+func (e *environmentImpl) IsDebugRace() bool {
 	return os.Getenv("GO_DEBUG") == "race"
 }
 
-func DevServerURL() string {
+func (e *environmentImpl) DevServerURL() string {
 	url := os.Getenv("WDS_URL")
 	if url == "" {
 		url = "http://localhost:9000"
@@ -22,8 +40,8 @@ func DevServerURL() string {
 	return url
 }
 
-func GetExecutableFolder() string {
-	if IsDev() {
+func (e *environmentImpl) GetExecutableFolder() string {
+	if e.IsDev() {
 		path, err := os.Getwd()
 		if err != nil {
 			log.Fatalln("Error retrieving file path", err)

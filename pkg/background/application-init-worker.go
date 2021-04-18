@@ -38,6 +38,8 @@ func (w *ApplicationInitWorker) startAcceptingInitRequests() {
 }
 
 func (w *ApplicationInitWorker) InitApplication(application *models.Application) error {
+	bus := application.GetEventBus()
+	bus.PublishEvent(models.ApplicationEventTypeInitializationStarted, application)
 	conf := application.GetConfiguration()
 	name := conf.Name
 	remote := conf.Remote
@@ -75,10 +77,13 @@ func (w *ApplicationInitWorker) InitApplication(application *models.Application)
 
 	}
 	application.SetBaseFolder(baseFolder)
+
 	w.mediator.ApplicationFetch.Enqueue(application, false)
 	w.startApplicationFetchRoutine(application)
 
 	application.SetStatus(models.ApplicationStatusReady)
+
+	bus.PublishEvent(models.ApplicationEventTypeInitializationCompleted, application)
 
 	return nil
 }

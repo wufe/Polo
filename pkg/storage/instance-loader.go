@@ -26,8 +26,8 @@ func NewInstance(port string) *Instance {
 	}
 }
 
-func DetectInstance() (*Instance, error) {
-	execFolder := utils.GetExecutableFolder()
+func DetectInstance(environment utils.Environment) (*Instance, error) {
+	execFolder := environment.GetExecutableFolder()
 	hostFilepath := filepath.Join(execFolder, ".host")
 	if _, err := os.Stat(hostFilepath); os.IsNotExist(err) {
 		return nil, err
@@ -48,8 +48,8 @@ func DetectInstance() (*Instance, error) {
 	return nil, errors.New("Error while retrieving running instance")
 }
 
-func (i *Instance) Persist() {
-	execFolder := utils.GetExecutableFolder()
+func (i *Instance) Persist(environment utils.Environment) {
+	execFolder := environment.GetExecutableFolder()
 	portFilepath := filepath.Join(execFolder, ".host")
 	ioutil.WriteFile(portFilepath, []byte(i.Host), os.ModePerm)
 }

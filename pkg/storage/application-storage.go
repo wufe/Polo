@@ -15,9 +15,9 @@ type Application struct {
 }
 
 // NewApplication builds new application storage
-func NewApplication() *Application {
+func NewApplication(environment utils.Environment) *Application {
 	return &Application{
-		RWLocker:     utils.GetMutex(),
+		RWLocker:     utils.GetMutex(environment),
 		applications: make([]*models.Application, 0),
 	}
 }

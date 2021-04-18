@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/utils"
 )
 
 type Handler struct {
@@ -19,10 +20,10 @@ var DefaultReverseProxy Builder = func(url *url.URL) *httputil.ReverseProxy {
 	return httputil.NewSingleHostReverseProxy(url)
 }
 
-func NewHandler(isDev bool, devServerURL string) *Handler {
+func NewHandler(environment utils.Environment) *Handler {
 	s := &Handler{
-		isDev:        isDev,
-		devServerURL: devServerURL,
+		isDev:        environment.IsDev(),
+		devServerURL: environment.DevServerURL(),
 	}
 	return s
 }

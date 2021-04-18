@@ -19,11 +19,11 @@ type StaticService struct {
 	sessionHelperContent string
 }
 
-func NewStaticService(isDev bool, devServer string) *StaticService {
+func NewStaticService(environment utils.Environment) *StaticService {
 	service := &StaticService{
-		RWLocker:  utils.GetMutex(),
-		isDev:     isDev,
-		devServer: devServer,
+		RWLocker:  utils.GetMutex(environment),
+		isDev:     environment.IsDev(),
+		devServer: environment.DevServerURL(),
 	}
 	service.initStaticFileSystem()
 	return service

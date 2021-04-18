@@ -19,9 +19,9 @@ type Session struct {
 }
 
 // NewSession creates new database storage
-func NewSession(db *Database) *Session {
+func NewSession(db *Database, environment utils.Environment) *Session {
 	session := &Session{
-		RWLocker: utils.GetMutex(),
+		RWLocker: utils.GetMutex(environment),
 		database: db,
 		sessions: make([]*models.Session, 0),
 	}
@@ -30,7 +30,7 @@ func NewSession(db *Database) *Session {
 
 // LoadSessions given an application, restores its sessions
 // retrieving them from the database
-func (s *Session) LoadSessions(application *Application) {
+func (s *Session) LoadSessions(application *Application, sessionBuilder *models.SessionBuilder) {
 	sessions := []*models.Session{}
 	err := s.database.DB.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
@@ -45,7 +45,7 @@ func (s *Session) LoadSessions(application *Application) {
 					return err
 				}
 				if session.Status.IsAlive() {
-					sessions = append(sessions, models.NewSession(&session))
+					sessions = append(sessions, sessionBuilder.Build(&session))
 				}
 				return nil
 			})

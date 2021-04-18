@@ -7,6 +7,7 @@ import (
 	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
+	"github.com/wufe/polo/pkg/utils"
 )
 
 type RequestService struct {
@@ -17,12 +18,12 @@ type RequestService struct {
 }
 
 func NewRequestService(
-	isDev bool,
+	environment utils.Environment,
 	sessionStorage *storage.Session,
 	applicationStorage *storage.Application,
 	mediator *background.Mediator) *RequestService {
 	return &RequestService{
-		isDev:              isDev,
+		isDev:              environment.IsDev(),
 		sessionStorage:     sessionStorage,
 		applicationStorage: applicationStorage,
 		mediator:           mediator,

@@ -44,6 +44,10 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 
 	// TODO: Handle all these errors
 
+	bus := application.GetEventBus()
+	bus.PublishEvent(models.ApplicationEventTypeFetchStarted, application)
+	defer bus.PublishEvent(models.ApplicationEventTypeFetchCompleted, application)
+
 	var baseFolder string
 
 	application.WithRLock(func(a *models.Application) {

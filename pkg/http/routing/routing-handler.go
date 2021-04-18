@@ -17,6 +17,7 @@ import (
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/services"
 	"github.com/wufe/polo/pkg/storage"
+	"github.com/wufe/polo/pkg/utils"
 )
 
 type Handler struct {
@@ -30,9 +31,9 @@ type Handler struct {
 }
 
 // NewHandler creates new routing handler
-func NewHandler(isDev bool, proxy *proxy.Handler, sessionStorage *storage.Session, applicationStorage *storage.Application, query *services.QueryService, request *services.RequestService, static *services.StaticService) *Handler {
+func NewHandler(environment utils.Environment, proxy *proxy.Handler, sessionStorage *storage.Session, applicationStorage *storage.Application, query *services.QueryService, request *services.RequestService, static *services.StaticService) *Handler {
 	return &Handler{
-		isDev:              isDev,
+		isDev:              environment.IsDev(),
 		proxy:              proxy,
 		sessionStorage:     sessionStorage,
 		applicationStorage: applicationStorage,

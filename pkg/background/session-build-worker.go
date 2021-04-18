@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/background/communication"
 	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
@@ -27,6 +28,8 @@ type SessionBuildWorker struct {
 	applicationStorage *storage.Application
 	sessionStorage     *storage.Session
 	mediator           *Mediator
+	sessionBuilder     *models.SessionBuilder
+	pubSubBuilder      *communication.PubSubBuilder
 }
 
 func NewSessionBuildWorker(
@@ -34,12 +37,16 @@ func NewSessionBuildWorker(
 	applicationStorage *storage.Application,
 	sessionStorage *storage.Session,
 	mediator *Mediator,
+	sessionBuilder *models.SessionBuilder,
+	pubSubBuilder *communication.PubSubBuilder,
 ) *SessionBuildWorker {
 	worker := &SessionBuildWorker{
 		global:             globalConfiguration,
 		applicationStorage: applicationStorage,
 		sessionStorage:     sessionStorage,
 		mediator:           mediator,
+		sessionBuilder:     sessionBuilder,
+		pubSubBuilder:      pubSubBuilder,
 	}
 
 	worker.startAcceptingNewSessionRequests()
@@ -66,6 +73,7 @@ func (w *SessionBuildWorker) RequestNewSession(buildInput *queues.SessionBuildIn
 }
 
 func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput) *queues.SessionBuildResult {
+
 	conf := input.Application.GetConfiguration()
 	appName := conf.Name
 	appMaxConcurrentSessions := conf.MaxConcurrentSessions
@@ -103,13 +111,13 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 
 	var session *models.Session
 	if recyclingPreviousSession {
-		session = models.NewSession(input.PreviousSession)
+		session = w.sessionBuilder.Build(input.PreviousSession)
 		session.ResetVariables()
 		session.IncStartupRetriesCount()
 	} else {
 		sessionUUID := uuid.NewString()
 
-		session = models.NewSession(&models.Session{
+		session = w.sessionBuilder.Build(&models.Session{
 			UUID:        sessionUUID,
 			Name:        appName,
 			Port:        0,
@@ -165,7 +173,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 		if sessionAlreadyBeingBuilt != nil {
 			session.LogWarn(fmt.Sprintf("Another session with the UUID %s has already being requested for checkout %s", sessionAlreadyBeingBuilt.UUID, input.Checkout))
 			return &queues.SessionBuildResult{
-				Result:  queues.SessionBuildResultSucceeded,
+				Result:  queues.SessionBuildResultAlreadyBuilt,
 				Session: sessionAlreadyBeingBuilt,
 			}
 		}
@@ -186,12 +194,14 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 	go w.buildSession(session)
 
 	return &queues.SessionBuildResult{
-		Result:  queues.SessionBuildResultSucceeded,
-		Session: session,
+		Result:   queues.SessionBuildResultSucceeded,
+		Session:  session,
+		EventBus: session.GetEventBus(),
 	}
 }
 
 func (w *SessionBuildWorker) buildSession(session *models.Session) {
+	session.GetEventBus().PublishEvent(models.SessionBuildEventTypeBuildStarted, session)
 	conf := session.GetConfiguration()
 	appStartupTimeout := conf.Startup.Timeout
 	appHealthcheck := conf.Healthcheck
@@ -214,10 +224,12 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 	}
 
 	calcBuildMetrics := models.NewMetricsForSession(session)("Build (total)")
+	session.GetEventBus().PublishEvent(models.SessionBuildEventTypePreparingFolders, session)
 	err := w.prepareFolders(session)
 	if err != nil {
 		session.LogError(fmt.Sprintf("Could not build session commit structure: %s", err.Error()))
 		session.SetKillReason(models.KillReasonBuildFailed)
+		session.GetEventBus().PublishEvent(models.SessionBuildEventTypePreparingFoldersFailed, session)
 		abort()
 		w.mediator.CleanSession.Enqueue(session, models.SessionStatusStartFailed)
 		return
@@ -250,12 +262,14 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 			}
 		}
 		session.LogError(err.Error())
+		session.GetEventBus().PublishEvent(models.SessionBuildEventTypeCommandsExecutionFailed, session)
 		abort()
 		return
 	}
 
 	warmup := conf.Warmup
 	if len(warmup.URLs) > 0 {
+		session.GetEventBus().PublishEvent(models.SessionBuildEventTypeWarmupStarted, session)
 		err := w.execWarmups(sessionStartContext, session, conf)
 		if err != nil {
 			if err == ErrWrongSessionState {
@@ -266,6 +280,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 				}
 			}
 			session.LogError(err.Error())
+			session.GetEventBus().PublishEvent(models.SessionBuildEventTypeWarmupFailed, session)
 			abort()
 			return
 		}
@@ -276,12 +291,16 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 
 	if appHealthcheck == (models.Healthcheck{}) {
 		if session.Status != models.SessionStatusStarted {
-			w.mediator.StartSession.Enqueue(session)
+			w.mediator.StartSession.Enqueue(queues.SessionStartInput{
+				Session: session,
+			})
 		}
 		session.LogInfo("Session started")
 	} else {
 		if !healthcheckingStarted {
-			w.mediator.HealthcheckSession.Enqueue(session)
+			w.mediator.HealthcheckSession.Enqueue(queues.SessionHealthcheckInput{
+				Session: session,
+			})
 			healthcheckingStarted = true
 		}
 	}
@@ -300,6 +319,7 @@ func (w *SessionBuildWorker) prepareFolders(session *models.Session) error {
 }
 
 func (w *SessionBuildWorker) execCommands(ctx context.Context, session *models.Session, conf models.ApplicationConfiguration) (healthcheckingStarted bool, err error) {
+	session.GetEventBus().PublishEvent(models.SessionBuildEventTypeCommandsExecutionStarted, session)
 	calcCommandMetrics := models.NewMetricsForSession(session)("Startup commands")
 	defer calcCommandMetrics()
 
@@ -329,7 +349,9 @@ func (w *SessionBuildWorker) execCommands(ctx context.Context, session *models.S
 			} else {
 				w.sessionStorage.Update(session)
 				if command.StartHealthchecking && !healthcheckingStarted && appHealthcheck != (models.Healthcheck{}) {
-					w.mediator.HealthcheckSession.Enqueue(session)
+					w.mediator.HealthcheckSession.Enqueue(queues.SessionHealthcheckInput{
+						Session: session,
+					})
 					healthcheckingStarted = true
 				}
 			}
