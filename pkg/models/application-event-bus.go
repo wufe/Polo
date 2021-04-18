@@ -24,40 +24,37 @@ type ApplicationEvent struct {
 }
 
 type ApplicationEventBus struct {
-	pubSub     *communication.PubSub
-	eventsChan chan ApplicationEvent
+	pubSub *communication.PubSub
 }
 
 func NewApplicationEventBus(pubSubBuilder *communication.PubSubBuilder) *ApplicationEventBus {
 	pubSub := pubSubBuilder.Build()
 	eventBus := &ApplicationEventBus{
-		pubSub:     pubSub,
-		eventsChan: make(chan ApplicationEvent),
+		pubSub: pubSub,
 	}
-	eventBus.convertEvents()
 	return eventBus
 }
 
-func (b *ApplicationEventBus) convertEvents() {
-	ch := b.pubSub.Subscribe("application")
+func (b *ApplicationEventBus) GetChan() <-chan ApplicationEvent {
+	sourceCh, history := b.pubSub.Subscribe("application")
+	destCh := make(chan ApplicationEvent)
 	go func() {
+		for _, pastEv := range b.convertHistoryEntries(history) {
+			destCh <- pastEv
+		}
 		for {
-			rawEvent, ok := <-ch
+			ev, ok := <-sourceCh
 			if !ok {
 				return
 			}
-			go func() {
-				applicationEvent, ok := rawEvent.(ApplicationEvent)
-				if ok {
-					b.eventsChan <- applicationEvent
-				}
-			}()
+			appEv, ok := ev.(ApplicationEvent)
+			if !ok {
+				continue
+			}
+			destCh <- appEv
 		}
 	}()
-}
-
-func (b *ApplicationEventBus) GetChan() <-chan ApplicationEvent {
-	return b.eventsChan
+	return destCh
 }
 
 func (b *ApplicationEventBus) PublishEvent(eventType ApplicationEventType, application *Application) {
@@ -73,6 +70,10 @@ func (b *ApplicationEventBus) Close() {
 
 func (b *ApplicationEventBus) GetHistory() []ApplicationEvent {
 	history := b.pubSub.GetHistory("application")
+	return b.convertHistoryEntries(history)
+}
+
+func (b *ApplicationEventBus) convertHistoryEntries(history *communication.PubSubHistory) []ApplicationEvent {
 	applicationEvents := []ApplicationEvent{}
 	for _, rawEvent := range history.GetEntries() {
 		applicationEvent, ok := rawEvent.(ApplicationEvent)

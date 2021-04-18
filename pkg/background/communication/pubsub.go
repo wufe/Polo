@@ -11,14 +11,20 @@ type PubSub struct {
 	subscriptions map[string][]chan interface{}
 	closed        bool
 	mutexBuilder  utils.MutexBuilder
+	options       PubSubOptions
 }
 
-func newPubSub(mutexBuilder utils.MutexBuilder) *PubSub {
+type PubSubOptions struct {
+	Buffer int
+}
+
+func newPubSub(mutexBuilder utils.MutexBuilder, options PubSubOptions) *PubSub {
 	return &PubSub{
 		mutex:         mutexBuilder(),
 		history:       make(map[string]*PubSubHistory),
 		subscriptions: make(map[string][]chan interface{}),
 		mutexBuilder:  mutexBuilder,
+		options:       options,
 	}
 }
 
@@ -39,9 +45,7 @@ func (ps *PubSub) Publish(topic string, payload interface{}) {
 	}
 
 	for _, ch := range ps.subscriptions[topic] {
-		go func(ch chan interface{}) {
-			ch <- payload
-		}(ch)
+		ch <- payload
 	}
 }
 
@@ -71,15 +75,15 @@ func (ps *PubSub) createHistory(topic string) *PubSubHistory {
 }
 
 // Subscribe to a topic
-func (ps *PubSub) Subscribe(topic string) <-chan interface{} {
+func (ps *PubSub) Subscribe(topic string) (<-chan interface{}, *PubSubHistory) {
 	ps.mutex.Lock()
 	defer ps.mutex.Unlock()
 
-	return ps.subscribeInternal(topic)
+	return ps.subscribeInternal(topic), ps.getHistoryInternal(topic)
 }
 
 func (ps *PubSub) subscribeInternal(topic string) <-chan interface{} {
-	ch := make(chan interface{})
+	ch := make(chan interface{}, ps.options.Buffer)
 	ps.subscriptions[topic] = append(ps.subscriptions[topic], ch)
 	return ch
 }
@@ -103,6 +107,10 @@ func (ps *PubSub) Close() {
 func (ps *PubSub) GetHistory(topic string) *PubSubHistory {
 	ps.mutex.RLock()
 	defer ps.mutex.RUnlock()
+	return ps.getHistoryInternal(topic)
+}
+
+func (ps *PubSub) getHistoryInternal(topic string) *PubSubHistory {
 	history, exists := ps.history[topic]
 	if !exists {
 		ps.mutex.RUnlock()

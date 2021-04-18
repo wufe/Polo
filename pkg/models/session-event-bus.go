@@ -29,40 +29,37 @@ type SessionBuildEvent struct {
 }
 
 type SessionLifetimeEventBus struct {
-	pubSub     *communication.PubSub
-	eventsChan chan SessionBuildEvent
+	pubSub *communication.PubSub
 }
 
 func NewSessionBuildEventBus(pubSubBuilder *communication.PubSubBuilder) *SessionLifetimeEventBus {
 	pubSub := pubSubBuilder.Build()
 	eventBus := &SessionLifetimeEventBus{
-		pubSub:     pubSub,
-		eventsChan: make(chan SessionBuildEvent),
+		pubSub: pubSub,
 	}
-	eventBus.convertEvents()
 	return eventBus
 }
 
-func (b *SessionLifetimeEventBus) convertEvents() {
-	ch := b.pubSub.Subscribe("session")
+func (b *SessionLifetimeEventBus) GetChan() <-chan SessionBuildEvent {
+	sourceCh, history := b.pubSub.Subscribe("session")
+	destCh := make(chan SessionBuildEvent)
 	go func() {
+		for _, pastEv := range b.convertHistoryEntries(history) {
+			destCh <- pastEv
+		}
 		for {
-			rawEvent, ok := <-ch
+			ev, ok := <-sourceCh
 			if !ok {
 				return
 			}
-			go func() {
-				sessionEvent, ok := rawEvent.(SessionBuildEvent)
-				if ok {
-					b.eventsChan <- sessionEvent
-				}
-			}()
+			sessionEv, ok := ev.(SessionBuildEvent)
+			if !ok {
+				continue
+			}
+			destCh <- sessionEv
 		}
 	}()
-}
-
-func (b *SessionLifetimeEventBus) GetChan() <-chan SessionBuildEvent {
-	return b.eventsChan
+	return destCh
 }
 
 func (b *SessionLifetimeEventBus) PublishEvent(eventType SessionBuildEventType, session *Session) {
@@ -78,6 +75,17 @@ func (b *SessionLifetimeEventBus) Close() {
 
 func (b *SessionLifetimeEventBus) GetHistory() []SessionBuildEvent {
 	history := b.pubSub.GetHistory("session")
+	sessionEvents := []SessionBuildEvent{}
+	for _, rawEvent := range history.GetEntries() {
+		sessionEvent, ok := rawEvent.(SessionBuildEvent)
+		if ok {
+			sessionEvents = append(sessionEvents, sessionEvent)
+		}
+	}
+	return sessionEvents
+}
+
+func (b *SessionLifetimeEventBus) convertHistoryEntries(history *communication.PubSubHistory) []SessionBuildEvent {
 	sessionEvents := []SessionBuildEvent{}
 	for _, rawEvent := range history.GetEntries() {
 		sessionEvent, ok := rawEvent.(SessionBuildEvent)

@@ -13,5 +13,5 @@ func NewPubSubBuilder(mutexBuilder utils.MutexBuilder) *PubSubBuilder {
 }
 
 func (b *PubSubBuilder) Build() *PubSub {
-	return newPubSub(b.mutexBuilder)
+	return newPubSub(b.mutexBuilder, PubSubOptions{10}) // Default options
 }
