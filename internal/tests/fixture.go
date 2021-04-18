@@ -16,7 +16,7 @@ import (
 	"github.com/wufe/polo/pkg/utils"
 )
 
-func Fixture(configuration *models.RootConfiguration) {
+func Fixture(configuration *models.RootConfiguration) []*models.Application {
 	environment := utils_fixture.BuildTestEnvironment()
 
 	// Factories
@@ -89,4 +89,6 @@ func Fixture(configuration *models.RootConfiguration) {
 		LoadSessionHelper: false,
 		StartServer:       false,
 	})
+
+	return applications
 }

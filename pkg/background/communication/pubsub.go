@@ -80,7 +80,7 @@ func (ps *PubSub) Subscribe(topic string) <-chan interface{} {
 
 func (ps *PubSub) subscribeInternal(topic string) <-chan interface{} {
 	ch := make(chan interface{})
-	ps.subscriptions[topic] = append(ps.subscriptions[""], ch)
+	ps.subscriptions[topic] = append(ps.subscriptions[topic], ch)
 	return ch
 }
 

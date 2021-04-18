@@ -1,9 +1,15 @@
 package models
 
-import "github.com/wufe/polo/pkg/background/communication"
+import (
+	"github.com/wufe/polo/pkg/background/communication"
+)
 
 const (
-	ApplicationEventTypeInitializationStarted ApplicationEventType = "initialization_started"
+	ApplicationEventTypeNone                    ApplicationEventType = "none"
+	ApplicationEventTypeInitializationStarted   ApplicationEventType = "initialization_started"
+	ApplicationEventTypeInitializationCompleted ApplicationEventType = "initialization_completed"
+	ApplicationEventTypeFetchStarted            ApplicationEventType = "fetch_started"
+	ApplicationEventTypeFetchCompleted          ApplicationEventType = "fetch_completed"
 )
 
 type ApplicationEventType string
