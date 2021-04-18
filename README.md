@@ -8,6 +8,7 @@
 </p>
 
 [![CodeQL](https://github.com/Wufe/Polo/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/Wufe/Polo/actions/workflows/codeql-analysis.yml)
+[![Tests](https://github.com/Wufe/Polo/actions/workflows/go.yml/badge.svg)](https://github.com/Wufe/Polo/actions/workflows/go.yml)
 
 ## What is Polo  
 
