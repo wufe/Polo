@@ -495,7 +495,7 @@ func (session *Session) GetEventBus() *SessionLifetimeEventBus {
 
 func (session *Session) GetTarget() string {
 	session.RLock()
-	session.RUnlock()
+	defer session.RUnlock()
 	target := session.configuration.Target
 	return session.Variables.ApplyTo(target)
 }
