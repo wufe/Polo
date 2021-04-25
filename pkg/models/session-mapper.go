@@ -14,7 +14,7 @@ func MapSession(model *Session) *output.Session {
 	session := &output.Session{
 		UUID:              model.UUID,
 		Name:              model.Name,
-		Target:            model.Target,
+		Target:            model.GetTarget(),
 		Port:              model.Port,
 		ApplicationName:   model.ApplicationName,
 		CreatedAt:         model.createdAt,

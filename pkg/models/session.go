@@ -87,7 +87,6 @@ type Session struct {
 	utils.RWLocker  `json:"-"`
 	UUID            string       `json:"uuid"`
 	Name            string       `json:"name"`
-	Target          string       `json:"target"`
 	Port            int          `json:"port"`
 	ApplicationName string       `json:"applicationName"`
 	Application     *Application `json:"-"`
@@ -492,4 +491,11 @@ func (session *Session) GetEventBus() *SessionLifetimeEventBus {
 	session.RLock()
 	defer session.RUnlock()
 	return session.bus
+}
+
+func (session *Session) GetTarget() string {
+	session.RLock()
+	session.RUnlock()
+	target := session.configuration.Target
+	return session.Variables.ApplyTo(target)
 }
