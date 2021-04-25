@@ -9,6 +9,7 @@
 		"dev:race": "run-p serve start:race",
 		"start:race": "cross-env GO_DEBUG=race GO_ENV=development go run -race cmd/server/main.go",
 		"start": "cross-env GO_ENV=development go run cmd/server/main.go",
+		"build:docker": "docker build -t polo:local -f ./docker/Dockerfile .",
 		"build:server:application": "go build -o polo cmd/server/main.go",
 		"start:proxy": "cross-env GO_ENV=development ./polo",
 		"start:prod": "run-s build:prod start:proxy:prod",
