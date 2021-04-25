@@ -567,3 +567,4 @@ MigrationBackup/
 !/testserver.yml
 /.host
 /release
+!/docker/dockerized-testserver.yml
