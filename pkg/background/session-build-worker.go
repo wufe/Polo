@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -121,7 +120,6 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 			UUID:        sessionUUID,
 			Name:        appName,
 			Port:        0,
-			Target:      "",
 			Status:      models.SessionStatusStarting,
 			Application: input.Application,
 			CommitID:    input.Checkout,
@@ -136,7 +134,6 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 	// Getting configuration matching this session
 	conf = session.GetConfiguration()
 	appPort := conf.Port
-	appTarget := conf.Target
 
 	checkout, ok := input.Application.ObjectsToHashMap[input.Checkout]
 	if !ok {
@@ -179,14 +176,11 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 		}
 	}
 
-	target := strings.ReplaceAll(appTarget, "{{port}}", fmt.Sprint(freePort))
-	session.Target = target
-	session.LogInfo(fmt.Sprintf("Setting session target to %s", session.Target))
+	session.LogInfo(fmt.Sprintf("Session target is %s", session.GetTarget()))
 
 	session.Variables["uuid"] = session.UUID
 	session.Variables["name"] = session.Name
 	session.Variables["port"] = fmt.Sprint(session.Port)
-	session.Variables["target"] = session.Target
 	session.Variables["commit"] = session.CommitID
 
 	w.sessionStorage.Add(session)

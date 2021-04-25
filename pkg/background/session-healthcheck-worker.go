@@ -70,7 +70,7 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 				return
 			}
 
-			target, err := url.Parse(session.Target)
+			target, err := url.Parse(session.GetTarget())
 			if err != nil {
 				session.LogError(fmt.Sprintf("Could not parse target URL: %s", err.Error()))
 				log.Errorln("Could not parse target URL", err)
