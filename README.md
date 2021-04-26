@@ -41,6 +41,7 @@ Polo will then start the application and provide a reverse proxy feature for nav
 
 - Start Polo from command line
 
+More info about the installation process and the configuration file in [the documentation](https://polo.bembi.dev).
 
 ***
 
