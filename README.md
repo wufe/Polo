@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="./.assets/logo.svg" width="50%" />
+    <img src="https://raw.githubusercontent.com/Wufe/Polo/main/.assets/logo.svg" width="50%" />
     <br />
     <br />
     <h1 align="center">Polo</h1>
