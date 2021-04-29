@@ -6,6 +6,7 @@ import (
 	"github.com/wufe/polo/pkg"
 	"github.com/wufe/polo/pkg/background"
 	"github.com/wufe/polo/pkg/background/communication"
+	"github.com/wufe/polo/pkg/background/fetch"
 	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/http/proxy"
 	"github.com/wufe/polo/pkg/http/rest"
@@ -16,7 +17,18 @@ import (
 	"github.com/wufe/polo/pkg/utils"
 )
 
-func Fixture(applicationConfiguration *models.ApplicationConfiguration) []*models.Application {
+type InjectableServices struct {
+	RepositoryFetcher fetch.RepositoryFetcher
+}
+
+func (s *InjectableServices) GetRepositoryFetcher() fetch.RepositoryFetcher {
+	if s == nil || s.RepositoryFetcher == nil {
+		return fetch.NewRepositoryFetcher()
+	}
+	return s.RepositoryFetcher
+}
+
+func Fixture(applicationConfiguration *models.ApplicationConfiguration, injectable *InjectableServices) []*models.Application {
 
 	environment := utils_fixture.BuildTestEnvironment()
 
@@ -45,6 +57,9 @@ func Fixture(applicationConfiguration *models.ApplicationConfiguration) []*model
 		applications = append(applications, application)
 	}
 
+	// Git dependencies
+	fetcher := injectable.GetRepositoryFetcher()
+
 	// Storage
 	database := storage_fixture.NewDB(environment.GetExecutableFolder(), &storage_fixture.FixtureDBOptions{
 		Clean: true,
@@ -71,7 +86,7 @@ func Fixture(applicationConfiguration *models.ApplicationConfiguration) []*model
 	background.NewSessionDestroyWorker(mediator)
 	background.NewSessionHealthcheckWorker(mediator)
 	background.NewApplicationInitWorker(&configuration.Global, mediator)
-	background.NewApplicationFetchWorker(sesStorage, mediator)
+	background.NewApplicationFetchWorker(sesStorage, fetcher, mediator)
 
 	// Services
 	staticService := services.NewStaticService(environment)

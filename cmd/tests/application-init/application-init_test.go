@@ -21,7 +21,7 @@ func Test_ApplicationInit(t *testing.T) {
 		},
 		Name:      "TestServer",
 		IsDefault: true,
-	})
+	}, nil)
 	firstApplicationBus := applications[0].GetEventBus()
 
 	events_assertions.AssertApplicationEvents(

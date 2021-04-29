@@ -53,7 +53,7 @@ func (w *SessionFilesystemWorker) buildSessionCommitStructure(session *models.Se
 }
 
 func buildStructureCopying(session *models.Session, checkout string) (string, error) {
-	gitClient := versioning.GetGitClient(session.Application)
+	gitClient := versioning.GetGitClient()
 
 	applicationBaseFolder := session.Application.BaseFolder
 	sessionCommitFolder := filepath.Join(session.Application.Folder, checkout)
@@ -91,7 +91,7 @@ func buildStructureCopying(session *models.Session, checkout string) (string, er
 }
 
 func buildStructureCloning(session *models.Session, checkout string) (string, error) {
-	gitClient := versioning.GetGitClient(session.Application)
+	gitClient := versioning.GetGitClient()
 
 	var appFolder string
 	session.Application.WithRLock(func(a *models.Application) {
