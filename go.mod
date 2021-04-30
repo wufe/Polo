@@ -13,6 +13,7 @@ require (
 	github.com/rakyll/statik v0.1.7
 	github.com/sasha-s/go-deadlock v0.2.0
 	github.com/sirupsen/logrus v1.7.0
+	go.uber.org/dig v1.10.0 // indirect
 	golang.org/x/net v0.0.0-20210119194325-5f4716e94777 // indirect
 	golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4 // indirect
 	gopkg.in/yaml.v2 v2.4.0
