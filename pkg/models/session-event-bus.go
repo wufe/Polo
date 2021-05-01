@@ -74,21 +74,9 @@ func (b *SessionLifetimeEventBus) Close() {
 	b.pubSub.Close()
 }
 
-func (b *SessionLifetimeEventBus) GetHistory() []SessionBuildEvent {
-	history := b.pubSub.GetHistory("session")
+func (b *SessionLifetimeEventBus) convertHistoryEntries(entries []interface{}) []SessionBuildEvent {
 	sessionEvents := []SessionBuildEvent{}
-	for _, rawEvent := range history.GetEntries() {
-		sessionEvent, ok := rawEvent.(SessionBuildEvent)
-		if ok {
-			sessionEvents = append(sessionEvents, sessionEvent)
-		}
-	}
-	return sessionEvents
-}
-
-func (b *SessionLifetimeEventBus) convertHistoryEntries(history *communication.PubSubHistory) []SessionBuildEvent {
-	sessionEvents := []SessionBuildEvent{}
-	for _, rawEvent := range history.GetEntries() {
+	for _, rawEvent := range entries {
 		sessionEvent, ok := rawEvent.(SessionBuildEvent)
 		if ok {
 			sessionEvents = append(sessionEvents, sessionEvent)

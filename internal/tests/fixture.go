@@ -5,7 +5,7 @@ import (
 	"github.com/wufe/polo/pkg/models"
 )
 
-func Fixture(applicationConfiguration *models.ApplicationConfiguration, injectable *InjectableServices) []*models.Application {
+func Fixture(applicationConfiguration *models.ApplicationConfiguration, injectable *InjectableServices) *DI {
 
 	container := NewDIContainer(injectable)
 
@@ -22,6 +22,7 @@ func Fixture(applicationConfiguration *models.ApplicationConfiguration, injectab
 
 	// Git
 
+	container.AddGitClient()
 	container.AddRepositoryFetcher()
 
 	// Configuration
@@ -79,5 +80,5 @@ func Fixture(applicationConfiguration *models.ApplicationConfiguration, injectab
 		StartServer:       false,
 	})
 
-	return container.GetApplications()
+	return container
 }

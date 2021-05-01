@@ -37,52 +37,40 @@ func (ps *PubSub) Publish(topic string, payload interface{}) {
 		return
 	}
 
-	_, exists := ps.history[topic]
+	history, exists := ps.history[topic]
 	if !exists {
 		ps.mutex.RUnlock()
-		ps.createHistory(topic)
+		ps.mutex.Lock()
+		history = ps.createHistoryInternal(topic)
+		ps.mutex.Unlock()
 		ps.mutex.RLock()
 	}
+
+	history.AddEntry(payload)
 
 	for _, ch := range ps.subscriptions[topic] {
 		ch <- payload
 	}
 }
 
-func (ps *PubSub) createHistory(topic string) *PubSubHistory {
-	ps.mutex.Lock()
+func (ps *PubSub) createHistoryInternal(topic string) *PubSubHistory {
 	history := &PubSubHistory{
 		mutex: ps.mutexBuilder(),
 	}
 	ps.history[topic] = history
 
-	// History filling subscription
-	ch := ps.subscribeInternal(topic)
-	go func(history *PubSubHistory) {
-		for {
-			ev, ok := <-ch
-			if !ok {
-				return
-			}
-			history.mutex.Lock()
-			history.entries = append(history.entries, ev)
-			history.mutex.Unlock()
-		}
-	}(history)
-
-	ps.mutex.Unlock()
 	return history
 }
 
 // Subscribe to a topic
-func (ps *PubSub) Subscribe(topic string) (<-chan interface{}, *PubSubHistory) {
+func (ps *PubSub) Subscribe(topic string) (<-chan interface{}, []interface{}) {
 	ps.mutex.Lock()
 	subscriptionChan := ps.subscribeInternal(topic)
-	ps.mutex.Unlock()
+	defer ps.mutex.Unlock()
 
 	history := ps.getHistoryInternal(topic)
 
-	return subscriptionChan, history
+	return subscriptionChan, history.GetEntries()
 }
 
 func (ps *PubSub) subscribeInternal(topic string) <-chan interface{} {
@@ -106,17 +94,10 @@ func (ps *PubSub) Close() {
 	}
 }
 
-// GetHistory retrieves the history of the events for a given topic
-func (ps *PubSub) GetHistory(topic string) *PubSubHistory {
-	ps.mutex.Lock()
-	defer ps.mutex.Unlock()
-	return ps.getHistoryInternal(topic)
-}
-
 func (ps *PubSub) getHistoryInternal(topic string) *PubSubHistory {
 	history, exists := ps.history[topic]
 	if !exists {
-		history = ps.createHistory(topic)
+		history = ps.createHistoryInternal(topic)
 	}
 	return history
 }
@@ -132,4 +113,10 @@ func (h *PubSubHistory) GetEntries() []interface{} {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 	return h.entries
+}
+
+func (h *PubSubHistory) AddEntry(entry interface{}) {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+	h.entries = append(h.entries, entry)
 }

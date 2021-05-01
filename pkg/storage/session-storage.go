@@ -14,12 +14,12 @@ import (
 // Contains methods to access and store sessions into the database
 type Session struct {
 	utils.RWLocker
-	database *Database
+	database Database
 	sessions []*models.Session
 }
 
 // NewSession creates new database storage
-func NewSession(db *Database, environment utils.Environment) *Session {
+func NewSession(db Database, environment utils.Environment) *Session {
 	session := &Session{
 		RWLocker: utils.GetMutex(environment),
 		database: db,
@@ -32,7 +32,7 @@ func NewSession(db *Database, environment utils.Environment) *Session {
 // retrieving them from the database
 func (s *Session) LoadSessions(application *Application, sessionBuilder *models.SessionBuilder) {
 	sessions := []*models.Session{}
-	err := s.database.DB.View(func(txn *badger.Txn) error {
+	err := s.database.GetDB().View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
 		prefix := []byte("session/")
@@ -92,7 +92,7 @@ func (s *Session) Update(session *models.Session) {
 }
 
 func (s *Session) internalUpdate(session *models.Session) {
-	err := s.database.DB.Update(func(txn *badger.Txn) error {
+	err := s.database.GetDB().Update(func(txn *badger.Txn) error {
 		session.RLock()
 		result, err := json.Marshal(session)
 		defer session.RUnlock()
@@ -113,7 +113,7 @@ func (s *Session) internalUpdate(session *models.Session) {
 // Delete removes a session
 func (s *Session) Delete(session *models.Session) {
 	log.Tracef("Deleting session %s", session.UUID)
-	err := s.database.DB.Update(func(txn *badger.Txn) error {
+	err := s.database.GetDB().Update(func(txn *badger.Txn) error {
 		return txn.Delete([]byte(fmt.Sprintf("session/%s", session.UUID)))
 	})
 	if err != nil {

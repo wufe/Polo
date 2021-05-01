@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/models"
 )
 
@@ -33,6 +34,7 @@ L:
 			if !ok {
 				break L
 			}
+			log.Infof("TEST [EVENT]: %s", ev.EventType)
 			stringifiedGotEventsSlice = append(stringifiedGotEventsSlice, ev.EventType.String())
 			if ev.EventType == events[lastFoundIndex+1] {
 				lastFoundIndex++
@@ -55,6 +57,58 @@ L:
 		if lastFoundIndex < len(events)-1 {
 			stringifiedGotEvents := strings.Join(stringifiedGotEventsSlice, ", ")
 			t.Errorf("expected application events to be %s, but got %s instead", stringifiedExpectedEvents, stringifiedGotEvents)
+		}
+	}
+}
+
+func AssertSessionEvents(
+	ch <-chan models.SessionBuildEvent,
+	events []models.SessionBuildEventType,
+	t *testing.T,
+	timeout time.Duration,
+) {
+
+	stringifiedExpectedEventsSlice := []string{}
+	for _, ev := range events {
+		stringifiedExpectedEventsSlice = append(stringifiedExpectedEventsSlice, ev.String())
+	}
+	stringifiedExpectedEvents := strings.Join(stringifiedExpectedEventsSlice, ", ")
+
+	lastFoundIndex := -1
+	stringifiedGotEventsSlice := []string{}
+
+	timeoutFired := false
+
+L:
+	for {
+		select {
+		case ev, ok := <-ch:
+			if !ok {
+				break L
+			}
+			log.Infof("TEST [EVENT]: %s", ev.EventType)
+			stringifiedGotEventsSlice = append(stringifiedGotEventsSlice, ev.EventType.String())
+			if ev.EventType == events[lastFoundIndex+1] {
+				lastFoundIndex++
+				if lastFoundIndex == len(events)-1 {
+					break L
+				}
+			} else {
+				break L
+			}
+		case <-time.After(timeout):
+			timeoutFired = true
+			break L
+		}
+	}
+
+	if timeoutFired {
+		stringifiedGotEvents := strings.Join(stringifiedGotEventsSlice, ", ")
+		t.Errorf("expected session events to be %s, but timeout fired and got %s events", stringifiedExpectedEvents, stringifiedGotEvents)
+	} else {
+		if lastFoundIndex < len(events)-1 {
+			stringifiedGotEvents := strings.Join(stringifiedGotEventsSlice, ", ")
+			t.Errorf("expected session events to be %s, but got %s instead", stringifiedExpectedEvents, stringifiedGotEvents)
 		}
 	}
 }

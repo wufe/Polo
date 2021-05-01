@@ -10,7 +10,6 @@ import (
 	"github.com/wufe/polo/pkg"
 	"github.com/wufe/polo/pkg/background"
 	"github.com/wufe/polo/pkg/background/communication"
-	"github.com/wufe/polo/pkg/background/fetch"
 	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/http/proxy"
 	"github.com/wufe/polo/pkg/http/rest"
@@ -19,6 +18,7 @@ import (
 	"github.com/wufe/polo/pkg/services"
 	"github.com/wufe/polo/pkg/storage"
 	"github.com/wufe/polo/pkg/utils"
+	"github.com/wufe/polo/pkg/versioning"
 	"go.uber.org/dig"
 )
 
@@ -76,12 +76,23 @@ func (d *DI) AddApplicationBuilder() {
 
 // Git
 
+func (d *DI) AddGitClient() {
+	if err := d.container.Provide(func() versioning.GitClient {
+		if d.injectable == nil || d.injectable.GitClient == nil {
+			return versioning.GetGitClient()
+		}
+		return d.injectable.GitClient
+	}); err != nil {
+		log.Panic(err)
+	}
+}
+
 func (d *DI) AddRepositoryFetcher() {
-	if err := d.container.Provide(func() fetch.RepositoryFetcher {
+	if err := d.container.Provide(func(gitClient versioning.GitClient) versioning.RepositoryFetcher {
 		if d.injectable != nil && d.injectable.RepositoryFetcher != nil {
 			return d.injectable.RepositoryFetcher
 		}
-		return fetch.NewRepositoryFetcher()
+		return versioning.NewRepositoryFetcher(gitClient)
 	}); err != nil {
 		log.Panic(err)
 	}
@@ -93,7 +104,8 @@ func (d *DI) AddConfiguration(applicationConfiguration *models.ApplicationConfig
 	if err := d.container.Provide(func(environment utils.Environment, applicationBuilder *models.ApplicationBuilder) (*models.RootConfiguration, []*models.Application) {
 		configuration := &models.RootConfiguration{
 			Global: models.GlobalConfiguration{
-				SessionsFolder: environment.GetExecutableFolder() + "/.sessions",
+				SessionsFolder:        environment.GetExecutableFolder() + "/.sessions",
+				MaxConcurrentSessions: 999,
 			},
 			ApplicationConfigurations: []*models.ApplicationConfiguration{
 				applicationConfiguration,
@@ -134,10 +146,8 @@ func (d *DI) AddInstance() {
 // Storage
 
 func (d *DI) AddDatabase() {
-	if err := d.container.Provide(func(environment utils.Environment) *storage.Database {
-		return storage_fixture.NewDB(environment.GetExecutableFolder(), &storage_fixture.FixtureDBOptions{
-			Clean: true,
-		})
+	if err := d.container.Provide(func(environment utils.Environment) storage.Database {
+		return storage_fixture.NewDB()
 	}); err != nil {
 		log.Panic(err)
 	}
@@ -153,7 +163,7 @@ func (d *DI) AddApplicationStorage() {
 }
 
 func (d *DI) AddSessionStorage() {
-	if err := d.container.Provide(func(environment utils.Environment, database *storage.Database) *storage.Session {
+	if err := d.container.Provide(func(environment utils.Environment, database storage.Database) *storage.Session {
 		sesStorage := storage.NewSession(database, environment)
 		return sesStorage
 	}); err != nil {
@@ -287,8 +297,8 @@ func (d *DI) AddSessionCleanWorker() {
 }
 
 func (d *DI) AddSessionFilesystemWorker() {
-	if err := d.container.Provide(func(mediator *background.Mediator) *background.SessionFilesystemWorker {
-		return background.NewSessionFilesystemWorker(mediator)
+	if err := d.container.Provide(func(gitClient versioning.GitClient, mediator *background.Mediator) *background.SessionFilesystemWorker {
+		return background.NewSessionFilesystemWorker(gitClient, mediator)
 	}); err != nil {
 		log.Panic(err)
 	}
@@ -311,15 +321,15 @@ func (d *DI) AddSessionHealthcheckWorker() {
 }
 
 func (d *DI) AddApplicationInitWorker() {
-	if err := d.container.Provide(func(configuration *models.RootConfiguration, mediator *background.Mediator) *background.ApplicationInitWorker {
-		return background.NewApplicationInitWorker(&configuration.Global, mediator)
+	if err := d.container.Provide(func(configuration *models.RootConfiguration, gitClient versioning.GitClient, mediator *background.Mediator) *background.ApplicationInitWorker {
+		return background.NewApplicationInitWorker(&configuration.Global, gitClient, mediator)
 	}); err != nil {
 		log.Panic(err)
 	}
 }
 
 func (d *DI) AddApplicationFetchWorker() {
-	if err := d.container.Provide(func(sesStorage *storage.Session, fetcher fetch.RepositoryFetcher, mediator *background.Mediator) *background.ApplicationFetchWorker {
+	if err := d.container.Provide(func(sesStorage *storage.Session, fetcher versioning.RepositoryFetcher, mediator *background.Mediator) *background.ApplicationFetchWorker {
 		return background.NewApplicationFetchWorker(sesStorage, fetcher, mediator)
 	}); err != nil {
 		log.Panic(err)
@@ -423,6 +433,27 @@ func (d *DI) GetApplications() []*models.Application {
 	return applications
 }
 
+func (d *DI) GetMediator() *background.Mediator {
+	var mediator *background.Mediator
+	if err := d.container.Invoke(func(m *background.Mediator) {
+		mediator = m
+	}); err != nil {
+		log.Panic(err)
+	}
+	return mediator
+}
+
+func (d *DI) GetRequestService() *services.RequestService {
+	var service *services.RequestService
+	if err := d.container.Invoke(func(s *services.RequestService) {
+		service = s
+	}); err != nil {
+		log.Panic(err)
+	}
+	return service
+}
+
 type InjectableServices struct {
-	RepositoryFetcher fetch.RepositoryFetcher
+	RepositoryFetcher versioning.RepositoryFetcher
+	GitClient         versioning.GitClient
 }

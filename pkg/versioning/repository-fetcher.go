@@ -1,4 +1,4 @@
-package fetch
+package versioning
 
 import (
 	"fmt"
@@ -9,16 +9,19 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/wufe/polo/pkg/models"
-	"github.com/wufe/polo/pkg/versioning"
 )
 
 type RepositoryFetcher interface {
 	Fetch(baseFolder string) (*FetchResult, []error)
 }
-type RepositoryFetcherImpl struct{}
+type RepositoryFetcherImpl struct {
+	gitClient GitClient
+}
 
-func NewRepositoryFetcher() *RepositoryFetcherImpl {
-	return &RepositoryFetcherImpl{}
+func NewRepositoryFetcher(gitClient GitClient) *RepositoryFetcherImpl {
+	return &RepositoryFetcherImpl{
+		gitClient: gitClient,
+	}
 }
 
 type FetchResult struct {
@@ -53,8 +56,6 @@ func (fetcher *RepositoryFetcherImpl) Fetch(baseFolder string) (*FetchResult, []
 
 	registerHash := fetcher.registerObjectHash(objectsToHashMap)
 
-	gitClient := versioning.GetGitClient()
-
 	// Open repository
 	repo, err := git.PlainOpen(baseFolder)
 	if err != nil {
@@ -63,7 +64,7 @@ func (fetcher *RepositoryFetcherImpl) Fetch(baseFolder string) (*FetchResult, []
 	}
 
 	// Fetch
-	err = gitClient.FetchAll(baseFolder)
+	err = fetcher.gitClient.FetchAll(baseFolder)
 	if err != git.NoErrAlreadyUpToDate {
 		errors = append(errors, err)
 	}

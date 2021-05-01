@@ -69,14 +69,9 @@ func (b *ApplicationEventBus) Close() {
 	b.pubSub.Close()
 }
 
-func (b *ApplicationEventBus) GetHistory() []ApplicationEvent {
-	history := b.pubSub.GetHistory("application")
-	return b.convertHistoryEntries(history)
-}
-
-func (b *ApplicationEventBus) convertHistoryEntries(history *communication.PubSubHistory) []ApplicationEvent {
+func (b *ApplicationEventBus) convertHistoryEntries(entries []interface{}) []ApplicationEvent {
 	applicationEvents := []ApplicationEvent{}
-	for _, rawEvent := range history.GetEntries() {
+	for _, rawEvent := range entries {
 		applicationEvent, ok := rawEvent.(ApplicationEvent)
 		if ok {
 			applicationEvents = append(applicationEvents, applicationEvent)

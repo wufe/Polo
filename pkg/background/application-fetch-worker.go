@@ -2,18 +2,18 @@ package background
 
 import (
 	log "github.com/sirupsen/logrus"
-	"github.com/wufe/polo/pkg/background/fetch"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
+	"github.com/wufe/polo/pkg/versioning"
 )
 
 type ApplicationFetchWorker struct {
 	sessionStorage    *storage.Session
 	mediator          *Mediator
-	repositoryFetcher fetch.RepositoryFetcher
+	repositoryFetcher versioning.RepositoryFetcher
 }
 
-func NewApplicationFetchWorker(sessionStorage *storage.Session, repositoryFetcher fetch.RepositoryFetcher, mediator *Mediator) *ApplicationFetchWorker {
+func NewApplicationFetchWorker(sessionStorage *storage.Session, repositoryFetcher versioning.RepositoryFetcher, mediator *Mediator) *ApplicationFetchWorker {
 	worker := &ApplicationFetchWorker{
 		sessionStorage:    sessionStorage,
 		repositoryFetcher: repositoryFetcher,

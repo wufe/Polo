@@ -21,6 +21,7 @@ func main() {
 
 	// Git
 
+	container.AddGitClient()
 	container.AddRepositoryFetcher()
 
 	// Configuration

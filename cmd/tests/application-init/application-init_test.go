@@ -11,7 +11,7 @@ import (
 
 func Test_ApplicationInit(t *testing.T) {
 
-	applications := tests.Fixture(&models.ApplicationConfiguration{
+	di := tests.Fixture(&models.ApplicationConfiguration{
 		SharedConfiguration: models.SharedConfiguration{
 			Remote: "https://github.com/wufe/polo-testserver",
 			Commands: models.Commands{
@@ -19,9 +19,10 @@ func Test_ApplicationInit(t *testing.T) {
 				Stop:  []models.Command{},
 			},
 		},
-		Name:      "TestServer",
+		Name:      "Test_ApplicationInit",
 		IsDefault: true,
 	}, nil)
+	applications := di.GetApplications()
 	firstApplicationBus := applications[0].GetEventBus()
 
 	events_assertions.AssertApplicationEvents(

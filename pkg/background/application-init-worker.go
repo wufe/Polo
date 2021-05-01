@@ -12,14 +12,16 @@ import (
 )
 
 type ApplicationInitWorker struct {
-	global   *models.GlobalConfiguration
-	mediator *Mediator
+	global    *models.GlobalConfiguration
+	gitClient versioning.GitClient
+	mediator  *Mediator
 }
 
-func NewApplicationInitWorker(globalConfiguration *models.GlobalConfiguration, mediator *Mediator) *ApplicationInitWorker {
+func NewApplicationInitWorker(globalConfiguration *models.GlobalConfiguration, gitClient versioning.GitClient, mediator *Mediator) *ApplicationInitWorker {
 	worker := &ApplicationInitWorker{
-		global:   globalConfiguration,
-		mediator: mediator,
+		global:    globalConfiguration,
+		gitClient: gitClient,
+		mediator:  mediator,
 	}
 	return worker
 }
@@ -69,9 +71,7 @@ func (w *ApplicationInitWorker) InitApplication(application *models.Application)
 	baseFolder := filepath.Join(applicationFolder, "_base") // Folder used for performing periodic git fetch --all and/or git log
 	if _, err := os.Stat(baseFolder); os.IsNotExist(err) {  // Application folder does not exist
 
-		gitClient := versioning.GetGitClient()
-
-		err = gitClient.Clone(applicationFolder, "_base", remote)
+		err = w.gitClient.Clone(applicationFolder, "_base", remote)
 		if err != nil {
 			return err
 		}
