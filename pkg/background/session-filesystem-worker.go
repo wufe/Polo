@@ -20,10 +20,11 @@ func NewSessionFilesystemWorker(mediator *Mediator) *SessionFilesystemWorker {
 	worker := &SessionFilesystemWorker{
 		mediator: mediator,
 	}
-
-	worker.startAcceptingFSRequests()
-
 	return worker
+}
+
+func (w *SessionFilesystemWorker) Start() {
+	w.startAcceptingFSRequests()
 }
 
 func (w *SessionFilesystemWorker) startAcceptingFSRequests() {

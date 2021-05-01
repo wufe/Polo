@@ -18,10 +18,11 @@ func NewSessionCleanWorker(sessionStorage *storage.Session, mediator *Mediator) 
 		sessionStorage: sessionStorage,
 		mediator:       mediator,
 	}
-
-	worker.startAcceptingSessionCleanRequests()
-
 	return worker
+}
+
+func (w *SessionCleanWorker) Start() {
+	w.startAcceptingSessionCleanRequests()
 }
 
 func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {

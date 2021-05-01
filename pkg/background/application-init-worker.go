@@ -21,10 +21,11 @@ func NewApplicationInitWorker(globalConfiguration *models.GlobalConfiguration, m
 		global:   globalConfiguration,
 		mediator: mediator,
 	}
-
-	worker.startAcceptingInitRequests()
-
 	return worker
+}
+
+func (w *ApplicationInitWorker) Start() {
+	w.startAcceptingInitRequests()
 }
 
 func (w *ApplicationInitWorker) startAcceptingInitRequests() {

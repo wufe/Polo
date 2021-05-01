@@ -47,10 +47,11 @@ func NewSessionBuildWorker(
 		sessionBuilder:     sessionBuilder,
 		pubSubBuilder:      pubSubBuilder,
 	}
-
-	worker.startAcceptingNewSessionRequests()
-
 	return worker
+}
+
+func (w *SessionBuildWorker) Start() {
+	w.startAcceptingNewSessionRequests()
 }
 
 func (w *SessionBuildWorker) startAcceptingNewSessionRequests() {

@@ -1,6 +1,8 @@
 package queues
 
-import "github.com/wufe/polo/pkg/models"
+import (
+	"github.com/wufe/polo/pkg/models"
+)
 
 type ApplicationInitQueue struct {
 	RequestChan  chan *models.Application

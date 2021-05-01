@@ -19,10 +19,11 @@ func NewApplicationFetchWorker(sessionStorage *storage.Session, repositoryFetche
 		repositoryFetcher: repositoryFetcher,
 		mediator:          mediator,
 	}
-
-	worker.startAcceptingFetchRequests()
-
 	return worker
+}
+
+func (w *ApplicationFetchWorker) Start() {
+	w.startAcceptingFetchRequests()
 }
 
 func (w *ApplicationFetchWorker) startAcceptingFetchRequests() {

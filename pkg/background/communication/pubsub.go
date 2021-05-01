@@ -77,9 +77,12 @@ func (ps *PubSub) createHistory(topic string) *PubSubHistory {
 // Subscribe to a topic
 func (ps *PubSub) Subscribe(topic string) (<-chan interface{}, *PubSubHistory) {
 	ps.mutex.Lock()
-	defer ps.mutex.Unlock()
+	subscriptionChan := ps.subscribeInternal(topic)
+	ps.mutex.Unlock()
 
-	return ps.subscribeInternal(topic), ps.getHistoryInternal(topic)
+	history := ps.getHistoryInternal(topic)
+
+	return subscriptionChan, history
 }
 
 func (ps *PubSub) subscribeInternal(topic string) <-chan interface{} {
@@ -105,17 +108,15 @@ func (ps *PubSub) Close() {
 
 // GetHistory retrieves the history of the events for a given topic
 func (ps *PubSub) GetHistory(topic string) *PubSubHistory {
-	ps.mutex.RLock()
-	defer ps.mutex.RUnlock()
+	ps.mutex.Lock()
+	defer ps.mutex.Unlock()
 	return ps.getHistoryInternal(topic)
 }
 
 func (ps *PubSub) getHistoryInternal(topic string) *PubSubHistory {
 	history, exists := ps.history[topic]
 	if !exists {
-		ps.mutex.RUnlock()
 		history = ps.createHistory(topic)
-		ps.mutex.RLock()
 	}
 	return history
 }

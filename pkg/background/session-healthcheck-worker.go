@@ -28,10 +28,11 @@ func NewSessionHealthcheckWorker(
 		},
 		mediator: mediator,
 	}
-
-	worker.startAcceptingSessionHealthcheckingRequests()
-
 	return worker
+}
+
+func (w *SessionHealthcheckWorker) Start() {
+	w.startAcceptingSessionHealthcheckingRequests()
 }
 
 func (w *SessionHealthcheckWorker) startAcceptingSessionHealthcheckingRequests() {

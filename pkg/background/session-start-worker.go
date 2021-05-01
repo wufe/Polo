@@ -20,8 +20,11 @@ func NewSessionStartWorker(
 		sessionStorage: sessionStorage,
 		mediator:       mediator,
 	}
-	worker.startAcceptingSessionStartRequests()
 	return worker
+}
+
+func (w *SessionStartWorker) Start() {
+	w.startAcceptingSessionStartRequests()
 }
 
 func (w *SessionStartWorker) startAcceptingSessionStartRequests() {
