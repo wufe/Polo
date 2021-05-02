@@ -74,6 +74,8 @@ func (w *SessionBuildWorker) RequestNewSession(buildInput *queues.SessionBuildIn
 
 func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput) *queues.SessionBuildResult {
 
+	appBus := input.Application.GetEventBus()
+
 	conf := input.Application.GetConfiguration()
 	appName := conf.Name
 	appMaxConcurrentSessions := conf.MaxConcurrentSessions
@@ -127,6 +129,8 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 			Checkout:    input.Checkout,
 		})
 	}
+
+	appBus.PublishEvent(models.ApplicationEventTypeSessionBuild, input.Application, session)
 
 	if isAReplacement {
 		session.SetReplaces(input.PreviousSession)
@@ -196,7 +200,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 }
 
 func (w *SessionBuildWorker) buildSession(session *models.Session) {
-	session.GetEventBus().PublishEvent(models.SessionBuildEventTypeBuildStarted, session)
+	session.GetEventBus().PublishEvent(models.SessionEventTypeBuildStarted, session)
 	conf := session.GetConfiguration()
 	appStartupTimeout := conf.Startup.Timeout
 	appHealthcheck := conf.Healthcheck
@@ -219,12 +223,12 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 	}
 
 	calcBuildMetrics := models.NewMetricsForSession(session)("Build (total)")
-	session.GetEventBus().PublishEvent(models.SessionBuildEventTypePreparingFolders, session)
+	session.GetEventBus().PublishEvent(models.SessionEventTypePreparingFolders, session)
 	err := w.prepareFolders(session)
 	if err != nil {
 		session.LogError(fmt.Sprintf("Could not build session commit structure: %s", err.Error()))
 		session.SetKillReason(models.KillReasonBuildFailed)
-		session.GetEventBus().PublishEvent(models.SessionBuildEventTypePreparingFoldersFailed, session)
+		session.GetEventBus().PublishEvent(models.SessionEventTypePreparingFoldersFailed, session)
 		abort()
 		w.mediator.CleanSession.Enqueue(session, models.SessionStatusStartFailed)
 		return
@@ -257,14 +261,14 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 			}
 		}
 		session.LogError(err.Error())
-		session.GetEventBus().PublishEvent(models.SessionBuildEventTypeCommandsExecutionFailed, session)
+		session.GetEventBus().PublishEvent(models.SessionEventTypeCommandsExecutionFailed, session)
 		abort()
 		return
 	}
 
 	warmup := conf.Warmup
 	if len(warmup.URLs) > 0 {
-		session.GetEventBus().PublishEvent(models.SessionBuildEventTypeWarmupStarted, session)
+		session.GetEventBus().PublishEvent(models.SessionEventTypeWarmupStarted, session)
 		err := w.execWarmups(sessionStartContext, session, conf)
 		if err != nil {
 			if err == ErrWrongSessionState {
@@ -275,7 +279,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 				}
 			}
 			session.LogError(err.Error())
-			session.GetEventBus().PublishEvent(models.SessionBuildEventTypeWarmupFailed, session)
+			session.GetEventBus().PublishEvent(models.SessionEventTypeWarmupFailed, session)
 			abort()
 			return
 		}
@@ -314,7 +318,7 @@ func (w *SessionBuildWorker) prepareFolders(session *models.Session) error {
 }
 
 func (w *SessionBuildWorker) execCommands(ctx context.Context, session *models.Session, conf models.ApplicationConfiguration) (healthcheckingStarted bool, err error) {
-	session.GetEventBus().PublishEvent(models.SessionBuildEventTypeCommandsExecutionStarted, session)
+	session.GetEventBus().PublishEvent(models.SessionEventTypeCommandsExecutionStarted, session)
 	calcCommandMetrics := models.NewMetricsForSession(session)("Startup commands")
 	defer calcCommandMetrics()
 

@@ -10,6 +10,9 @@ const (
 	ApplicationEventTypeInitializationCompleted ApplicationEventType = "initialization_completed"
 	ApplicationEventTypeFetchStarted            ApplicationEventType = "fetch_started"
 	ApplicationEventTypeFetchCompleted          ApplicationEventType = "fetch_completed"
+	ApplicationEventTypeHotSwap                 ApplicationEventType = "hot_swap"
+	ApplicationEventTypeAutoStart               ApplicationEventType = "auto_start"
+	ApplicationEventTypeSessionBuild            ApplicationEventType = "session_build"
 )
 
 type ApplicationEventType string
@@ -19,8 +22,9 @@ func (t ApplicationEventType) String() string {
 }
 
 type ApplicationEvent struct {
-	EventType   ApplicationEventType
-	Application *Application
+	EventType    ApplicationEventType
+	Application  *Application
+	EventPayload interface{}
 }
 
 type ApplicationEventBus struct {
@@ -58,10 +62,19 @@ func (b *ApplicationEventBus) GetChan() <-chan ApplicationEvent {
 	return destCh
 }
 
-func (b *ApplicationEventBus) PublishEvent(eventType ApplicationEventType, application *Application) {
+func (b *ApplicationEventBus) PublishEvent(eventType ApplicationEventType, application *Application, payloadObjects ...interface{}) {
+
+	var payload interface{} = nil
+	if len(payloadObjects) == 1 {
+		payload = payloadObjects
+	} else {
+		payload = payloadObjects
+	}
+
 	b.pubSub.Publish("application", ApplicationEvent{
-		EventType:   eventType,
-		Application: application,
+		EventType:    eventType,
+		Application:  application,
+		EventPayload: payload,
 	})
 }
 

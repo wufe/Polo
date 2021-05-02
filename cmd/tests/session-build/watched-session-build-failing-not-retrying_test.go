@@ -11,7 +11,7 @@ import (
 	"github.com/wufe/polo/pkg/models"
 )
 
-func Test_SessionBuildFailing(t *testing.T) {
+func Test_WatchedSessionBuildFailingDoesNotGetRetriedAfterFetch(t *testing.T) {
 
 	log.SetLevel(log.PanicLevel)
 
@@ -36,9 +36,21 @@ func Test_SessionBuildFailing(t *testing.T) {
 					{Command: "notexistingcommand.exe"},
 				},
 			},
+			Startup: models.Startup{
+				Retries: 3,
+			},
 		},
 		Name:      "Test_SessionBuildFailing",
 		IsDefault: true,
+		Branches: []models.BranchConfigurationMatch{
+			{
+				Test: "main",
+				BranchConfiguration: models.BranchConfiguration{
+					Watch: true,
+					Main:  true,
+				},
+			},
+		},
 	}, &tests.InjectableServices{
 		RepositoryFetcher: fetcher,
 		GitClient:         versioning_fixture.NewGitClient(),
@@ -98,10 +110,67 @@ func Test_SessionBuildFailing(t *testing.T) {
 	events_assertions.AssertSessionEvents(
 		sessionChan,
 		[]models.SessionEventType{
+			// First build
 			models.SessionEventTypeBuildStarted,
 			models.SessionEventTypePreparingFolders,
 			models.SessionEventTypeCommandsExecutionStarted,
 			models.SessionEventTypeCommandsExecutionFailed,
+			models.SessionEventTypeGettingRecycled,
+			models.SessionEventTypeBuildGettingRetried,
+
+			// First retry
+			models.SessionEventTypeBuildStarted,
+			models.SessionEventTypePreparingFolders,
+			models.SessionEventTypeCommandsExecutionStarted,
+			models.SessionEventTypeCommandsExecutionFailed,
+			models.SessionEventTypeGettingRecycled,
+			models.SessionEventTypeBuildGettingRetried,
+
+			// Second retry
+			models.SessionEventTypeBuildStarted,
+			models.SessionEventTypePreparingFolders,
+			models.SessionEventTypeCommandsExecutionStarted,
+			models.SessionEventTypeCommandsExecutionFailed,
+			models.SessionEventTypeGettingRecycled,
+			models.SessionEventTypeBuildGettingRetried,
+
+			// Third retry
+			models.SessionEventTypeBuildStarted,
+			models.SessionEventTypePreparingFolders,
+			models.SessionEventTypeCommandsExecutionStarted,
+			models.SessionEventTypeCommandsExecutionFailed,
+			models.SessionEventTypeFolderClean,
+		},
+		t,
+		10*time.Second,
+	)
+
+	// Assert application's sessions get built
+	events_assertions.AssertApplicationEvents(
+		firstApplicationChan,
+		[]models.ApplicationEventType{
+			models.ApplicationEventTypeSessionBuild,
+			models.ApplicationEventTypeSessionBuild,
+			models.ApplicationEventTypeSessionBuild,
+			models.ApplicationEventTypeSessionBuild,
+		},
+		t,
+		10*time.Second,
+	)
+
+	// Creating the third commit
+	thirdCommit := fetcher.NewCommit("Third commit")
+	fetcher.AddCommitToBranch(thirdCommit, branch)
+
+	// Fetch the repo again, watching started branches
+	mediator.ApplicationFetch.Enqueue(firstApplication, true)
+
+	// Assert application gets fetched without hot-swap or auto-start
+	events_assertions.AssertApplicationEvents(
+		firstApplicationChan,
+		[]models.ApplicationEventType{
+			models.ApplicationEventTypeFetchStarted,
+			models.ApplicationEventTypeFetchCompleted,
 		},
 		t,
 		10*time.Second,

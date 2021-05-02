@@ -37,7 +37,7 @@ func (w *SessionStartWorker) startAcceptingSessionStartRequests() {
 }
 
 func (w *SessionStartWorker) MarkSessionAsStarted(session *models.Session) {
-	session.GetEventBus().PublishEvent(models.SessionBuildEventTypeStarted, session)
+	session.GetEventBus().PublishEvent(models.SessionEventTypeStarted, session)
 	session.SetStatus(models.SessionStatusStarted)
 	session.ResetStartupRetriesCount()
 	conf := session.GetConfiguration()

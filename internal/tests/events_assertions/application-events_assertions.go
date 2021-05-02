@@ -1,11 +1,11 @@
 package events_assertions
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/models"
 )
 
@@ -14,7 +14,7 @@ func AssertApplicationEvents(
 	events []models.ApplicationEventType,
 	t *testing.T,
 	timeout time.Duration,
-) {
+) []models.ApplicationEvent {
 
 	stringifiedExpectedEventsSlice := []string{}
 	for _, ev := range events {
@@ -27,6 +27,8 @@ func AssertApplicationEvents(
 
 	timeoutFired := false
 
+	gotEvents := []models.ApplicationEvent{}
+
 L:
 	for {
 		select {
@@ -34,7 +36,8 @@ L:
 			if !ok {
 				break L
 			}
-			log.Infof("TEST [EVENT]: %s", ev.EventType)
+			fmt.Printf("[APP_EVENT]: %s\n", ev.EventType)
+			gotEvents = append(gotEvents, ev)
 			stringifiedGotEventsSlice = append(stringifiedGotEventsSlice, ev.EventType.String())
 			if ev.EventType == events[lastFoundIndex+1] {
 				lastFoundIndex++
@@ -59,11 +62,12 @@ L:
 			t.Errorf("expected application events to be %s, but got %s instead", stringifiedExpectedEvents, stringifiedGotEvents)
 		}
 	}
+	return gotEvents
 }
 
 func AssertSessionEvents(
 	ch <-chan models.SessionBuildEvent,
-	events []models.SessionBuildEventType,
+	events []models.SessionEventType,
 	t *testing.T,
 	timeout time.Duration,
 ) {
@@ -86,7 +90,7 @@ L:
 			if !ok {
 				break L
 			}
-			log.Infof("TEST [EVENT]: %s", ev.EventType)
+			fmt.Printf("[SESSION_EVENT]: %s\n", ev.EventType)
 			stringifiedGotEventsSlice = append(stringifiedGotEventsSlice, ev.EventType.String())
 			if ev.EventType == events[lastFoundIndex+1] {
 				lastFoundIndex++

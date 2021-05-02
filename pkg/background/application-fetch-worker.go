@@ -139,6 +139,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 				// This new one will be aware that it is a replacement for another session that is going to expire.
 				// When the new one gets started, the old one gets destroyed.
 				foundSession.SetKillReason(models.KillReasonReplaced)
+				bus.PublishEvent(models.ApplicationEventTypeHotSwap, application, foundSession)
 				buildSession(w.mediator, foundSession)
 			}
 		} else {
@@ -155,6 +156,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 
 			if lastSession == nil || !lastSession.GetKillReason().PreventsRebuild() {
 				log.Infof("[APP:%s][WATCH] Auto-start on %s", appName, ref)
+				bus.PublishEvent(models.ApplicationEventTypeAutoStart, application)
 				buildSession(w.mediator, nil)
 			}
 		}
