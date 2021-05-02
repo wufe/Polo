@@ -13,6 +13,7 @@ import (
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/services"
 	"github.com/wufe/polo/pkg/storage"
+	"go.uber.org/dig"
 )
 
 type Startup struct {
@@ -25,6 +26,37 @@ type Startup struct {
 	mediator           *background.Mediator
 	applicationBuilder *models.ApplicationBuilder
 	sessionBuilder     *models.SessionBuilder
+
+	sessionBuildWorker       *background.SessionBuildWorker
+	sessionStartWorker       *background.SessionStartWorker
+	sessionCleanWorker       *background.SessionCleanWorker
+	sessionFilesystemWorker  *background.SessionFilesystemWorker
+	sessionDestroyWorker     *background.SessionDestroyWorker
+	sessionHealthcheckWorker *background.SessionHealthcheckWorker
+	applicationInitWorker    *background.ApplicationInitWorker
+	applicationFetchWorker   *background.ApplicationFetchWorker
+}
+
+type StartupParams struct {
+	dig.In
+	Configuration      *models.RootConfiguration
+	Applications       []*models.Application
+	Handler            *rest.Handler
+	Static             *services.StaticService
+	AppStorage         *storage.Application
+	SesStorage         *storage.Session
+	Mediator           *background.Mediator
+	ApplicationBuilder *models.ApplicationBuilder
+	SessionBuilder     *models.SessionBuilder
+
+	SessionBuildWorker       *background.SessionBuildWorker
+	SessionStartWorker       *background.SessionStartWorker
+	SessionCleanWorker       *background.SessionCleanWorker
+	SessionFilesystemWorker  *background.SessionFilesystemWorker
+	SessionDestroyWorker     *background.SessionDestroyWorker
+	SessionHealthcheckWorker *background.SessionHealthcheckWorker
+	ApplicationInitWorker    *background.ApplicationInitWorker
+	ApplicationFetchWorker   *background.ApplicationFetchWorker
 }
 
 type StartupOptions struct {
@@ -33,27 +65,26 @@ type StartupOptions struct {
 	StartServer       bool
 }
 
-func NewStartup(
-	configuration *models.RootConfiguration,
-	applications []*models.Application,
-	handler *rest.Handler,
-	static *services.StaticService,
-	appStorage *storage.Application,
-	sesStorage *storage.Session,
-	mediator *background.Mediator,
-	applicationBuilder *models.ApplicationBuilder,
-	sessionBuilder *models.SessionBuilder,
-) *Startup {
+func NewStartup(params StartupParams) *Startup {
 	return &Startup{
-		configuration:      configuration,
-		applications:       applications,
-		handler:            handler,
-		static:             static,
-		appStorage:         appStorage,
-		sesStorage:         sesStorage,
-		mediator:           mediator,
-		applicationBuilder: applicationBuilder,
-		sessionBuilder:     sessionBuilder,
+		configuration:      params.Configuration,
+		applications:       params.Applications,
+		handler:            params.Handler,
+		static:             params.Static,
+		appStorage:         params.AppStorage,
+		sesStorage:         params.SesStorage,
+		mediator:           params.Mediator,
+		applicationBuilder: params.ApplicationBuilder,
+		sessionBuilder:     params.SessionBuilder,
+
+		sessionBuildWorker:       params.SessionBuildWorker,
+		sessionStartWorker:       params.SessionStartWorker,
+		sessionCleanWorker:       params.SessionCleanWorker,
+		sessionFilesystemWorker:  params.SessionFilesystemWorker,
+		sessionDestroyWorker:     params.SessionDestroyWorker,
+		sessionHealthcheckWorker: params.SessionHealthcheckWorker,
+		applicationInitWorker:    params.ApplicationInitWorker,
+		applicationFetchWorker:   params.ApplicationFetchWorker,
 	}
 }
 
@@ -65,6 +96,16 @@ func (s *Startup) Start(options *StartupOptions) {
 			StartServer:       true,
 		}
 	}
+
+	s.sessionBuildWorker.Start()
+	s.sessionStartWorker.Start()
+	s.sessionCleanWorker.Start()
+	s.sessionFilesystemWorker.Start()
+	s.sessionDestroyWorker.Start()
+	s.sessionHealthcheckWorker.Start()
+	s.applicationInitWorker.Start()
+	s.applicationFetchWorker.Start()
+
 	s.loadApplications()
 	s.storeApplications()
 	if options.WatchApplications {

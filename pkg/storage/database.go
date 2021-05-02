@@ -7,18 +7,26 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type Database struct {
-	DB *badger.DB
+type Database interface {
+	GetDB() *badger.DB
 }
 
-func NewDB(folder string) *Database {
+type DatabaseImpl struct {
+	db *badger.DB
+}
+
+func NewDB(folder string) *DatabaseImpl {
 	options := badger.DefaultOptions(filepath.Join(folder, "./db"))
 	options.Logger = nil
 	db, err := badger.Open(options)
 	if err != nil {
 		log.Panicf("Error while opening database: %s", err.Error())
 	}
-	return &Database{
-		DB: db,
+	return &DatabaseImpl{
+		db: db,
 	}
+}
+
+func (d *DatabaseImpl) GetDB() *badger.DB {
+	return d.db
 }

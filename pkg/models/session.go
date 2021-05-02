@@ -136,7 +136,9 @@ func newSession(
 ) *Session {
 	session.shortUUID = strings.Split(session.UUID, "-")[0]
 	session.RWLocker = mutexBuilder()
-	session.bus = NewSessionBuildEventBus(pubSubBuilder)
+	if session.bus == nil {
+		session.bus = NewSessionBuildEventBus(pubSubBuilder)
+	}
 	if session.ApplicationName == "" {
 		session.ApplicationName = session.Application.GetConfiguration().Name
 	}

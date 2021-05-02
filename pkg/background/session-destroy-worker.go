@@ -17,9 +17,11 @@ func NewSessionDestroyWorker(mediator *Mediator) *SessionDestroyWorker {
 	worker := &SessionDestroyWorker{
 		mediator: mediator,
 	}
-
-	worker.startAcceptingDestroyRequests()
 	return worker
+}
+
+func (w *SessionDestroyWorker) Start() {
+	w.startAcceptingDestroyRequests()
 }
 
 func (w *SessionDestroyWorker) startAcceptingDestroyRequests() {

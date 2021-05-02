@@ -28,10 +28,11 @@ func NewSessionHealthcheckWorker(
 		},
 		mediator: mediator,
 	}
-
-	worker.startAcceptingSessionHealthcheckingRequests()
-
 	return worker
+}
+
+func (w *SessionHealthcheckWorker) Start() {
+	w.startAcceptingSessionHealthcheckingRequests()
 }
 
 func (w *SessionHealthcheckWorker) startAcceptingSessionHealthcheckingRequests() {
@@ -50,7 +51,7 @@ func (w *SessionHealthcheckWorker) startAcceptingSessionHealthcheckingRequests()
 }
 
 func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) {
-	session.GetEventBus().PublishEvent(models.SessionBuildEventTypeHealthcheckStarted, session)
+	session.GetEventBus().PublishEvent(models.SessionEventTypeHealthcheckStarted, session)
 	w.sessions.Push(session)
 	go func() {
 		time.Sleep(5 * time.Second)
@@ -118,7 +119,7 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 					session.LogError("Session healthcheck failed. Destroying session")
 					w.mediator.DestroySession.Enqueue(session, nil)
 					w.sessions.Remove(session)
-					session.GetEventBus().PublishEvent(models.SessionBuildEventTypeHealthcheckFailed, session)
+					session.GetEventBus().PublishEvent(models.SessionEventTypeHealthcheckFailed, session)
 					session.GetEventBus().Close()
 					return
 				}
