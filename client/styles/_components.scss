@@ -35,6 +35,12 @@
         @apply w-4 h-4;
     }
 
+    &.--large-icon {
+        > svg {
+            @apply w-5 h-5;
+        }
+    }
+
     >*:not(:last-child) {
         @apply mr-2;
     }

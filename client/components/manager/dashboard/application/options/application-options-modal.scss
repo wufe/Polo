@@ -1,0 +1,79 @@
+@import "~/client/styles/index";
+
+.application-options-modal {
+    @apply flex-1 flex flex-col min-h-0;
+    > .__header {
+        @apply mb-4;
+    }
+
+    > .__list {
+        @apply flex flex-col items-stretch flex-1 overflow-y-auto;
+
+        >.__item {
+            @apply text-base lg:text-sm items-center relative py-2 cursor-pointer flex;
+
+            &.--command {
+                @apply pt-0 justify-end;
+            }
+
+            &.--indented {
+                @apply pl-6;
+            }
+
+            &.--disabled {
+                @apply text-gray-500 dark:text-gray-400 cursor-not-allowed;
+            }
+
+            &.--show-on-mobile {
+                @apply sm:hidden;
+            }
+
+            &.--not-implemented {
+                @apply hidden;
+            }
+
+            &.--multiple-rows {
+                @apply flex-col;
+
+                > .__row {
+                    @apply flex w-full items-center;
+
+                    &.--secondary {
+                        @apply pt-2;
+
+                        span {
+                            @apply text-gray-400 text-xs;
+                        }
+
+                        svg {
+                            @apply w-4 h-4 mr-1;
+                        }
+
+                        &.--indented {
+                            @apply pl-6;
+                        }
+                    }
+                }
+            }
+
+            svg {
+                @apply w-5 h-5 mr-2 left-0 flex-shrink-0;
+            }
+
+            span {
+                @apply flex-shrink whitespace-nowrap overflow-hidden overflow-ellipsis;
+            }
+
+            &:hover:not(.--disabled) {
+                > span {
+                    @apply underline;
+                }
+                .__row:not(.--secondary) {
+                    > span {
+                        @apply underline;
+                    }
+                }
+            }
+        }
+    }
+}
