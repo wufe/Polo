@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -114,5 +115,22 @@ func (s *QueryService) GetMatchingCheckout(rawInput string) (checkout string, ap
 		}
 	}
 	return "", "", "", false
+}
 
+func (s *QueryService) GetFailedSessions() []*models.Session {
+	return s.sessionStorage.GetSessionsByCategory(storage.SessionCategoryFailedToStart)
+}
+
+func (s *QueryService) GetFailedSessionLogs(uuid string) ([]models.Log, error) {
+	failedSessions := s.sessionStorage.GetSessionsByCategory(storage.SessionCategoryFailedToStart)
+	var foundSession *models.Session
+	for _, session := range failedSessions {
+		if session.UUID == uuid {
+			foundSession = session
+		}
+	}
+	if foundSession == nil {
+		return nil, errors.New("Session not found")
+	}
+	return foundSession.GetLogs(), nil
 }
