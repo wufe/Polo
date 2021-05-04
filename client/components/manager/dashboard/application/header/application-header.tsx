@@ -50,7 +50,8 @@ export const ApplicationHeader = (props: TProps) => {
     </div>
 };
 
-function sortSessionsByCreationTimeDesc(sessions: ISession[]): ISession[] {
+function sortSessionsByCreationTimeDesc(sessions: ISession[] | null): ISession[] {
+    if (!sessions) return sessions;
     return sessions
         .sort((a, b) => {
             const dateA = dayjs(a.createdAt);
