@@ -276,7 +276,7 @@ func (rest *Handler) deleteSession(req *services.RequestService) httprouter.Hand
 func (rest *Handler) getFailedSessions(query *services.QueryService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		write := write(w)
-		sessions := query.GetFailedSessions()
+		sessions := query.GetApplicationFailedSessions()
 		sessionOutputs := []output.Session{}
 		for _, session := range sessions {
 			sessionOutputs = append(sessionOutputs, session.ToOutput())

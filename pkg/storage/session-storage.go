@@ -221,9 +221,11 @@ func (s *Session) AddSessionToCategory(category SessionCategory, session *models
 	s.sessionsByCategory.Data[category] = append(s.sessionsByCategory.Data[category], session)
 }
 
-func (s *Session) GetSessionsByCategory(category SessionCategory) []*models.Session {
+func (s *Session) GetApplicationSessionsByCategory(category SessionCategory) []*models.Session {
 	s.sessionsByCategory.RLock()
 	defer s.sessionsByCategory.RUnlock()
+
+	// Find all sessions by category
 	var foundSessions []*models.Session
 	if sessions, exists := s.sessionsByCategory.Data[category]; exists {
 		foundSessions = sessions

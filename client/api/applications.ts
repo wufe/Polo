@@ -14,3 +14,7 @@ export function createNewSessionAPI(applicationName: string, checkout: string) {
         applicationName
     }));
 }
+
+export function retrieveFailedSessionsAPI() {
+    return buildRequest<ISession[]>(() => Axios.get(`/_polo_/api/failed/`));
+}

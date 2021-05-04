@@ -1,7 +1,7 @@
-import { APIPayload } from "@/api/common";
+import { APIPayload, APIRequestResult } from "@/api/common";
 import { createNewSessionAPI } from "@/api/applications";
 import { flow, Instance, SnapshotIn, SnapshotOut, types } from "mobx-state-tree";
-import { ISession } from "./session-model";
+import { ISession, SessionModel } from "./session-model";
 
 const checkoutObject = {
     name       : types.string,
@@ -23,6 +23,7 @@ export const ApplicationTagModel = types.model({
 export interface IApplicationBranchModel extends Instance<typeof ApplicationBranchModel> {}
 
 export const ApplicationConfigurationModel = types.model({
+    id                   : types.string,
     name                 : types.string,
     remote               : types.string,
     target               : types.string,
@@ -31,16 +32,17 @@ export const ApplicationConfigurationModel = types.model({
 })
 
 export const ApplicationModel = types.model({
-    filename     : types.string,
-    configuration: ApplicationConfigurationModel,
-    folder       : types.string,
-    branchesMap  : types.map(ApplicationBranchModel),
-    tagsMap      : types.map(ApplicationTagModel),
+    filename      : types.string,
+    configuration : ApplicationConfigurationModel,
+    folder        : types.string,
+    branchesMap   : types.map(ApplicationBranchModel),
+    tagsMap       : types.map(ApplicationTagModel),
+    failedSessions: types.map(SessionModel),
 })
 .actions(self => {
 
     const newSession = flow(function* newSession(checkout: string) {
-        const session: APIPayload<ISession> = yield  createNewSessionAPI(self.configuration.name, checkout);
+        const session: APIPayload<ISession> = yield createNewSessionAPI(self.configuration.name, checkout);
         return session;
     });
 

@@ -117,12 +117,12 @@ func (s *QueryService) GetMatchingCheckout(rawInput string) (checkout string, ap
 	return "", "", "", false
 }
 
-func (s *QueryService) GetFailedSessions() []*models.Session {
-	return s.sessionStorage.GetSessionsByCategory(storage.SessionCategoryFailedToStart)
+func (s *QueryService) GetApplicationFailedSessions() []*models.Session {
+	return s.sessionStorage.GetApplicationSessionsByCategory(storage.SessionCategoryFailedToStart)
 }
 
 func (s *QueryService) GetFailedSessionLogs(uuid string) ([]models.Log, error) {
-	failedSessions := s.sessionStorage.GetSessionsByCategory(storage.SessionCategoryFailedToStart)
+	failedSessions := s.sessionStorage.GetApplicationSessionsByCategory(storage.SessionCategoryFailedToStart)
 	var foundSession *models.Session
 	for _, session := range failedSessions {
 		if session.UUID == uuid {

@@ -12,6 +12,14 @@
         >.__item {
             @apply text-base lg:text-sm items-center relative py-2 cursor-pointer flex;
 
+            &.--danger-icon {
+                @apply relative;
+                &::before {
+                    content: '';
+                    @apply absolute left-0 top-2 bg-nord11 w-2 h-2 rounded-full;
+                }
+            }
+
             &.--command {
                 @apply pt-0 justify-end;
             }

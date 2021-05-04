@@ -12,18 +12,18 @@ import './application.scss';
 import { DefaultModal } from '../../modal/default-modal';
 import { useModal } from '../../modal/modal-hooks';
 import { ApplicationOptionsModal } from './options/application-options-modal';
+import { ApplicationHeader } from './header/application-header';
 
 type TProps = {
-    sessions     : ISession[] | null;
-    application  : IApplication;
+    sessions      : ISession[] | null;
+    failedSessions: ISession[] | null;
+    application   : IApplication;
 }
 
 export const Application = observer((props: TProps) => {
 
     const [newSessionCheckout, setNewSessionCheckout] = useState<string>("")
     const history = useHistory();
-    const { show } = useModal();
-    const applicationOptionsModalName = `application-options-${props.application.configuration.name}`;
 
     const onCheckoutChange = (value: string) => setNewSessionCheckout(value);
 
@@ -45,20 +45,11 @@ export const Application = observer((props: TProps) => {
         mx-auto
         font-quicksand
         application`}>
-        <div>
-            <div className="flex justify-between min-w-0 max-w-full flex-nowrap items-center">
-                <h3 className="text-xl lg:text-2xl leading-5 font-bold overflow-hidden overflow-ellipsis whitespace-nowrap flex-grow flex-shrink pr-6" title={props.application.configuration.name}>{props.application.configuration.name}</h3>
-                <div className="__button --ghost --large-icon flex-shrink-0" onClick={() => show(applicationOptionsModalName)}>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                </div>
-            </div>
-            <span className="text-gray-400 text-sm">{props.application.filename}</span>
-        </div>
+
+        <ApplicationHeader
+            name={props.application.configuration.name}
+            filename={props.application.filename}
+            failedSessions={props.failedSessions} />
         
         {props.sessions && props.sessions.length > 0 && <div className="py-4">
             <ApplicationSessions sessions={props.sessions} />
@@ -99,8 +90,5 @@ export const Application = observer((props: TProps) => {
                 </div>
             </div>
         </div>
-        <ApplicationOptionsModal
-            modalName={applicationOptionsModalName}
-            applicationName={props.application.configuration.name} />
     </div>;
 })

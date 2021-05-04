@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import './application-options-modal.scss';
 import { DefaultModal } from '@/components/manager/modal/default-modal';
+import { observer } from 'mobx-react-lite';
+import { IApplication, ISession } from '@/state/models';
 
 type TProps = {
     modalName: string;
     applicationName: string;
+    failedSessions: ISession[] | null;
 };
-export const ApplicationOptionsModal = (props: TProps) => {
+export const ApplicationOptionsModal = observer((props: TProps) => {
 
     const [viewFailingSessions, setViewFailingSession] = useState(false);
+    const anyFailedSession = props.failedSessions && props.failedSessions.length > 0;
 
     return <DefaultModal name={props.modalName}>
         <div className="application-options-modal">
@@ -17,8 +21,8 @@ export const ApplicationOptionsModal = (props: TProps) => {
                     {props.applicationName}
                 </span>
             </div>
-            {!viewFailingSessions && <div className="__list">
-                <div className="__item" onClick={() => setViewFailingSession(true)}>
+            {!viewFailingSessions && <div className={`__list ${!anyFailedSession && '--disabled'}`}>
+                <div className={`__item ${anyFailedSession && '--danger-icon'}`} onClick={() => anyFailedSession && setViewFailingSession(true)}>
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
@@ -109,4 +113,4 @@ export const ApplicationOptionsModal = (props: TProps) => {
             </div>}
         </div>
     </DefaultModal>
-}
+})

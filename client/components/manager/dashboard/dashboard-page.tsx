@@ -20,6 +20,7 @@ export const Dashboard = observer((props: TProps) => {
     const requestData = async () => {
         await props.app.retrieveApplications();
         await props.app.retrieveAllSessions();
+        await props.app.retrieveFailedSessions();
     }
 
     useEffect(() => {
@@ -67,6 +68,7 @@ export const Dashboard = observer((props: TProps) => {
                 {!!selected && <div className="flex-grow min-w-0">
                     <Application
                         sessions={props.app.sessionsByApplicationName[selected.configuration.name]}
+                        failedSessions={props.app.failedSessionsByApplicationName[selected.configuration.name]}
                         application={selected} />
                 </div>}
             </div>
