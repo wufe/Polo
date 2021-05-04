@@ -1,17 +1,18 @@
 import { APIPayload, APIRequestResult } from "@/api/common";
-import { retrieveApplicationsAPI } from "@/api/applications";
+import { retrieveApplicationsAPI, retrieveFailedSessionAPI, retrieveFailedSessionLogsAPI, retrieveFailedSessionsAPI } from "@/api/applications";
 import { IAPISession, retrieveAllSessionsAPI, retrieveSessionAPI } from "@/api/session";
 import { values } from "mobx";
 import { types, flow, cast, Instance, getType, applySnapshot, applyPatch } from "mobx-state-tree";
 import { ApplicationModel, IApplication } from "./application-model";
-import { SessionModel, ISession, castAPISessionToSessionModel } from "./session-model";
+import { SessionModel, ISession, castAPISessionToSessionModel, ISessionLog } from "./session-model";
 import { initialModalState, ModalModel } from "./modal-model";
 
 export const AppModel = types.model({
-    session     : types.maybeNull(SessionModel),
-    sessions    : types.map(SessionModel),
-    applications: types.map(ApplicationModel),
-    modal       : ModalModel,
+    session       : types.maybeNull(SessionModel),
+    sessions      : types.map(SessionModel),
+    failedSessions: types.map(SessionModel),
+    applications  : types.map(ApplicationModel),
+    modal         : ModalModel,
 })
 .actions(self => {
     const retrieveApplications = flow(function* retrieveApplications() {
@@ -49,11 +50,41 @@ export const AppModel = types.model({
         }
         return session;
     });
-    return { retrieveSession, retrieveAllSessions, retrieveApplications };
+
+    const retrieveFailedSessions = flow(function* retrieveFailedSessions() {
+        const request: APIPayload<ISession[]> = yield retrieveFailedSessionsAPI();
+        if (request.result === APIRequestResult.SUCCEEDED) {
+            for (const session of request.payload) {
+                self.failedSessions.set(session.uuid, session);
+            }
+        }
+        return request;
+    });
+
+    const retrieveFailedSession = flow(function *retrieveFailedSession(uuid: string) {
+        const request: APIPayload<ISession> = yield retrieveFailedSessionAPI(uuid);
+        return request
+    })
+
+    const retrieveFailedSessionLogs = flow(function *retrieveFailedSessionLogs(uuid: string) {
+        const request: APIPayload<ISessionLog[]> = yield retrieveFailedSessionLogsAPI(uuid);
+        return request;
+    })
+
+    return { retrieveSession, retrieveAllSessions, retrieveApplications, retrieveFailedSessions, retrieveFailedSession, retrieveFailedSessionLogs };
 })
 .views(self => ({
     get sessionsByApplicationName() {
         return (values(self.sessions) as any as ISession[])
+            .reduce<{ [name: string]: ISession[] }>((accumulator, session: ISession) => {
+                const applicationName = session.applicationName;
+                if (!accumulator[applicationName]) accumulator[applicationName] = [];
+                accumulator[applicationName].push(session);
+                return accumulator
+            }, {});
+    },
+    get failedSessionsByApplicationName() {
+        return (values(self.failedSessions) as any as ISession[])
             .reduce<{ [name: string]: ISession[] }>((accumulator, session: ISession) => {
                 const applicationName = session.applicationName;
                 if (!accumulator[applicationName]) accumulator[applicationName] = [];

@@ -22,5 +22,8 @@ applications:
       - test: ^dev$
         watch: false
         main: false
+        commands:
+          start:
+            - command: nonexisting.exe
       - test: feature/my-watched-feature
         watch: false

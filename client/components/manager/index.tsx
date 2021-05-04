@@ -5,6 +5,7 @@ import './index.scss';
 import whiteLogo from '@/assets/white-logo.png';
 import blackLogo from '@/assets/black-logo.png';
 import { observer } from 'mobx-react-lite';
+import FailingSessionPage from './session/failing-session-page';
 
 const Dashboard = React.lazy(() => import('@/components/manager/dashboard/dashboard-page'));
 const Session = React.lazy(() => import('@/components/manager/session/session-page'));
@@ -48,6 +49,9 @@ export const ManagerApp = observer(() => {
                     <Switch>
                         <Route path="/_polo_/" exact>
                             <Dashboard app={store.app} />
+                        </Route>
+                        <Route path="/_polo_/session/failing/:uuid">
+                            <FailingSessionPage app={store.app} />
                         </Route>
                         <Route path="/_polo_/session/:uuid">
                             <SessionRoute />

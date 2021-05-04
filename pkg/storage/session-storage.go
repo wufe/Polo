@@ -14,16 +14,18 @@ import (
 // Contains methods to access and store sessions into the database
 type Session struct {
 	utils.RWLocker
-	database Database
-	sessions []*models.Session
+	database           Database
+	sessions           []*models.Session
+	sessionsByCategory *SessionsByCategory
 }
 
 // NewSession creates new database storage
-func NewSession(db Database, environment utils.Environment) *Session {
+func NewSession(db Database, mutexBuilder utils.MutexBuilder) *Session {
 	session := &Session{
-		RWLocker: utils.GetMutex(environment),
-		database: db,
-		sessions: make([]*models.Session, 0),
+		RWLocker:           mutexBuilder(),
+		database:           db,
+		sessions:           make([]*models.Session, 0),
+		sessionsByCategory: newSessionsByCategory(mutexBuilder),
 	}
 	return session
 }
@@ -189,4 +191,46 @@ func (s *Session) GetAliveApplicationSessionByCheckout(checkout string, applicat
 		}
 	}
 	return foundSession
+}
+
+const (
+	SessionCategoryFailedToStart SessionCategory = "failed_to_start"
+)
+
+type SessionCategory string
+
+type SessionsByCategory struct {
+	utils.RWLocker
+
+	Data map[SessionCategory][]*models.Session
+}
+
+func newSessionsByCategory(mutexBuilder utils.MutexBuilder) *SessionsByCategory {
+	return &SessionsByCategory{
+		RWLocker: mutexBuilder(),
+		Data:     make(map[SessionCategory][]*models.Session),
+	}
+}
+
+func (s *Session) AddSessionToCategory(category SessionCategory, session *models.Session) {
+	s.sessionsByCategory.Lock()
+	defer s.sessionsByCategory.Unlock()
+	// if _, exists := s.sessionsByCategory.Data[category]; !exists {
+	// 	s.sessionsByCategory.Data[category] = []*models.Session{}
+	// }
+	s.sessionsByCategory.Data[category] = append(s.sessionsByCategory.Data[category], session)
+}
+
+func (s *Session) GetApplicationSessionsByCategory(category SessionCategory) []*models.Session {
+	s.sessionsByCategory.RLock()
+	defer s.sessionsByCategory.RUnlock()
+
+	// Find all sessions by category
+	var foundSessions []*models.Session
+	if sessions, exists := s.sessionsByCategory.Data[category]; exists {
+		foundSessions = sessions
+	} else {
+		foundSessions = []*models.Session{}
+	}
+	return foundSessions
 }

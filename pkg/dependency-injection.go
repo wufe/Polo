@@ -133,10 +133,7 @@ func (d *DI) AddApplicationStorage() {
 }
 
 func (d *DI) AddSessionStorage() {
-	if err := d.container.Provide(func(environment utils.Environment, database storage.Database) *storage.Session {
-		sesStorage := storage.NewSession(database, environment)
-		return sesStorage
-	}); err != nil {
+	if err := d.container.Provide(storage.NewSession); err != nil {
 		log.Panic(err)
 	}
 }

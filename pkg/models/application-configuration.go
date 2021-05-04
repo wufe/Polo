@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/kennygrant/sanitize"
 	"github.com/wufe/polo/pkg/models/output"
 	"github.com/wufe/polo/pkg/utils"
 )
@@ -17,6 +18,7 @@ import (
 type ApplicationConfiguration struct {
 	SharedConfiguration   `yaml:",inline"` // Base configuration, common for branches and root application configuration
 	utils.RWLocker        `json:"-"`
+	ID                    string   `json:"id"`
 	Name                  string   `json:"name"`
 	Fetch                 Fetch    `json:"fetch"`
 	IsDefault             bool     `yaml:"is_default" json:"isDefault"`
@@ -31,6 +33,7 @@ func NewApplicationConfiguration(configuration *ApplicationConfiguration, mutexB
 	if configuration.Name == "" {
 		return nil, errors.New("application.name (required) not defined")
 	}
+	configuration.ID = sanitize.Name(configuration.Name)
 	if configuration.CleanOnExit == nil {
 		cleanOnExit := true
 		configuration.CleanOnExit = &cleanOnExit
