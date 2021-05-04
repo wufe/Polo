@@ -1,10 +1,10 @@
 import { APIPayload, APIRequestResult } from "@/api/common";
-import { retrieveApplicationsAPI, retrieveFailedSessionsAPI } from "@/api/applications";
+import { retrieveApplicationsAPI, retrieveFailedSessionAPI, retrieveFailedSessionLogsAPI, retrieveFailedSessionsAPI } from "@/api/applications";
 import { IAPISession, retrieveAllSessionsAPI, retrieveSessionAPI } from "@/api/session";
 import { values } from "mobx";
 import { types, flow, cast, Instance, getType, applySnapshot, applyPatch } from "mobx-state-tree";
 import { ApplicationModel, IApplication } from "./application-model";
-import { SessionModel, ISession, castAPISessionToSessionModel } from "./session-model";
+import { SessionModel, ISession, castAPISessionToSessionModel, ISessionLog } from "./session-model";
 import { initialModalState, ModalModel } from "./modal-model";
 
 export const AppModel = types.model({
@@ -61,7 +61,17 @@ export const AppModel = types.model({
         return request;
     });
 
-    return { retrieveSession, retrieveAllSessions, retrieveApplications, retrieveFailedSessions };
+    const retrieveFailedSession = flow(function *retrieveFailedSession(uuid: string) {
+        const request: APIPayload<ISession> = yield retrieveFailedSessionAPI(uuid);
+        return request
+    })
+
+    const retrieveFailedSessionLogs = flow(function *retrieveFailedSessionLogs(uuid: string) {
+        const request: APIPayload<ISessionLog[]> = yield retrieveFailedSessionLogsAPI(uuid);
+        return request;
+    })
+
+    return { retrieveSession, retrieveAllSessions, retrieveApplications, retrieveFailedSessions, retrieveFailedSession, retrieveFailedSessionLogs };
 })
 .views(self => ({
     get sessionsByApplicationName() {

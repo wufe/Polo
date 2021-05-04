@@ -5,6 +5,8 @@ import { values } from 'mobx';
 import React from 'react';
 import { ApplicationOptionsModal } from '../options/application-options-modal';
 import './application-header.scss';
+import { useHistory } from 'react-router';
+import dayjs from 'dayjs';
 
 type TProps = {
     name: string;
@@ -13,11 +15,17 @@ type TProps = {
     failedSessions: ISession[] | null;
 }
 export const ApplicationHeader = (props: TProps) => {
-    const { show } = useModal();
+    const { show, hide } = useModal();
+    const history = useHistory();
 
     const anyFailedSession = props.failedSessions && props.failedSessions.length > 0;
 
     const applicationOptionsModalName = `application-options-${props.name}`;
+
+    const goTo = (session: ISession) => {
+        hide();
+        history.push(`/_polo_/session/failing/${session.uuid}`);
+    }
 
     return <div className="application-header">
         <div className="flex justify-between min-w-0 max-w-full flex-nowrap items-center">
@@ -37,6 +45,20 @@ export const ApplicationHeader = (props: TProps) => {
         <ApplicationOptionsModal
             modalName={applicationOptionsModalName}
             applicationName={props.name}
-            failedSessions={props.failedSessions} />
+            failedSessions={sortSessionsByCreationTimeDesc(props.failedSessions)}
+            onSessionClick={goTo} />
     </div>
 };
+
+function sortSessionsByCreationTimeDesc(sessions: ISession[]): ISession[] {
+    return sessions
+        .sort((a, b) => {
+            const dateA = dayjs(a.createdAt);
+            const dateB = dayjs(b.createdAt);
+            if (dateA.isBefore(dateB))
+                return 1;
+            if (dateA.isAfter(dateB))
+                return -1;
+            return 0;
+        })
+}

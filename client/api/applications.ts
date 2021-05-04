@@ -1,5 +1,5 @@
 import { IApplication } from '@/state/models/application-model';
-import { ISession } from '@/state/models/session-model';
+import { ISession, ISessionLog } from '@/state/models/session-model';
 import axios from 'axios';
 import Axios from 'axios';
 import { buildRequest } from './common';
@@ -17,4 +17,12 @@ export function createNewSessionAPI(applicationName: string, checkout: string) {
 
 export function retrieveFailedSessionsAPI() {
     return buildRequest<ISession[]>(() => Axios.get(`/_polo_/api/failed/`));
+}
+
+export function retrieveFailedSessionAPI(uuid: string) {
+    return buildRequest<ISession[]>(() => Axios.get(`/_polo_/api/failed/${uuid}`));
+}
+
+export function retrieveFailedSessionLogsAPI(uuid: string) {
+    return buildRequest<ISessionLog[]>(() => Axios.get(`/_polo_/api/failed/${uuid}/logs`));
 }

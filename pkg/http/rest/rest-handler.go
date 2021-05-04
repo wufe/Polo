@@ -38,7 +38,8 @@ func NewHandler(environment utils.Environment, static *services.StaticService, r
 	// TODO: Updated these routes to /sessions/failed/ after this PR gets merged
 	// https://github.com/julienschmidt/httprouter/pull/329
 	router.GET("/_polo_/api/failed/", h.getFailedSessions(query))
-	router.GET("/_polo_/api/failed/logs/:uuid", h.getFailedSessionLogs(query))
+	router.GET("/_polo_/api/failed/:uuid", h.getFailedSession(query))
+	router.GET("/_polo_/api/failed/:uuid/logs", h.getFailedSessionLogs(query))
 	router.GET("/_polo_/api/session/:uuid", h.getSession(query))
 	router.DELETE("/_polo_/api/session/:uuid", h.deleteSession(request))
 	router.GET("/_polo_/api/session/:uuid/status", h.getSessionStatus(query))
@@ -282,6 +283,25 @@ func (rest *Handler) getFailedSessions(query *services.QueryService) httprouter.
 			sessionOutputs = append(sessionOutputs, session.ToOutput())
 		}
 		write(ok(sessionOutputs))
+	}
+}
+
+func (rest *Handler) getFailedSession(query *services.QueryService) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		uuid := p.ByName("uuid")
+		write := write(w)
+		sessions := query.GetApplicationFailedSessions()
+		var sessionOuput *output.Session
+		for _, session := range sessions {
+			if session.UUID == uuid {
+				output := session.ToOutput()
+				sessionOuput = &output
+			}
+		}
+		if sessionOuput == nil {
+			write(notFound())
+		}
+		write(ok(sessionOuput))
 	}
 }
 

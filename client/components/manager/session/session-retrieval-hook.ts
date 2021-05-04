@@ -38,3 +38,7 @@ export const useSessionRetrieval = (session: ISession) => {
         }
     }, [])
 }
+
+export const useFailingSessionRetrieval = (sessino: ISession) => {
+    
+}
