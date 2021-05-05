@@ -236,6 +236,9 @@ func (h *Handler) tryGetSessionByRequestURL(req *http.Request) (*models.Session,
 			if err != nil {
 				return nil, ""
 			}
+			if req.URL.RawQuery != "" {
+				path = path + "?" + req.URL.RawQuery
+			}
 			return result.Session, path
 		}
 	}

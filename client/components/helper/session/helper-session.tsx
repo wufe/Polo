@@ -29,9 +29,9 @@ export const HelperSession = (props: TProps) => {
         props.session.age > expiredAgeValue;
 
     const copyPermalink = () => {
-        let pathname = location.pathname;
-        pathname = pathname === '/' ? '' : pathname;
-        copy(`${location.origin}/s/${props.session.checkout}${pathname}`);
+        let fullpath = location.pathname + location.search;
+        fullpath = fullpath === '/' ? '' : fullpath;
+        copy(`${location.origin}/s/${props.session.checkout}${fullpath}`);
         setOpen(false);
     }
     const goToLogs = () => location.href = `/_polo_/session/${props.session.uuid}/logs`;
