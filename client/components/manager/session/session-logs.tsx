@@ -25,8 +25,8 @@ const SessionLogsRow =  ({ index, style, data }: { index: number; style: React.C
     const log = data[index];
     const color = colorsByLogType[log.type];
     return <p style={style} className="mx-2 lg:mx-0 leading-relaxed text-sm whitespace-nowrap max-w-full min-w-0 flex items-center" key={index}>
-        <span className="hidden lg:inline-block uppercase text-xs font-mono min-w-24 px-3">[{dayjs(log.when).format('HH:mm:ss')}]</span>
-        <span className="hidden lg:inline-block uppercase text-xs w-16 min-w-16" style={{ color }}>{log.type}:</span>
+        <span className="hidden lg:inline-block uppercase text-xs font-mono min-w-24 px-3 flex-shrink-0 select-none">[{dayjs(log.when).format('HH:mm:ss')}]</span>
+        <span className="hidden lg:inline-block uppercase text-xs w-16 min-w-16 flex-shrink-0 select-none" style={{ color }}>{log.type}:</span>
         {parseMessage(log.message)}
     </p>
 }
@@ -56,7 +56,7 @@ export const SessionLogs = observer((props: { logs: ISessionLog[], onLogsProport
         <List
             ref={listRef}
             outerRef={contentRef}
-            className=" text-nord-3 dark:text-nord4"
+            className="text-nord-3 dark:text-nord4 tracking-wide"
             height={contentHeight}
             itemCount={props.logs.length}
             itemSize={itemsHeight}
@@ -107,10 +107,10 @@ function parseSpaces(message: string) {
                 acc.push(<span key={acc.length}>{chars}</span>)
             }
             chars = '';
-            spaces += 2;
+            spaces += 4;
         } else {
             if (spaces > 0) {
-                acc.push(<span key={acc.length} style={{ paddingLeft: `${6 * spaces}px` }}></span>)
+                acc.push(<span key={acc.length} style={{ whiteSpace: 'pre' }}>{" ".repeat(spaces)}</span>)
             }
             spaces = 0;
             chars += char;
@@ -120,7 +120,7 @@ function parseSpaces(message: string) {
         acc.push(<span key={acc.length}>{chars}</span>)
     }
     if (spaces > 0) {
-        acc.push(<span key={acc.length} style={{ paddingLeft: `${6 * spaces}px` }}></span>)
+        acc.push(<span key={acc.length} style={{ whiteSpace: 'pre' }}>{" ".repeat(spaces)}</span>)
     }
     return acc;
 }
