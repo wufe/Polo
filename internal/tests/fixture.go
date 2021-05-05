@@ -7,6 +7,8 @@ import (
 
 func Fixture(applicationConfiguration *models.ApplicationConfiguration, injectable *InjectableServices) *DI {
 
+	pkg.ConfigureLogging()
+
 	container := NewDIContainer(injectable)
 
 	// Environment
