@@ -53,7 +53,6 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 					retriesCount := session.GetStartupRetriesCount()
 					if retriesCount < maxRetries {
 						sessionGetsRecycled = true
-						bus.PublishEvent(models.SessionEventTypeGettingRecycled, session)
 						retriesCount++
 						session.LogWarn(fmt.Sprintf("[%d/%d] Retrying session startup.", retriesCount, maxRetries))
 						bus.PublishEvent(models.SessionEventTypeBuildGettingRetried, session)

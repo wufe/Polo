@@ -1,22 +1,19 @@
 package models
 
 import (
-	"github.com/wufe/polo/pkg/background/communication"
 	"github.com/wufe/polo/pkg/utils"
 )
 
 type SessionBuilder struct {
-	mutexBuilder  utils.MutexBuilder
-	pubSubBuilder *communication.PubSubBuilder
+	mutexBuilder utils.MutexBuilder
 }
 
-func NewSessionBuilder(mutexBuilder utils.MutexBuilder, pubSubBuilder *communication.PubSubBuilder) *SessionBuilder {
+func NewSessionBuilder(mutexBuilder utils.MutexBuilder) *SessionBuilder {
 	return &SessionBuilder{
-		mutexBuilder:  mutexBuilder,
-		pubSubBuilder: pubSubBuilder,
+		mutexBuilder: mutexBuilder,
 	}
 }
 
 func (b *SessionBuilder) Build(session *Session) *Session {
-	return newSession(session, b.mutexBuilder, b.pubSubBuilder)
+	return newSession(session, b.mutexBuilder)
 }

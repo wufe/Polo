@@ -1,7 +1,8 @@
 package models
 
 import (
-	"github.com/wufe/polo/pkg/background/communication"
+	"github.com/asaskevich/EventBus"
+	"github.com/wufe/polo/pkg/utils"
 )
 
 const (
@@ -28,38 +29,38 @@ type ApplicationEvent struct {
 }
 
 type ApplicationEventBus struct {
-	pubSub *communication.PubSub
+	utils.RWLocker
+	bus     EventBus.Bus
+	ch      chan ApplicationEvent
+	history []ApplicationEvent
 }
 
-func NewApplicationEventBus(pubSubBuilder *communication.PubSubBuilder) *ApplicationEventBus {
-	pubSub := pubSubBuilder.Build()
+func NewApplicationEventBus(mutexBuilder utils.MutexBuilder) *ApplicationEventBus {
 	eventBus := &ApplicationEventBus{
-		pubSub: pubSub,
+		RWLocker: mutexBuilder(),
+		bus:      EventBus.New(),
+		ch:       make(chan ApplicationEvent, 999),
 	}
+	eventBus.start()
 	return eventBus
 }
 
+func (b *ApplicationEventBus) start() {
+	history := []ApplicationEvent{}
+	b.history = history
+
+	b.bus.Subscribe("application", func(ev interface{}) {
+		if appEv, ok := ev.(ApplicationEvent); ok {
+			b.Lock()
+			defer b.Unlock()
+			history = append(history, appEv)
+			b.ch <- appEv
+		}
+	})
+}
+
 func (b *ApplicationEventBus) GetChan() <-chan ApplicationEvent {
-	sourceCh, history := b.pubSub.Subscribe("application")
-	destCh := make(chan ApplicationEvent)
-	go func() {
-		for _, pastEv := range b.convertHistoryEntries(history) {
-			destCh <- pastEv
-		}
-		for {
-			ev, ok := <-sourceCh
-			if !ok {
-				close(destCh)
-				return
-			}
-			appEv, ok := ev.(ApplicationEvent)
-			if !ok {
-				continue
-			}
-			destCh <- appEv
-		}
-	}()
-	return destCh
+	return b.ch
 }
 
 func (b *ApplicationEventBus) PublishEvent(eventType ApplicationEventType, application *Application, payloadObjects ...interface{}) {
@@ -71,16 +72,14 @@ func (b *ApplicationEventBus) PublishEvent(eventType ApplicationEventType, appli
 		payload = payloadObjects
 	}
 
-	b.pubSub.Publish("application", ApplicationEvent{
+	b.bus.Publish("application", ApplicationEvent{
 		EventType:    eventType,
 		Application:  application,
 		EventPayload: payload,
 	})
 }
 
-func (b *ApplicationEventBus) Close() {
-	b.pubSub.Close()
-}
+func (b *ApplicationEventBus) Close() {}
 
 func (b *ApplicationEventBus) convertHistoryEntries(entries []interface{}) []ApplicationEvent {
 	applicationEvents := []ApplicationEvent{}

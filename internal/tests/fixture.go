@@ -18,7 +18,6 @@ func Fixture(applicationConfiguration *models.ApplicationConfiguration, injectab
 	// Factories
 
 	container.AddMutexBuilder()
-	container.AddPubSubBuilder()
 	container.AddSessionBuilder()
 	container.AddApplicationBuilder()
 

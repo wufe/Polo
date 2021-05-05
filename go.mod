@@ -3,6 +3,7 @@ module github.com/wufe/polo
 go 1.15
 
 require (
+	github.com/asaskevich/EventBus v0.0.0-20200907212545-49d423059eef
 	github.com/dgraph-io/badger/v3 v3.2011.1
 	github.com/go-git/go-git/v5 v5.2.0
 	github.com/google/uuid v1.2.0

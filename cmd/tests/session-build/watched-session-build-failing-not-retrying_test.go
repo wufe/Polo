@@ -91,7 +91,7 @@ func Test_WatchedSessionBuildFailingDoesNotGetRetriedAfterFetch(t *testing.T) {
 			models.ApplicationEventTypeFetchCompleted,
 		},
 		t,
-		10*time.Second,
+		2*time.Second,
 	)
 
 	// Request new session to be built
@@ -115,7 +115,6 @@ func Test_WatchedSessionBuildFailingDoesNotGetRetriedAfterFetch(t *testing.T) {
 			models.SessionEventTypePreparingFolders,
 			models.SessionEventTypeCommandsExecutionStarted,
 			models.SessionEventTypeCommandsExecutionFailed,
-			models.SessionEventTypeGettingRecycled,
 			models.SessionEventTypeBuildGettingRetried,
 
 			// First retry
@@ -123,7 +122,6 @@ func Test_WatchedSessionBuildFailingDoesNotGetRetriedAfterFetch(t *testing.T) {
 			models.SessionEventTypePreparingFolders,
 			models.SessionEventTypeCommandsExecutionStarted,
 			models.SessionEventTypeCommandsExecutionFailed,
-			models.SessionEventTypeGettingRecycled,
 			models.SessionEventTypeBuildGettingRetried,
 
 			// Second retry
@@ -131,7 +129,6 @@ func Test_WatchedSessionBuildFailingDoesNotGetRetriedAfterFetch(t *testing.T) {
 			models.SessionEventTypePreparingFolders,
 			models.SessionEventTypeCommandsExecutionStarted,
 			models.SessionEventTypeCommandsExecutionFailed,
-			models.SessionEventTypeGettingRecycled,
 			models.SessionEventTypeBuildGettingRetried,
 
 			// Third retry
@@ -142,7 +139,7 @@ func Test_WatchedSessionBuildFailingDoesNotGetRetriedAfterFetch(t *testing.T) {
 			models.SessionEventTypeFolderClean,
 		},
 		t,
-		10*time.Second,
+		5*time.Second,
 	)
 
 	// Assert application's sessions get built
@@ -155,7 +152,7 @@ func Test_WatchedSessionBuildFailingDoesNotGetRetriedAfterFetch(t *testing.T) {
 			models.ApplicationEventTypeSessionBuild,
 		},
 		t,
-		10*time.Second,
+		3*time.Second,
 	)
 
 	// Creating the third commit
@@ -173,6 +170,6 @@ func Test_WatchedSessionBuildFailingDoesNotGetRetriedAfterFetch(t *testing.T) {
 			models.ApplicationEventTypeFetchCompleted,
 		},
 		t,
-		10*time.Second,
+		2*time.Second,
 	)
 }

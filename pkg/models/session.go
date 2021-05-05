@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing/object"
 	log "github.com/sirupsen/logrus"
-	"github.com/wufe/polo/pkg/background/communication"
 	"github.com/wufe/polo/pkg/models/output"
 	"github.com/wufe/polo/pkg/utils"
 )
@@ -132,12 +131,11 @@ func (v Variables) ApplyTo(str string) string {
 func newSession(
 	session *Session,
 	mutexBuilder utils.MutexBuilder,
-	pubSubBuilder *communication.PubSubBuilder,
 ) *Session {
 	session.shortUUID = strings.Split(session.UUID, "-")[0]
 	session.RWLocker = mutexBuilder()
 	if session.bus == nil {
-		session.bus = NewSessionBuildEventBus(pubSubBuilder)
+		session.bus = NewSessionBuildEventBus(mutexBuilder)
 	}
 	if session.ApplicationName == "" {
 		session.ApplicationName = session.Application.GetConfiguration().Name

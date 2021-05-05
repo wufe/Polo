@@ -1,7 +1,8 @@
 package models
 
 import (
-	"github.com/wufe/polo/pkg/background/communication"
+	"github.com/asaskevich/EventBus"
+	"github.com/wufe/polo/pkg/utils"
 )
 
 const (
@@ -15,7 +16,6 @@ const (
 	SessionEventTypeHealthcheckStarted       SessionEventType = "healthcheck_started"
 	SessionEventTypeHealthcheckFailed        SessionEventType = "healthcheck_failed"
 	SessionEventTypeStarted                  SessionEventType = "started"
-	SessionEventTypeGettingRecycled          SessionEventType = "getting_recycled"
 	SessionEventTypeBuildGettingRetried      SessionEventType = "build_getting_retried"
 	SessionEventTypeFolderClean              SessionEventType = "folder_clean"
 )
@@ -32,50 +32,51 @@ type SessionBuildEvent struct {
 }
 
 type SessionLifetimeEventBus struct {
-	pubSub *communication.PubSub
+	utils.RWLocker
+	bus     EventBus.Bus
+	ch      chan SessionBuildEvent
+	history []SessionBuildEvent
 }
 
-func NewSessionBuildEventBus(pubSubBuilder *communication.PubSubBuilder) *SessionLifetimeEventBus {
-	pubSub := pubSubBuilder.Build()
+func NewSessionBuildEventBus(mutexBuilder utils.MutexBuilder) *SessionLifetimeEventBus {
+	bus := EventBus.New()
 	eventBus := &SessionLifetimeEventBus{
-		pubSub: pubSub,
+		RWLocker: mutexBuilder(),
+		bus:      bus,
+		ch:       make(chan SessionBuildEvent, 999),
 	}
+	eventBus.start()
 	return eventBus
 }
 
+func (b *SessionLifetimeEventBus) start() {
+	history := []SessionBuildEvent{}
+	b.history = history
+
+	b.bus.SubscribeAsync("session", func(ev interface{}) {
+		if sessionEv, ok := ev.(SessionBuildEvent); ok {
+			b.Lock()
+			defer b.Unlock()
+			history = append(history, sessionEv)
+			go func() {
+				b.ch <- sessionEv
+			}()
+		}
+	}, true)
+}
+
 func (b *SessionLifetimeEventBus) GetChan() <-chan SessionBuildEvent {
-	sourceCh, history := b.pubSub.Subscribe("session")
-	destCh := make(chan SessionBuildEvent)
-	go func() {
-		for _, pastEv := range b.convertHistoryEntries(history) {
-			destCh <- pastEv
-		}
-		for {
-			ev, ok := <-sourceCh
-			if !ok {
-				close(destCh)
-				return
-			}
-			sessionEv, ok := ev.(SessionBuildEvent)
-			if !ok {
-				continue
-			}
-			destCh <- sessionEv
-		}
-	}()
-	return destCh
+	return b.ch
 }
 
 func (b *SessionLifetimeEventBus) PublishEvent(eventType SessionEventType, session *Session) {
-	b.pubSub.Publish("session", SessionBuildEvent{
+	b.bus.Publish("session", SessionBuildEvent{
 		EventType: eventType,
 		Session:   session,
 	})
 }
 
-func (b *SessionLifetimeEventBus) Close() {
-	b.pubSub.Close()
-}
+func (b *SessionLifetimeEventBus) Close() {}
 
 func (b *SessionLifetimeEventBus) convertHistoryEntries(entries []interface{}) []SessionBuildEvent {
 	sessionEvents := []SessionBuildEvent{}

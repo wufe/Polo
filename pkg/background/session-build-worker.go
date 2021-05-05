@@ -10,7 +10,6 @@ import (
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
-	"github.com/wufe/polo/pkg/background/communication"
 	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
@@ -28,7 +27,6 @@ type SessionBuildWorker struct {
 	sessionStorage     *storage.Session
 	mediator           *Mediator
 	sessionBuilder     *models.SessionBuilder
-	pubSubBuilder      *communication.PubSubBuilder
 }
 
 func NewSessionBuildWorker(
@@ -37,7 +35,6 @@ func NewSessionBuildWorker(
 	sessionStorage *storage.Session,
 	mediator *Mediator,
 	sessionBuilder *models.SessionBuilder,
-	pubSubBuilder *communication.PubSubBuilder,
 ) *SessionBuildWorker {
 	worker := &SessionBuildWorker{
 		global:             globalConfiguration,
@@ -45,7 +42,6 @@ func NewSessionBuildWorker(
 		sessionStorage:     sessionStorage,
 		mediator:           mediator,
 		sessionBuilder:     sessionBuilder,
-		pubSubBuilder:      pubSubBuilder,
 	}
 	return worker
 }

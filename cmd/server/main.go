@@ -17,7 +17,6 @@ func main() {
 	// Factories
 
 	container.AddMutexBuilder()
-	container.AddPubSubBuilder()
 	container.AddSessionBuilder()
 	container.AddApplicationBuilder()
 

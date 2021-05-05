@@ -6,7 +6,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/wufe/polo/pkg/background"
-	"github.com/wufe/polo/pkg/background/communication"
 	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/http/proxy"
 	"github.com/wufe/polo/pkg/http/rest"
@@ -47,12 +46,6 @@ func (d *DI) AddMutexBuilder() {
 			return utils.GetMutex(env)
 		}
 	}); err != nil {
-		log.Panic(err)
-	}
-}
-
-func (d *DI) AddPubSubBuilder() {
-	if err := d.container.Provide(communication.NewPubSubBuilder); err != nil {
 		log.Panic(err)
 	}
 }
@@ -239,9 +232,8 @@ func (d *DI) AddSessionBuildWorker() {
 		sesStorage *storage.Session,
 		mediator *background.Mediator,
 		sessionBuilder *models.SessionBuilder,
-		pubSubBuilder *communication.PubSubBuilder,
 	) *background.SessionBuildWorker {
-		return background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, sessionBuilder, pubSubBuilder)
+		return background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, sessionBuilder)
 	}); err != nil {
 		log.Panic(err)
 	}

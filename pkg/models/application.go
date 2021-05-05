@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/wufe/polo/pkg/background/communication"
 	"github.com/wufe/polo/pkg/models/output"
 	"github.com/wufe/polo/pkg/utils"
 )
@@ -77,13 +76,12 @@ func newApplication(
 	configuration *ApplicationConfiguration,
 	filename string,
 	mutexBuilder utils.MutexBuilder,
-	pubSubBuilder *communication.PubSubBuilder,
 ) (*Application, error) {
 	application := &Application{
 		Filename: filename,
 		RWLocker: mutexBuilder(),
 		Status:   ApplicationStatusLoading,
-		bus:      NewApplicationEventBus(pubSubBuilder),
+		bus:      NewApplicationEventBus(mutexBuilder),
 	}
 	configuration, err := NewApplicationConfiguration(configuration, mutexBuilder)
 	if err != nil {
