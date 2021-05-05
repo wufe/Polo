@@ -72,7 +72,9 @@ export const useScroll = (onLogsProportionChanged: (proportions: number) => void
 
         setScrollTop(newScrollTop);
 
-        if (newScrollTop + clientHeight < scrollHeight) {
+        const thresholdBuffer = 40;
+
+        if (newScrollTop + clientHeight + thresholdBuffer < scrollHeight) {
             setDownArrowVisible(true);
         } else {
             setDownArrowVisible(false);
