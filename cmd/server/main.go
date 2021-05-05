@@ -6,6 +6,8 @@ import (
 
 func main() {
 
+	pkg.ConfigureLogging()
+
 	container := pkg.NewDIContainer()
 
 	// Environment
