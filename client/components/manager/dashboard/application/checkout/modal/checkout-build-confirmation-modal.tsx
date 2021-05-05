@@ -20,7 +20,7 @@ export const CheckoutBuildConfirmationModal = (props: TProps) => {
     return <DefaultModal name={props.name}>
         <div className="checkout-build-confirmation-modal">
             <div className="__header mb-6">
-                <div className="text-base lg:text-lg font-bold whitespace-nowrap overflow-hidden overflow-ellipsis">{props.name}</div>
+                <div className="text-base lg:text-lg font-bold whitespace-nowrap overflow-hidden overflow-ellipsis">{props.checkoutName}</div>
             </div>
             <CommitMessage
                 commitAuthorEmail={props.commitAuthorEmail}
