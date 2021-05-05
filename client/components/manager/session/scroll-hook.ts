@@ -11,6 +11,7 @@ export const useScroll = (onLogsProportionChanged: (proportions: number) => void
     const timeoutIdRef = useRef<NodeJS.Timeout>();
     const [scrollProportions, setScrollProportions] = useState(0);
     const [windowHeight, setWindowHeight] = useState(window.innerHeight);
+    const [downArrowVisible, setDownArrowVisible] = useState(false);
 
     const getScrollTop = () => itemsHeight * itemsCount;
     
@@ -61,19 +62,57 @@ export const useScroll = (onLogsProportionChanged: (proportions: number) => void
 
     const onScroll = () => {
         const newScrollTop = contentRef.current.scrollTop;
+        const clientHeight = contentRef.current.clientHeight;
+        const scrollHeight = contentRef.current.scrollHeight;
         if (scrollTop > newScrollTop || scrolling) {
             setScrolling(true);
+            clearTimeout(timeoutIdRef.current);
             onLogsProportionChanged(0);
-            clearTimeout(timeoutIdRef.current)
-            timeoutIdRef.current = setTimeout(() => {
-                setScrolling(false);
-                setScrollProportions(scrollProportions);
-                onLogsProportionChanged(scrollProportions);
-            }, 5000);
         }
 
         setScrollTop(newScrollTop);
+
+        if (newScrollTop + clientHeight < scrollHeight) {
+            setDownArrowVisible(true);
+        } else {
+            setDownArrowVisible(false);
+        }
     }
 
-    return { contentRef, containerRef, listRef, onScroll, contentHeight };
+    // Entering the container, the timer needs to get reset
+    const onMouseEnter = () => {
+        if (!scrolling) return;
+        clearTimeout(timeoutIdRef.current);
+    }
+
+    // Moving inside the container, the timer needs to get reset
+    const onMouseMove = () => {
+        if (!scrolling) return;
+        clearTimeout(timeoutIdRef.current);
+    }
+
+    // Leaving the div with the mouse means
+    // starting the timer which will reset the automatic div scroll
+    // (like clicking the down arrow)
+    const onMouseLeave = () => {
+        if (!scrolling) return;
+        clearTimeout(timeoutIdRef.current)
+        timeoutIdRef.current = setTimeout(() => {
+            setScrolling(false);
+            setScrollProportions(scrollProportions);
+            onLogsProportionChanged(scrollProportions);
+        }, 20000);
+    }
+
+    // Clicking the down arrow:
+    // - the "scrolling" is set to false
+    // - the proportions calculation is refreshed to show the shadow again
+    const onDownArrowClick = () => {
+        if (!downArrowVisible) return;
+        setScrolling(false);
+        setScrollProportions(scrollProportions);
+        onLogsProportionChanged(scrollProportions);
+    }
+
+    return { contentRef, containerRef, listRef, onScroll, onMouseEnter, onMouseMove, onMouseLeave, contentHeight, downArrowVisible, onDownArrowClick };
 }

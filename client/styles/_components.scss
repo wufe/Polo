@@ -23,7 +23,11 @@
     }
 
     &.--ghost {
+        &.--bg {
+            @apply bg-nord4-alpha30 hover:bg-nord4-alpha dark:bg-nord6-alpha30 dark:hover:bg-nord6-alpha;
+        }
         @apply hover:bg-nord4-alpha dark:hover:bg-nord6-alpha;
+        
     }
 
     &.--small {
