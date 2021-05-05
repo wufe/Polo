@@ -1,7 +1,8 @@
+import React from 'react';
+import './session-logs.scss';
 import { ISessionLog, SessionLogType } from '@/state/models';
 import dayjs from 'dayjs';
 import { observer } from 'mobx-react-lite';
-import React from 'react';
 import { useScroll } from './scroll-hook';
 import { FixedSizeList as List } from 'react-window';
 const { parse } = require('ansicolor');
@@ -32,11 +33,26 @@ const SessionLogsRow =  ({ index, style, data }: { index: number; style: React.C
 
 export const SessionLogs = observer((props: { logs: ISessionLog[], onLogsProportionChanged: (proportions: number) => void }) => {
     const itemsHeight = 22;
-    const { contentRef, containerRef, listRef, onScroll, contentHeight } = useScroll(props.onLogsProportionChanged, itemsHeight, props.logs ? props.logs.length : 0);
+    const {
+        contentRef, containerRef, listRef,
+        onScroll, onMouseEnter, onMouseMove, onMouseLeave,
+        contentHeight,
+        downArrowVisible, onDownArrowClick
+    } = useScroll(props.onLogsProportionChanged, itemsHeight, props.logs ? props.logs.length : 0);
 
     if (!props.logs) return null;
 
-    return <div ref={containerRef} className="lg:m-2 lg:mt-5 flex-grow mt-10 mb-10 lg:mb-36 min-w-0 min-h-0 overflow-hidden">
+    return <div ref={containerRef}
+        className="lg:m-2 lg:mt-5 flex-grow mt-10 mb-10 lg:mb-36 min-w-0 min-h-0 overflow-hidden relative session-logs"
+        onMouseEnter={onMouseEnter}
+        onMouseMove={onMouseMove}
+        onMouseLeave={onMouseLeave}>
+        <div className={`__button --ghost --bg ${downArrowVisible ? '--visible' : ''}`}
+            onClick={onDownArrowClick}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+                </svg>
+            </div>
         <List
             ref={listRef}
             outerRef={contentRef}

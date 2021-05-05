@@ -1,0 +1,14 @@
+@import "~/client/styles/index.scss";
+
+.session-logs {
+    .__button {
+        @include button();
+        @apply absolute right-6 bottom-2 z-50 opacity-0;
+
+        transition: opacity .3s ease-out;
+
+        &.--visible {
+            opacity: 1;
+        }
+    }
+}
