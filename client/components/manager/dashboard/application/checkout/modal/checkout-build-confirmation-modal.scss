@@ -3,9 +3,5 @@
 .checkout-build-confirmation-modal {
     .__actions-container {
         @apply mt-5 flex justify-center;
-
-        .__button {
-            @include button();
-        }
     }
 }

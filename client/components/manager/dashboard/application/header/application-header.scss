@@ -1,12 +1,7 @@
 @import "~/client/styles/index.scss";
 
 .application-header {
-    .__button {
-        @include button();
-        @apply relative;
-
-        .__error-circle {
-            @apply absolute top-3 right-1 bg-nord11 w-2 h-2 rounded-full;
-        }
+    .__error-circle {
+        @apply absolute top-3 right-1 bg-nord11 w-2 h-2 rounded-full;
     }
 }

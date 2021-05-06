@@ -16,6 +16,9 @@ import { ApplicationSessionDeletionModal } from './modal/application-session-del
 import { useClipboard } from '@/components/shared/hooks/use-clipboard';
 import { useHistory } from 'react-router-dom';
 import loading from '@/assets/loading.svg';
+import { Button } from '@/components/shared/elements/button/button';
+import { LoginIcon } from '@/components/shared/elements/icons/login/login-icon';
+import { HorizontalDotsIcon } from '@/components/shared/elements/icons/horizontal-dots/horizontal-dots-icon';
 
 export const validAgeValue = 1;
 
@@ -99,28 +102,17 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
                 </div>
             </div>
         </div>
-
-        {/* {props.session.age > noExpirationAgeValue && <span className="text-xs uppercase text-gray-500">
-                            <span className="hidden lg:inline-block pr-1">Expires in </span><span>{props.session.age}s</span>
-                        </span>} */}
         <span className="text-center whitespace-nowrap flex flex-nowrap items-start">
-            <span className="__button --success --hide-on-mobile" onClick={attachToSession}>
-                <span>Enter</span>
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                </svg>
-            </span>
-            <span className="__button --ghost inline-flex" onClick={() => show(optionsModalName)}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
-                </svg>
-            </span>
-
-            {/* <span className="__button --danger" onClick={() => killSession(session)}>Delete</span> */}
+            <Button
+                success
+                hideOnMobile
+                onClick={attachToSession}
+                label="Enter"
+                icon={<LoginIcon />} />
+            <Button
+                ghost
+                onClick={() => show(optionsModalName)}
+                icon={<HorizontalDotsIcon />} />
         </span>
         <ApplicationSessionModal
             session={props.session}

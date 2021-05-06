@@ -1,10 +1,11 @@
 import React from 'react';
-import './session-logs.scss';
 import { ISessionLog, SessionLogType } from '@/state/models';
 import dayjs from 'dayjs';
 import { observer } from 'mobx-react-lite';
 import { useScroll } from './scroll-hook';
 import { FixedSizeList as List } from 'react-window';
+import { Button } from '@/components/shared/elements/button/button';
+import { DownArrowIcon } from '@/components/shared/elements/icons/down-arrow/down-arrow-icon';
 const { parse } = require('ansicolor');
 
 const colorsByLogType: {
@@ -47,12 +48,14 @@ export const SessionLogs = observer((props: { logs: ISessionLog[], onLogsProport
         onMouseEnter={onMouseEnter}
         onMouseMove={onMouseMove}
         onMouseLeave={onMouseLeave}>
-        <div className={`__button --ghost --bg ${downArrowVisible ? '--visible' : ''}`}
-            onClick={onDownArrowClick}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
-                </svg>
-            </div>
+        <Button
+            ghost
+            bgVisible
+            absolute
+            hidden={!downArrowVisible}
+            className="right-6 bottom-2 z-50"
+            onClick={onDownArrowClick}
+            icon={<DownArrowIcon className="h-8 w-8" />} />
         <List
             ref={listRef}
             outerRef={contentRef}

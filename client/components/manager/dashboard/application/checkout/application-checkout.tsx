@@ -7,6 +7,9 @@ import { CommitMessage } from '@/components/manager/shared/commit-message';
 import { CheckoutBuildConfirmationModal } from './modal/checkout-build-confirmation-modal';
 import { ApplicationCheckoutModal } from './modal/application-checkout-modal';
 import { CommitModal } from '@/components/manager/shared/commit-modal';
+import { Button } from '@/components/shared/elements/button/button';
+import { CubeIcon } from '@/components/shared/elements/icons/cube/cube-icon';
+import { HorizontalDotsIcon } from '@/components/shared/elements/icons/horizontal-dots/horizontal-dots-icon';
 
 type TProps = {
     type                       : 'branch' | 'tag';
@@ -76,21 +79,13 @@ export const ApplicationCheckout = (props: TProps) => {
             </div>
         </div>
         <span className="text-center whitespace-nowrap flex flex-nowrap items-start">
-            <span className="__button --success --hide-on-mobile" onClick={() => props.onSessionCreationSubmission(props.name)}>
-                <span>Create</span>
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-            </span>
-            <span className="__button --ghost inline-flex" onClick={() => show(checkoutOptionsModalName)}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
-                </svg>
-            </span>
+            <Button
+                onClick={() => props.onSessionCreationSubmission(props.name)}
+                label="Create"
+                icon={<CubeIcon />} />
+            <Button
+                onClick={() => show(checkoutOptionsModalName)}
+                icon={<HorizontalDotsIcon />} />
         </span>
         <ApplicationCheckoutModal
             name={checkoutOptionsModalName}

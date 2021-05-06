@@ -2,6 +2,8 @@ import React from 'react';
 import { DefaultModal } from '@/components/manager/modal/default-modal';
 import { ISession } from '@/state/models/session-model';
 import './application-session-deletion-modal.scss';
+import { Button } from '@/components/shared/elements/button/button';
+import { TrashIcon } from '@/components/shared/elements/icons/trash/trash-icon';
 
 type TProps = {
     name                         : string;
@@ -19,16 +21,12 @@ export const ApplicationSessionDeletionModal = (props: TProps) => {
                 You are going to delete the session. Are you sure?
             </div>
             <div className="__actions-container mt-5 flex justify-center">
-                <span className="__button --danger --outlined" onClick={props.onApplicationDeletionSelected}>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    <span>Delete</span>
-                </span>
+                <Button
+                    danger
+                    outlined
+                    label="Delete"
+                    onClick={props.onApplicationDeletionSelected}
+                    icon={<TrashIcon />} />
             </div>
         </div>
     </DefaultModal>

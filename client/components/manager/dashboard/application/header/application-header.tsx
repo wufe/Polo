@@ -7,6 +7,8 @@ import { ApplicationOptionsModal } from '../options/application-options-modal';
 import './application-header.scss';
 import { useHistory } from 'react-router';
 import dayjs from 'dayjs';
+import { Button } from '@/components/shared/elements/button/button';
+import { MenuIcon } from '@/components/shared/elements/icons/menu/menu-icon';
 
 type TProps = {
     name: string;
@@ -30,15 +32,13 @@ export const ApplicationHeader = (props: TProps) => {
     return <div className="application-header">
         <div className="flex justify-between min-w-0 max-w-full flex-nowrap items-center">
             <h3 className="text-xl lg:text-2xl leading-5 font-bold overflow-hidden overflow-ellipsis whitespace-nowrap flex-grow flex-shrink pr-6" title={props.name}>{props.name}</h3>
-            <div className="__button --ghost --large-icon flex-shrink-0" onClick={() => show(applicationOptionsModalName)}>
+            <Button
+                ghost
+                largeIcon
+                onClick={() => show(applicationOptionsModalName)}
+                icon={<MenuIcon />}>
                 {anyFailedSession && <div className="__error-circle"></div>}
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-            </div>
+            </Button>
         </div>
         <span className="text-gray-400 text-sm">{props.filename}</span>
 

@@ -13,6 +13,8 @@ import { DefaultModal } from '../../modal/default-modal';
 import { useModal } from '../../modal/modal-hooks';
 import { ApplicationOptionsModal } from './options/application-options-modal';
 import { ApplicationHeader } from './header/application-header';
+import { Button } from '@/components/shared/elements/button/button';
+import { CubeIcon } from '@/components/shared/elements/icons/cube/cube-icon';
 
 type TProps = {
     sessions      : ISession[] | null;
@@ -78,16 +80,12 @@ export const Application = observer((props: TProps) => {
                     value={newSessionCheckout}
                     onChange={e => onCheckoutChange(e.target.value)}
                     onKeyUp={e => e.key === 'Enter' && submitSessionCreation(newSessionCheckout)} />
-                <div className="__button --success --small" onClick={e => submitSessionCreation(newSessionCheckout)}>
-                    <span>Create</span>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                </div>
+                <Button
+                    success
+                    small
+                    onClick={() => submitSessionCreation(newSessionCheckout)}
+                    label="Create"
+                    icon={<CubeIcon />} />
             </div>
         </div>
     </div>;

@@ -1,0 +1,5 @@
+@import "~/client/styles/index.scss";
+
+.button-component {
+    @include button();
+}
