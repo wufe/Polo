@@ -1,6 +1,7 @@
 import { ISession } from '@/state/models';
 import React from 'react';
 import { DefaultModal } from '../modal/default-modal';
+import { DefaultModalHeader, DefaultModalLayout } from '../modal/default-modal-layout/default-modal-layout';
 import { FramelessModal } from '../modal/frameless-modal';
 import { CommitMessage } from './commit-message';
 
@@ -14,11 +15,11 @@ type TProps = {
 }
 export const CommitModal = (props: TProps) => {
     return <DefaultModal name={props.name}>
-        <div className="overflow-hidden lg:rounded-md text-nord0 dark:text-nord4 flex flex-col">
-            <div className="mb-6">
-                <div className="text-base lg:text-lg font-bold whitespace-nowrap overflow-hidden overflow-ellipsis">{props.title}</div>
+        <DefaultModalLayout>
+            <DefaultModalHeader>{props.title}</DefaultModalHeader>
+            <div className="p-3">
+                <CommitMessage {...props} />
             </div>
-            <CommitMessage {...props} />
-        </div>
+        </DefaultModalLayout>
     </DefaultModal>
 }

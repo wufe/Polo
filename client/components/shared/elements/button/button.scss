@@ -1,5 +1,68 @@
 @import "~/client/styles/index.scss";
 
 .button-component {
-    @include button();
+    @apply leading-none text-xs uppercase cursor-pointer mx-1 rounded-md py-2 px-3 flex-nowrap items-center relative flex-shrink-0;
+    @apply lg:text-sm;
+    height: 3em;
+    transition-property: background,
+    opacity;
+    transition-duration: .3s;
+    transition-timing-function: ease-out;
+    opacity: 1;
+
+    &.--absolute {
+        @apply absolute;
+    }
+
+    &.--hidden {
+        @apply opacity-0;
+    }
+
+    &:not(.--hide-on-mobile) {
+        @apply inline-flex;
+    }
+
+    &.--hide-on-mobile {
+        @apply hidden sm:inline-flex;
+    }
+
+    &.--success {
+        @apply hover:bg-nord14-alpha;
+
+        &.--outlined {
+            @apply border border-nord14-alpha;
+        }
+    }
+
+    &.--danger {
+        @apply hover:bg-nord11-alpha;
+    }
+
+    &.--ghost {
+        &.--bg-visible {
+            @apply bg-nord4-alpha30 hover:bg-nord4-alpha dark:bg-nord6-alpha30 dark:hover:bg-nord6-alpha;
+        }
+
+        @apply hover:bg-nord4-alpha dark:hover:bg-nord6-alpha;
+
+    }
+
+    &.--small {
+        @apply text-xs;
+        height: auto;
+    }
+
+    >svg {
+        @apply w-4 h-4;
+    }
+
+    &.--large-icon {
+        >svg {
+            @apply w-5 h-5;
+        }
+    }
+
+    >*:not(:last-child) {
+        @apply mr-2;
+    }
 }

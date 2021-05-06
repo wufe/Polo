@@ -80,10 +80,12 @@ export const ApplicationCheckout = (props: TProps) => {
         </div>
         <span className="text-center whitespace-nowrap flex flex-nowrap items-start">
             <Button
+                ghost
                 onClick={() => props.onSessionCreationSubmission(props.name)}
                 label="Create"
                 icon={<CubeIcon />} />
             <Button
+                ghost
                 onClick={() => show(checkoutOptionsModalName)}
                 icon={<HorizontalDotsIcon />} />
         </span>
