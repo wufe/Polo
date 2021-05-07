@@ -2,6 +2,7 @@ const Color = require('color');
 const lighten = (color, val) => Color(color).lighten(val).rgba().string();
 
 module.exports = {
+  mode: 'jit',
   purge: ["./client/**/*.tsx", "./client/**/*.html"],
   darkMode: 'media', // or 'media' or 'class'
   theme: {
