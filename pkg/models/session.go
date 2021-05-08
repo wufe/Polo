@@ -366,7 +366,7 @@ func (session *Session) SetStatus(status SessionStatus) {
 	previousStatus := session.Status
 	session.Status = status
 	session.diagnostics = append(session.diagnostics, DiagnosticsData{
-		Action: DiagonsticsActionReplacement,
+		Action: DiagnosticsActionReplacement,
 		When:   time.Now(),
 		Field:  "status",
 		Value: PrevNextDiagnosticsValue{

@@ -3,7 +3,7 @@ package models
 import "time"
 
 const (
-	DiagonsticsActionReplacement DiagnosticsAction = "replacement"
+	DiagnosticsActionReplacement DiagnosticsAction = "replacement"
 )
 
 type DiagnosticsAction string

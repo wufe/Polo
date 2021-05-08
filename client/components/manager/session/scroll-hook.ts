@@ -64,16 +64,21 @@ export const useScroll = (onLogsProportionChanged: (proportions: number) => void
         const newScrollTop = contentRef.current.scrollTop;
         const clientHeight = contentRef.current.clientHeight;
         const scrollHeight = contentRef.current.scrollHeight;
+        // If scrolling up
         if (scrollTop > newScrollTop || scrolling) {
             setScrolling(true);
             clearTimeout(timeoutIdRef.current);
+            // Slide the overlay up
             onLogsProportionChanged(0);
         }
 
         setScrollTop(newScrollTop);
 
+        // How close to the edge the scroll must be
+        // to hide the down arrovw
         const thresholdBuffer = 40;
 
+        // Hide the arrow if near the bottom edge
         if (newScrollTop + clientHeight + thresholdBuffer < scrollHeight) {
             setDownArrowVisible(true);
         } else {
