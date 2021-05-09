@@ -39,7 +39,7 @@ export const ApplicationOptionsModal = observer((props: TProps) => {
             {!viewFailingSessions && <DefaultModalList>
                 <DefaultModalItem
                     dangerIcon={anyUnacknowledgedFailures} disabled={!anyFailures}
-                    onClick={() => anyUnacknowledgedFailures && setViewFailingSession(true)}>
+                    onClick={() => anyFailures && setViewFailingSession(true)}>
                     <ExclamationCircleIcon />
                     <span>View failing sessions</span>
                 </DefaultModalItem>
