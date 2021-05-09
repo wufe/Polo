@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -117,20 +116,49 @@ func (s *QueryService) GetMatchingCheckout(rawInput string) (checkout string, ap
 	return "", "", "", false
 }
 
-func (s *QueryService) GetApplicationFailedSessions() []*models.Session {
-	return s.sessionStorage.GetApplicationSessionsByCategory(storage.SessionCategoryFailedToStart)
+func (s *QueryService) GetFailedSessions() []*models.Session {
+	return s.sessionStorage.GetSessionsByCategory(storage.SessionCategoryFailedToStart)
 }
 
-func (s *QueryService) GetFailedSessionLogs(uuid string) ([]models.Log, error) {
-	failedSessions := s.sessionStorage.GetApplicationSessionsByCategory(storage.SessionCategoryFailedToStart)
+func (s *QueryService) GetSeenFailedSessions() []*models.Session {
+	return s.sessionStorage.GetSessionsByCategory(storage.SessionCategoryFailedToStartAcknowledged)
+}
+
+// Retrieve a failed session, search through seen and unseen
+func (s *QueryService) GetFailedSession(uuid string) (*models.Session, error) {
+	unacknowledged := s.GetFailedSessions()
 	var foundSession *models.Session
-	for _, session := range failedSessions {
+	for _, session := range unacknowledged {
 		if session.UUID == uuid {
 			foundSession = session
 		}
 	}
 	if foundSession == nil {
-		return nil, errors.New("Session not found")
+		acknowledged := s.GetSeenFailedSessions()
+		for _, session := range acknowledged {
+			if session.UUID == uuid {
+				foundSession = session
+			}
+		}
+		if foundSession == nil {
+			return nil, ErrSessionNotFound
+		}
 	}
-	return foundSession.GetLogs(), nil
+	return foundSession, nil
+}
+
+func (s *QueryService) GetFailedSessionLogs(uuid string) ([]models.Log, error) {
+	session, err := s.GetFailedSession(uuid)
+	if err != nil {
+		return nil, ErrSessionNotFound
+	}
+	return session.GetLogs(), nil
+}
+
+func (s *QueryService) MarkFailedSessionAsSeen(uuid string) {
+	session, err := s.GetFailedSession(uuid)
+	if err == nil {
+		s.sessionStorage.RemoveSessionFromCategory(storage.SessionCategoryFailedToStart, uuid)
+		s.sessionStorage.AddSessionToCategory(storage.SessionCategoryFailedToStartAcknowledged, session)
+	}
 }

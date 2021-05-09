@@ -195,6 +195,10 @@ func (s *Session) GetAliveApplicationSessionByCheckout(checkout string, applicat
 
 const (
 	SessionCategoryFailedToStart SessionCategory = "failed_to_start"
+	// Failed sessions that are acknowledged by the user
+	// A session goes from SessionCategoryFailedToStart to SessionCategoryFailedToStartAcknowledged
+	// when a user sees its logs from the frontend
+	SessionCategoryFailedToStartAcknowledged SessionCategory = "failed_to_start_ack"
 )
 
 type SessionCategory string
@@ -215,13 +219,21 @@ func newSessionsByCategory(mutexBuilder utils.MutexBuilder) *SessionsByCategory 
 func (s *Session) AddSessionToCategory(category SessionCategory, session *models.Session) {
 	s.sessionsByCategory.Lock()
 	defer s.sessionsByCategory.Unlock()
-	// if _, exists := s.sessionsByCategory.Data[category]; !exists {
-	// 	s.sessionsByCategory.Data[category] = []*models.Session{}
-	// }
 	s.sessionsByCategory.Data[category] = append(s.sessionsByCategory.Data[category], session)
 }
+func (s *Session) RemoveSessionFromCategory(category SessionCategory, sessionUUID string) {
+	s.sessionsByCategory.Lock()
+	defer s.sessionsByCategory.Unlock()
+	newSessions := []*models.Session{}
+	for _, session := range s.sessionsByCategory.Data[category] {
+		if session.UUID != sessionUUID {
+			newSessions = append(newSessions, session)
+		}
+	}
+	s.sessionsByCategory.Data[category] = newSessions
+}
 
-func (s *Session) GetApplicationSessionsByCategory(category SessionCategory) []*models.Session {
+func (s *Session) GetSessionsByCategory(category SessionCategory) []*models.Session {
 	s.sessionsByCategory.RLock()
 	defer s.sessionsByCategory.RUnlock()
 

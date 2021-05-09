@@ -50,7 +50,7 @@ export const SessionPage = observer((props: TProps) => {
 
     if (!session || session.uuid !== uuid || loading) return null;
 
-    return <Session session={session} />
+    return <Session app={props.app} session={session} />
 });
 
 export default SessionPage;

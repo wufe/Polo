@@ -6,6 +6,7 @@ import { useScroll } from './scroll-hook';
 import { FixedSizeList as List } from 'react-window';
 import { Button } from '@/components/shared/elements/button/button';
 import { DownArrowIcon } from '@/components/shared/elements/icons/down-arrow/down-arrow-icon';
+import classnames from 'classnames';
 const { parse } = require('ansicolor');
 
 const colorsByLogType: {
@@ -32,7 +33,11 @@ const SessionLogsRow =  ({ index, style, data }: { index: number; style: React.C
     </p>
 }
 
-export const SessionLogs = observer((props: { logs: ISessionLog[], onLogsProportionChanged: (proportions: number) => void }) => {
+export const SessionLogs = observer((props: {
+    logs: ISessionLog[];
+    onLogsProportionChanged: (proportions: number) => void;
+    failed?: boolean;
+}) => {
     const itemsHeight = 22;
     const {
         contentRef, containerRef, listRef,
@@ -44,7 +49,10 @@ export const SessionLogs = observer((props: { logs: ISessionLog[], onLogsProport
     if (!props.logs) return null;
 
     return <div ref={containerRef}
-        className="lg:m-2 lg:mt-5 flex-grow mt-10 mb-10 lg:mb-36 min-w-0 min-h-0 overflow-hidden relative session-logs"
+        className={classnames(
+            'lg:m-2 lg:mt-5 flex-grow mt-10 mb-10 lg:mb-36 min-w-0 min-h-0 overflow-hidden relative session-logs',
+            props.failed && 'border-r-4 border-l-4 border-nord11'
+        )}
         onMouseEnter={onMouseEnter}
         onMouseMove={onMouseMove}
         onMouseLeave={onMouseLeave}>

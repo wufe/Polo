@@ -29,8 +29,8 @@ export const FailingSession = observer((props: TProps) => {
 
     useEffect(() => {
         Promise.all([
-            props.app.retrieveFailedSession(props.uuid),
-            props.app.retrieveFailedSessionLogs(props.uuid)
+            props.app.failures.retrieveFailedSession(props.uuid),
+            props.app.failures.retrieveFailedSessionLogs(props.uuid)
         ])
         .then(([sessionResponse, logsResponse]) => {
             if (sessionResponse.result === APIRequestResult.FAILED) {
@@ -53,6 +53,7 @@ export const FailingSession = observer((props: TProps) => {
         </div>
         <CommitMessage {...session} maxHeight />
         <SessionLogs
+            failed
             logs={logs}
             onLogsProportionChanged={setOverlayProportions} />
     </div>

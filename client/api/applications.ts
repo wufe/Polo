@@ -4,6 +4,11 @@ import axios from 'axios';
 import Axios from 'axios';
 import { buildRequest } from './common';
 
+export interface IAPIFailedSessions {
+    acknowledged: ISession[];
+    unacknowledged: ISession[];
+}
+
 export function retrieveApplicationsAPI() {
     return buildRequest<IApplication[]>(() => Axios.get(`/_polo_/api/application`));
 }
@@ -16,11 +21,15 @@ export function createNewSessionAPI(applicationName: string, checkout: string) {
 }
 
 export function retrieveFailedSessionsAPI() {
-    return buildRequest<ISession[]>(() => Axios.get(`/_polo_/api/failed/`));
+    return buildRequest<IAPIFailedSessions>(() => Axios.get(`/_polo_/api/failed/`));
 }
 
 export function retrieveFailedSessionAPI(uuid: string) {
     return buildRequest<ISession[]>(() => Axios.get(`/_polo_/api/failed/${uuid}`));
+}
+
+export function markFailedSessionAsAcknowledgedAPI(uuid: string) {
+    return buildRequest<void>(() => Axios.post(`/_polo_/api/failed/${uuid}/ack`));
 }
 
 export function retrieveFailedSessionLogsAPI(uuid: string) {

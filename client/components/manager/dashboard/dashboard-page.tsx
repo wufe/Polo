@@ -3,16 +3,13 @@ import { observer } from 'mobx-react-lite';
 import { IApp, IApplication } from '@/state/models';
 import { Application } from './application/application';
 import { values } from 'mobx';
-import { Link } from 'react-router-dom';
-import { Modal, ModalPortal } from '../modal/modal-portal';
+import { useHistory } from 'react-router';
 
 type TProps = {
     app: IApp;
 }
 export const Dashboard = observer((props: TProps) => {
 
-    const [openApplications, setOpenApplications] = useState<{[k:string]: boolean}>({});
-    const [openToggleEnabled, setOpenToggleEnabled] = useState(false);
     const [selectedAppIndex, setSelectedAppIndex] = useState(-1);
 
     const selectedApplicationLocalStorageKey = 'selected-application-name';
@@ -20,7 +17,7 @@ export const Dashboard = observer((props: TProps) => {
     const requestData = async () => {
         await props.app.retrieveApplications();
         await props.app.retrieveAllSessions();
-        await props.app.retrieveFailedSessions();
+        await props.app.failures.retrieveFailedSessions();
     }
 
     useEffect(() => {
@@ -41,10 +38,6 @@ export const Dashboard = observer((props: TProps) => {
         const interval = setInterval(() => requestData(), 2000);
         return () => clearInterval(interval);
     }, []);
-
-    useEffect(() => {
-        setOpenToggleEnabled(props.app.applications.size > 1);
-    }, [props.app.applications.size]);
 
     const openApplication = (name: string, index: number) => () => {
         setSelectedAppIndex(index);
@@ -68,7 +61,7 @@ export const Dashboard = observer((props: TProps) => {
                 {!!selected && <div className="flex-grow min-w-0">
                     <Application
                         sessions={props.app.sessionsByApplicationName[selected.configuration.name]}
-                        failedSessions={props.app.failedSessionsByApplicationName[selected.configuration.name]}
+                        failures={props.app.failures.byApplicationName[selected.configuration.name]}
                         application={selected} />
                 </div>}
             </div>

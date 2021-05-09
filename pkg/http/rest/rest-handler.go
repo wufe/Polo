@@ -40,6 +40,7 @@ func NewHandler(environment utils.Environment, static *services.StaticService, r
 	router.GET("/_polo_/api/failed/", h.getFailedSessions(query))
 	router.GET("/_polo_/api/failed/:uuid", h.getFailedSession(query))
 	router.GET("/_polo_/api/failed/:uuid/logs", h.getFailedSessionLogs(query))
+	router.POST("/_polo_/api/failed/:uuid/ack", h.markFailedSessionAsAcknowledged(query))
 	router.GET("/_polo_/api/session/:uuid", h.getSession(query))
 	router.DELETE("/_polo_/api/session/:uuid", h.deleteSession(request))
 	router.GET("/_polo_/api/session/:uuid/status", h.getSessionStatus(query))
@@ -277,12 +278,20 @@ func (rest *Handler) deleteSession(req *services.RequestService) httprouter.Hand
 func (rest *Handler) getFailedSessions(query *services.QueryService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		write := write(w)
-		sessions := query.GetApplicationFailedSessions()
-		sessionOutputs := []output.Session{}
-		for _, session := range sessions {
-			sessionOutputs = append(sessionOutputs, session.ToOutput())
+		unacknowledged := query.GetFailedSessions()
+		unacknowledgedOutput := make([]output.Session, 0, len(unacknowledged))
+		for _, session := range unacknowledged {
+			unacknowledgedOutput = append(unacknowledgedOutput, session.ToOutput())
 		}
-		write(ok(sessionOutputs))
+		acknowledged := query.GetSeenFailedSessions()
+		acknowledgedOuput := make([]output.Session, 0, len(acknowledged))
+		for _, session := range acknowledged {
+			acknowledgedOuput = append(acknowledgedOuput, session.ToOutput())
+		}
+		write(ok(&struct {
+			Unacknowledged []output.Session `json:"unacknowledged"`
+			Acknowledged   []output.Session `json:"acknowledged"`
+		}{unacknowledgedOutput, acknowledgedOuput}))
 	}
 }
 
@@ -290,18 +299,12 @@ func (rest *Handler) getFailedSession(query *services.QueryService) httprouter.H
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		uuid := p.ByName("uuid")
 		write := write(w)
-		sessions := query.GetApplicationFailedSessions()
-		var sessionOuput *output.Session
-		for _, session := range sessions {
-			if session.UUID == uuid {
-				output := session.ToOutput()
-				sessionOuput = &output
-			}
-		}
-		if sessionOuput == nil {
+		session, err := query.GetFailedSession(uuid)
+		if err != nil {
 			write(notFound())
+		} else {
+			write(ok(session.ToOutput()))
 		}
-		write(ok(sessionOuput))
 	}
 }
 
@@ -316,6 +319,17 @@ func (rest *Handler) getFailedSessionLogs(query *services.QueryService) httprout
 		} else {
 			write(ok(logs))
 		}
+	}
+}
+
+func (rest *Handler) markFailedSessionAsAcknowledged(query *services.QueryService) httprouter.Handle {
+	return func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		uuid := p.ByName("uuid")
+		write := write(rw)
+
+		query.MarkFailedSessionAsSeen(uuid)
+
+		write(ok(nil))
 	}
 }
 
