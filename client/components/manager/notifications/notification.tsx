@@ -43,7 +43,11 @@ export const Notification = ({
         '--info'   : type === NotificationType.INFO,
     })} onClick={triggerOnClick}>
         <div className="__title">{title}</div>
-        <div>{text}</div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {text.split('\n').map((line, index) => <span key={index}>
+                {line}
+            </span>)}
+        </div>
         <div className="__loading-bar" style={{
             animationDuration: `${expiration}s`
         }}></div>

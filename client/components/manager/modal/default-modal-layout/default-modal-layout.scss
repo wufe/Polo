@@ -5,7 +5,7 @@
 
     > .__header {
         @apply mb-4;
-        @apply inline-block max-w-full text-base lg:text-lg font-bold whitespace-nowrap overflow-hidden overflow-ellipsis;
+        @apply inline-block max-w-full text-base lg:text-lg font-bold whitespace-nowrap overflow-hidden overflow-ellipsis flex-shrink-0;
 
         > .__subtitle {
             @apply text-xs text-gray-500 dark:text-gray-400 opacity-80 font-normal;

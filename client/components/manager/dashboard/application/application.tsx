@@ -1,5 +1,5 @@
 import { APIRequestResult } from '@/api/common';
-import { IApp } from '@/state/models';
+import { IApp, SessionSubscriptionEventType } from '@/state/models';
 import { IApplication, IApplicationBranchModel } from '@/state/models/application-model';
 import { ISession } from '@/state/models/session-model';
 import { values } from 'mobx';
@@ -15,16 +15,21 @@ import { ApplicationOptionsModal } from './options/application-options-modal';
 import { ApplicationHeader } from './header/application-header';
 import { Button } from '@/components/shared/elements/button/button';
 import { CubeIcon } from '@/components/shared/elements/icons/cube/cube-icon';
+import { useSubscription } from '@/state/models/subscription-hook';
+import { NotificationType } from '@/state/models/notification-model';
+import { useNotification } from '@/state/models/notification-hook';
 
 type TProps = {
-    sessions      : ISession[] | null;
-    failedSessions: ISession[] | null;
-    application   : IApplication;
+    sessions        : ISession[] | null;
+    failedSessions  : ISession[] | null;
+    application     : IApplication;
 }
 
 export const Application = observer((props: TProps) => {
 
     const [newSessionCheckout, setNewSessionCheckout] = useState<string>("")
+    const { subscribe } = useSubscription();
+    const { notify } = useNotification();
     const history = useHistory();
 
     const onCheckoutChange = (value: string) => setNewSessionCheckout(value);
@@ -35,6 +40,18 @@ export const Application = observer((props: TProps) => {
         if (checkout) {
             const newSession = await props.application.newSession(checkout);
             if (newSession.result === APIRequestResult.SUCCEEDED) {
+                
+                subscribe(newSession.payload.uuid, SessionSubscriptionEventType.FAIL, (event, session) => {
+                    notify({
+                        text: 'Build failed',
+                        type: NotificationType.ERROR,
+                        onClick: notification => {
+                            notification.remove();
+                            history.push(`/_polo_/session/failing/${session.uuid}`);
+                        }
+                    });
+                });
+                
                 history.push(`/_polo_/session/${newSession.payload.uuid}/`);
             } else {
                 alert('Could not create new session.\n' + newSession.reason);

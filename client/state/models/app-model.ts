@@ -9,14 +9,43 @@ import { initialModalState, ModalModel } from "./modal-model";
 import { INotification, NotificationModel, NotificationType } from "./notification-model";
 import { v1 } from 'uuid';
 
+export enum SessionSubscriptionEventType {
+    FAIL = 'fail',
+}
+export type TSubscription = {
+    sessionUUID: string;
+    event      : SessionSubscriptionEventType;
+    cb         : (event: SessionSubscriptionEventType, session: ISession) => void;
+}
+
 export const AppModel = types.model({
-    session       : types.maybeNull(SessionModel),
-    sessions      : types.map(SessionModel),
-    failedSessions: types.map(SessionModel),
-    applications  : types.map(ApplicationModel),
-    notifications : types.map(NotificationModel),
-    modal         : ModalModel,
+    session              : types.maybeNull(SessionModel),
+    sessions             : types.map(SessionModel),
+    failedSessions       : types.map(SessionModel),
+    applications         : types.map(ApplicationModel),
+    notifications        : types.map(NotificationModel),
+    modal                : ModalModel,
 })
+// #region Session events subscriptions
+.volatile(self => {
+    return {
+        subscriptions: [] as TSubscription[]
+    };
+})
+.actions(self => {
+    const subscribeToSessionEvents = (sessionUUID: TSubscription['sessionUUID'], event: TSubscription['event'], cb: TSubscription['cb']) => {
+        self.subscriptions.push({ sessionUUID, event, cb });
+    };
+
+    const publishSessionEvent = (s: ISession, e: SessionSubscriptionEventType) => {
+        for (const { sessionUUID, event, cb } of self.subscriptions) {
+            if (sessionUUID === s.uuid && event === e)
+                cb(event, s);
+        }
+    };
+    return { subscribeToSessionEvents, publishSessionEvent };
+})
+// #endregion
 .actions(self => {
     const retrieveApplications = flow(function* retrieveApplications() {
         const applications: APIPayload<IApplication[]> = yield retrieveApplicationsAPI();
@@ -54,11 +83,18 @@ export const AppModel = types.model({
         return session;
     });
 
+    const storeFailedSession = (session: ISession) => {
+        if (!self.failedSessions.has(session.uuid)) {
+            self.failedSessions.set(session.uuid, session);
+            self.publishSessionEvent(session, SessionSubscriptionEventType.FAIL);
+        }
+    }
+
     const retrieveFailedSessions = flow(function* retrieveFailedSessions() {
         const request: APIPayload<ISession[]> = yield retrieveFailedSessionsAPI();
         if (request.result === APIRequestResult.SUCCEEDED) {
             for (const session of request.payload) {
-                self.failedSessions.set(session.uuid, session);
+                storeFailedSession(session);
             }
         }
         return request;
@@ -66,6 +102,8 @@ export const AppModel = types.model({
 
     const retrieveFailedSession = flow(function *retrieveFailedSession(uuid: string) {
         const request: APIPayload<ISession> = yield retrieveFailedSessionAPI(uuid);
+        if (request.result === APIRequestResult.SUCCEEDED)
+            storeFailedSession(request.payload);
         return request
     })
 

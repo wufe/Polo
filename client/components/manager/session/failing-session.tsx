@@ -53,6 +53,7 @@ export const FailingSession = observer((props: TProps) => {
         </div>
         <CommitMessage {...session} maxHeight />
         <SessionLogs
+            failed
             logs={logs}
             onLogsProportionChanged={setOverlayProportions} />
     </div>

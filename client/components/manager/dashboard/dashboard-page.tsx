@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { IApp, IApplication } from '@/state/models';
 import { Application } from './application/application';
 import { values } from 'mobx';
-import { NotificationType } from '@/state/models/notification-model';
+import { useHistory } from 'react-router';
 
 type TProps = {
     app: IApp;

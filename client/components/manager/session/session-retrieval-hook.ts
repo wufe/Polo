@@ -1,16 +1,20 @@
-import { APIRequestResult } from "@/api/common";
+import { APIPayload, APIRequestResult } from "@/api/common";
 import { ISession, ISessionLog } from "@/state/models";
 import { values } from "mobx";
 import { useRef, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 
-export const useSessionRetrieval = (session: ISession) => {
+export const useSessionRetrieval = (
+    retrieveFailedSession: (uuid: string) => Promise<APIPayload<ISession>>,
+    onSessionFail: () => void,
+    session: ISession,
+) => {
     const interval = useRef<NodeJS.Timeout | null>(null);
     const history = useHistory();
 
     useEffect(() => {
 
-        const sessionStatusRetrieval = () => {
+        const sessionStatusRetrieval = async () => {
 
             const logs: ISessionLog[] = values(session.logs) as any;
 
@@ -20,14 +24,35 @@ export const useSessionRetrieval = (session: ISession) => {
                 lastLogUUID = logs[logs.length - 1].uuid;
             }
 
-            session.retrieveLogsAndStatus(lastLogUUID)
-                .then(request => {
-                    if (request.result === APIRequestResult.FAILED) {
-                        history.push(`/_polo_/`);
-                    } else {
-                        interval.current = setTimeout(() => sessionStatusRetrieval(), 1000);
+            let fetchFailed = false;
+            try {
+                const logsRequest = await session.retrieveLogsAndStatus(lastLogUUID);
+                if (logsRequest.result === APIRequestResult.SUCCEEDED) {
+                    interval.current = setTimeout(() => sessionStatusRetrieval(), 1000);
+                } else {
+                    fetchFailed = true;
+                }
+            } catch (e) {
+                console.error(e);
+                fetchFailed = true;
+            }
+
+            let redirectToDashboard = false;
+            if (fetchFailed) {
+                redirectToDashboard = true;
+                try {
+                    const failedSessionRequest = await retrieveFailedSession(session.uuid);
+                    if (failedSessionRequest.result === APIRequestResult.SUCCEEDED) {
+                        redirectToDashboard = false;
+                        onSessionFail();
                     }
-                });
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            if (redirectToDashboard)
+                history.push(`/_polo_/`);
         };
 
         sessionStatusRetrieval();
