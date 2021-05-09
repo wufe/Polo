@@ -94,5 +94,14 @@ function sortSessionsByCreationTimeDesc(failures: TFailuresDictionary): FailureW
             status: FailureStatus.UNACK,
         });
     }
-    return sessions;
+    return sessions
+        .sort((a, b) => {
+            const dateA = dayjs(a.session.createdAt);
+            const dateB = dayjs(b.session.createdAt);
+            if (dateA.isBefore(dateB))
+                return 1;
+            if (dateA.isAfter(dateB))
+                return -1;
+            return 0;
+        })
 }
