@@ -10,7 +10,7 @@
 }
 
 .notification {
-    @apply min-w-96 px-4 pt-3 pb-4 my-2 rounded-md backdrop-filter backdrop-blur-md border relative cursor-pointer shadow-md;
+    @apply max-w-full min-w-full sm:min-w-96 px-4 pt-3 pb-4 my-2 rounded-md backdrop-filter backdrop-blur-md border relative cursor-pointer shadow-md;
     @apply bg-white-alpha10 dark:bg-black-alpha10;
     @apply hover:bg-nord0-alpha10 dark:hover:bg-nord4-alpha10;
 
