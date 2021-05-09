@@ -8,6 +8,7 @@ import { SessionModel, ISession, castAPISessionToSessionModel, ISessionLog } fro
 import { initialModalState, ModalModel } from "./modal-model";
 import { INotification, NotificationModel, NotificationType } from "./notification-model";
 import { v1 } from 'uuid';
+import { FailuresModel, initialFailuresState } from "./failures-model";
 
 export enum SessionSubscriptionEventType {
     FAIL = 'fail',
@@ -15,16 +16,24 @@ export enum SessionSubscriptionEventType {
 export type TSubscription = {
     sessionUUID: string;
     event      : SessionSubscriptionEventType;
-    cb         : (event: SessionSubscriptionEventType, session: ISession) => void;
-}
+    cb: (session: ISession, event: SessionSubscriptionEventType) => void;
+};
+
+export type TNotificationProps = {
+    text: string;
+    type?: NotificationType;
+    title?: string;
+    expiration?: number;
+    onClick?: (notification: INotification) => void;
+};
 
 export const AppModel = types.model({
-    session              : types.maybeNull(SessionModel),
-    sessions             : types.map(SessionModel),
-    failedSessions       : types.map(SessionModel),
-    applications         : types.map(ApplicationModel),
-    notifications        : types.map(NotificationModel),
-    modal                : ModalModel,
+    session      : types.maybeNull(SessionModel),
+    sessions     : types.map(SessionModel),
+    failures     : FailuresModel,
+    applications : types.map(ApplicationModel),
+    notifications: types.map(NotificationModel),
+    modal        : ModalModel,
 })
 // #region Session events subscriptions
 .volatile(self => {
@@ -40,7 +49,7 @@ export const AppModel = types.model({
     const publishSessionEvent = (s: ISession, e: SessionSubscriptionEventType) => {
         for (const { sessionUUID, event, cb } of self.subscriptions) {
             if (sessionUUID === s.uuid && event === e)
-                cb(event, s);
+                cb(s, event);
         }
     };
     return { subscribeToSessionEvents, publishSessionEvent };
@@ -83,36 +92,7 @@ export const AppModel = types.model({
         return session;
     });
 
-    const storeFailedSession = (session: ISession) => {
-        if (!self.failedSessions.has(session.uuid)) {
-            self.failedSessions.set(session.uuid, session);
-            self.publishSessionEvent(session, SessionSubscriptionEventType.FAIL);
-        }
-    }
-
-    const retrieveFailedSessions = flow(function* retrieveFailedSessions() {
-        const request: APIPayload<ISession[]> = yield retrieveFailedSessionsAPI();
-        if (request.result === APIRequestResult.SUCCEEDED) {
-            for (const session of request.payload) {
-                storeFailedSession(session);
-            }
-        }
-        return request;
-    });
-
-    const retrieveFailedSession = flow(function *retrieveFailedSession(uuid: string) {
-        const request: APIPayload<ISession> = yield retrieveFailedSessionAPI(uuid);
-        if (request.result === APIRequestResult.SUCCEEDED)
-            storeFailedSession(request.payload);
-        return request
-    })
-
-    const retrieveFailedSessionLogs = flow(function *retrieveFailedSessionLogs(uuid: string) {
-        const request: APIPayload<ISessionLog[]> = yield retrieveFailedSessionLogsAPI(uuid);
-        return request;
-    })
-
-    return { retrieveSession, retrieveAllSessions, retrieveApplications, retrieveFailedSessions, retrieveFailedSession, retrieveFailedSessionLogs };
+    return { retrieveSession, retrieveAllSessions, retrieveApplications };
 })
 .actions(self => {
     const deleteNotification = (uuid: string) => {
@@ -121,14 +101,6 @@ export const AppModel = types.model({
     return { deleteNotification };
 })
 .actions(self => {
-
-    type TNotificationProps = {
-        text  : string;
-        type? : NotificationType;
-        title?: string;
-        expiration?: number;
-        onClick?: (notification: INotification) => void;
-    };
     const addNotification = ({
         text,
         type = NotificationType.INFO,
@@ -169,20 +141,12 @@ export const AppModel = types.model({
                 accumulator[applicationName].push(session);
                 return accumulator
             }, {});
-    },
-    get failedSessionsByApplicationName() {
-        return (values(self.failedSessions) as any as ISession[])
-            .reduce<{ [name: string]: ISession[] }>((accumulator, session: ISession) => {
-                const applicationName = session.applicationName;
-                if (!accumulator[applicationName]) accumulator[applicationName] = [];
-                accumulator[applicationName].push(session);
-                return accumulator
-            }, {});
     }
 }));
 
 export interface IApp extends Instance<typeof AppModel> { }
 
 export const initialAppState = AppModel.create({
-    modal: initialModalState
+    modal: initialModalState,
+    failures: initialFailuresState as any,
 });

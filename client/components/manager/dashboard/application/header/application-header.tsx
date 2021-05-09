@@ -9,18 +9,19 @@ import { useHistory } from 'react-router';
 import dayjs from 'dayjs';
 import { Button } from '@/components/shared/elements/button/button';
 import { MenuIcon } from '@/components/shared/elements/icons/menu/menu-icon';
+import { FailureStatus, TFailuresDictionary } from '@/state/models/failures-model';
 
 type TProps = {
     name: string;
     filename: string;
 
-    failedSessions: ISession[] | null;
+    failures: TFailuresDictionary | null;
 }
 export const ApplicationHeader = (props: TProps) => {
     const { show, hide } = useModal();
     const history = useHistory();
 
-    const anyFailedSession = props.failedSessions && props.failedSessions.length > 0;
+    const anyUnacknowledged = props.failures && props.failures.unacknowledged.length > 0;
 
     const applicationOptionsModalName = `application-options-${props.name}`;
 
@@ -28,6 +29,7 @@ export const ApplicationHeader = (props: TProps) => {
         hide();
         history.push(`/_polo_/session/failing/${session.uuid}`);
     }
+
 
     return <div className="application-header">
         <div className="flex justify-between min-w-0 max-w-full flex-nowrap items-center">
@@ -37,7 +39,7 @@ export const ApplicationHeader = (props: TProps) => {
                 largeIcon
                 onClick={() => show(applicationOptionsModalName)}
                 icon={<MenuIcon />}>
-                {anyFailedSession && <div className="__error-circle"></div>}
+                {anyUnacknowledged && <div className="__error-circle"></div>}
             </Button>
         </div>
         <span className="text-gray-400 text-sm">{props.filename}</span>
@@ -45,21 +47,8 @@ export const ApplicationHeader = (props: TProps) => {
         <ApplicationOptionsModal
             modalName={applicationOptionsModalName}
             applicationName={props.name}
-            failedSessions={sortSessionsByCreationTimeDesc(props.failedSessions)}
+            failures={props.failures}
             onSessionClick={goTo} />
     </div>
 };
 
-function sortSessionsByCreationTimeDesc(sessions: ISession[] | null): ISession[] {
-    if (!sessions) return sessions;
-    return sessions
-        .sort((a, b) => {
-            const dateA = dayjs(a.createdAt);
-            const dateB = dayjs(b.createdAt);
-            if (dateA.isBefore(dateB))
-                return 1;
-            if (dateA.isAfter(dateB))
-                return -1;
-            return 0;
-        })
-}

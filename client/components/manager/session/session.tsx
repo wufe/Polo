@@ -1,5 +1,7 @@
 import { IApp } from '@/state/models/app-model';
+import { useNotification } from '@/state/models/notification-hook';
 import { ISession, ISessionLog } from '@/state/models/session-model';
+import { buildFailedNotification } from '@/state/notifications/build-failed-notification';
 import { values } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import React, { useState } from 'react';
@@ -16,12 +18,20 @@ export const Session = observer((props: TProps) => {
 
     const [overlayBottom, setOverlayBottom] = useState(100);
     const history = useHistory();
+    const { notify } = useNotification();
 
     const onSessionFail = () => {
+        notify(
+            buildFailedNotification(
+                props.session,
+                notification =>
+                    notification.remove()
+                )
+            );
         history.replace(`/_polo_/session/failing/${props.session.uuid}`);
     }
     
-    useSessionRetrieval(props.app.retrieveFailedSession, onSessionFail, props.session);
+    useSessionRetrieval(props.app.failures.retrieveFailedSession, onSessionFail, props.session);
 
     const setOverlayProportions = (proportions: number) => {
         const percentage = parseInt(`${proportions * 100}`);

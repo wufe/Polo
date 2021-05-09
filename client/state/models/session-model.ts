@@ -103,6 +103,6 @@ export const SessionModel = types.model({
     })
 
     return { retrieveAge, track, untrack, kill, retrieveLogsAndStatus };
-})
+});
 
 export interface ISession extends Instance<typeof SessionModel> {}

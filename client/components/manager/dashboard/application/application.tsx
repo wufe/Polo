@@ -18,11 +18,13 @@ import { CubeIcon } from '@/components/shared/elements/icons/cube/cube-icon';
 import { useSubscription } from '@/state/models/subscription-hook';
 import { NotificationType } from '@/state/models/notification-model';
 import { useNotification } from '@/state/models/notification-hook';
+import { TFailuresDictionary } from '@/state/models/failures-model';
+import { buildFailedNotification } from '@/state/notifications/build-failed-notification';
 
 type TProps = {
-    sessions        : ISession[] | null;
-    failedSessions  : ISession[] | null;
-    application     : IApplication;
+    sessions   : ISession[] | null;
+    failures   : TFailuresDictionary | null;
+    application: IApplication;
 }
 
 export const Application = observer((props: TProps) => {
@@ -41,15 +43,11 @@ export const Application = observer((props: TProps) => {
             const newSession = await props.application.newSession(checkout);
             if (newSession.result === APIRequestResult.SUCCEEDED) {
                 
-                subscribe(newSession.payload.uuid, SessionSubscriptionEventType.FAIL, (event, session) => {
-                    notify({
-                        text: 'Build failed',
-                        type: NotificationType.ERROR,
-                        onClick: notification => {
-                            notification.remove();
-                            history.push(`/_polo_/session/failing/${session.uuid}`);
-                        }
-                    });
+                subscribe(newSession.payload.uuid, SessionSubscriptionEventType.FAIL, session => {
+                    notify(buildFailedNotification(session, notification => {
+                        notification.remove();
+                        history.push(`/_polo_/session/failing/${session.uuid}`);
+                    }));
                 });
                 
                 history.push(`/_polo_/session/${newSession.payload.uuid}/`);
@@ -68,7 +66,7 @@ export const Application = observer((props: TProps) => {
         <ApplicationHeader
             name={props.application.configuration.name}
             filename={props.application.filename}
-            failedSessions={props.failedSessions} />
+            failures={props.failures} />
         
         {props.sessions && props.sessions.length > 0 && <div className="py-4">
             <ApplicationSessions sessions={props.sessions} />
