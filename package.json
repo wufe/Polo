@@ -25,7 +25,7 @@
 		"build:server:prod:windows": "run-s build:server:prod:restore build:server:prod:statik build:server:prod:application:windows",
 		"build:server:prod:application:windows": "cross-env GOOS=windows GOARCH=amd64 go build -o dist/polo.exe cmd/server/main.go",
 		"clean": "rimraf dist public release pkg/services/statik.go",
-		"serve": "node --max-old-space-size=8192 node_modules/webpack/bin/webpack.js serve",
+		"serve": "cross-env TAILWIND_MODE=watch node --max-old-space-size=8192 node_modules/webpack/bin/webpack.js serve",
 		"build:release": "run-s clean build:client:prod build:server:prod:restore build:server:prod:statik build:release:windows build:release:macos build:release:linux",
 		"build:release:windows": "cross-env GOOS=windows GOARCH=amd64 go build -o release/polo-windows-amd64.exe cmd/server/main.go",
 		"build:release:macos": "cross-env GOOS=darwin GOARCH=amd64 go build -o release/polo-darwin-amd64 cmd/server/main.go",
@@ -36,6 +36,7 @@
 	},
 	"devDependencies": {
 		"@babel/core": "^7.12.10",
+		"@heroicons/react": "^1.0.1",
 		"@pmmmwh/react-refresh-webpack-plugin": "^0.4.3",
 		"@types/axios": "^0.14.0",
 		"@types/react": "^17.0.0",

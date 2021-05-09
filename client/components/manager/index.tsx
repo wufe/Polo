@@ -6,6 +6,7 @@ import whiteLogo from '@/assets/white-logo.png';
 import blackLogo from '@/assets/black-logo.png';
 import { observer } from 'mobx-react-lite';
 import FailingSessionPage from './session/failing-session-page';
+import { Notifications } from './notifications/notifications';
 
 const Dashboard = React.lazy(() => import('@/components/manager/dashboard/dashboard-page'));
 const Session = React.lazy(() => import('@/components/manager/session/session-page'));
@@ -65,6 +66,7 @@ export const ManagerApp = observer(() => {
                 </a>
             </div>
         </div>
+        <Notifications />
     </>;
 });
 

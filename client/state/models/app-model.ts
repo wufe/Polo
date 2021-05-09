@@ -6,12 +6,15 @@ import { types, flow, cast, Instance, getType, applySnapshot, applyPatch } from 
 import { ApplicationModel, IApplication } from "./application-model";
 import { SessionModel, ISession, castAPISessionToSessionModel, ISessionLog } from "./session-model";
 import { initialModalState, ModalModel } from "./modal-model";
+import { INotification, NotificationModel, NotificationType } from "./notification-model";
+import { v1 } from 'uuid';
 
 export const AppModel = types.model({
     session       : types.maybeNull(SessionModel),
     sessions      : types.map(SessionModel),
     failedSessions: types.map(SessionModel),
     applications  : types.map(ApplicationModel),
+    notifications : types.map(NotificationModel),
     modal         : ModalModel,
 })
 .actions(self => {
@@ -72,6 +75,52 @@ export const AppModel = types.model({
     })
 
     return { retrieveSession, retrieveAllSessions, retrieveApplications, retrieveFailedSessions, retrieveFailedSession, retrieveFailedSessionLogs };
+})
+.actions(self => {
+    const deleteNotification = (uuid: string) => {
+        self.notifications.delete(uuid);
+    };
+    return { deleteNotification };
+})
+.actions(self => {
+
+    type TNotificationProps = {
+        text  : string;
+        type? : NotificationType;
+        title?: string;
+        expiration?: number;
+        onClick?: (notification: INotification) => void;
+    };
+    const addNotification = ({
+        text,
+        type = NotificationType.INFO,
+        title = '',
+        expiration = 10,
+        onClick,
+    }: TNotificationProps) => {
+
+        const uuid = v1();
+
+        const notification = NotificationModel.create({
+            uuid,
+            expiration,
+            text,
+            title,
+            type
+        });
+
+        notification.addOnClick(onClick);
+
+        self.notifications.set(uuid, notification);
+
+        if (expiration > 0) {
+            setTimeout(() => {
+                self.deleteNotification(uuid);
+            }, expiration * 1000);
+        }
+    };
+
+    return { addNotification };
 })
 .views(self => ({
     get sessionsByApplicationName() {
