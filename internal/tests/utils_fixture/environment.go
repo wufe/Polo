@@ -16,6 +16,10 @@ func (e *testEnvironmentImpl) IsTest() bool {
 	return true
 }
 
+func (e *testEnvironmentImpl) IsDiagnostics() bool {
+	return true
+}
+
 func (e *testEnvironmentImpl) IsDev() bool {
 	return false
 }

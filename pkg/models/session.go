@@ -176,6 +176,7 @@ func (session *Session) ToOutput() output.Session {
 // SetReplaces thread-safely sets the session which will be replaced
 // when this session will go online
 func (session *Session) SetReplaces(previous *Session) {
+	log.Trace("Setting replaces")
 	session.Lock()
 	defer session.Unlock()
 	session.replaces = previous
@@ -209,6 +210,7 @@ func (session *Session) GetReplacedBy() string {
 // This configuration gets replaced whenever there's an update by the user.
 // So it is advisable to not store indefinitely this configuration, but to ask for it when needed
 func (session *Session) GetConfiguration() ApplicationConfiguration {
+	log.Trace("Getting session configuration")
 	session.RLock()
 	defer session.RUnlock()
 	return session.configuration
@@ -427,6 +429,7 @@ func (session *Session) GetStartupRetriesCount() int {
 
 // IncStartupRetriesCount thread-safely increments the current count of startup retries
 func (session *Session) IncStartupRetriesCount() {
+	log.Trace("Incrementing startup retries count")
 	session.Lock()
 	defer session.Unlock()
 	session.startupRetries++
@@ -442,6 +445,7 @@ func (session *Session) ResetStartupRetriesCount() {
 // GetKillReason returns the reason why the session has been killed thread-safely.
 // Returns KillReasonNone if the session has not been killed
 func (session *Session) GetKillReason() KillReason {
+	log.Trace("Getting kill reason")
 	session.RLock()
 	defer session.RUnlock()
 	return session.killReason
@@ -463,6 +467,7 @@ func (session *Session) SetVariable(k string, v string) {
 
 // ResetVariables thread-safely resets the session variables dictionary
 func (session *Session) ResetVariables() {
+	log.Trace("Resetting variables")
 	session.Lock()
 	defer session.Unlock()
 	session.Variables = make(map[string]string)
@@ -488,6 +493,7 @@ func (session *Session) GetDiagnosticsData() []DiagnosticsData {
 }
 
 func (session *Session) GetEventBus() *SessionLifetimeEventBus {
+	log.Trace("Getting session event bus")
 	session.RLock()
 	defer session.RUnlock()
 	return session.bus

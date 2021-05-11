@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/phayes/freeport"
+	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/models"
 )
 
@@ -60,6 +61,7 @@ func addPortsOnDemand(input string, session *models.Session) (string, error) {
 }
 
 func getFreePort(portConfiguration models.PortConfiguration) (int, error) {
+	log.Trace("Getting a free port")
 	foundPort := 0
 L:
 	for foundPort == 0 {

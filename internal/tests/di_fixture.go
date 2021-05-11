@@ -442,6 +442,16 @@ func (d *DI) GetRequestService() *services.RequestService {
 	return service
 }
 
+func (d *DI) GetEnvironment() utils.Environment {
+	var environment utils.Environment
+	if err := d.container.Invoke(func(e utils.Environment) {
+		environment = e
+	}); err != nil {
+		log.Panic(err)
+	}
+	return environment
+}
+
 type InjectableServices struct {
 	RepositoryFetcher versioning.RepositoryFetcher
 	GitClient         versioning.GitClient

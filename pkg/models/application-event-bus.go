@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/asaskevich/EventBus"
+	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/utils"
 )
 
@@ -64,7 +65,7 @@ func (b *ApplicationEventBus) GetChan() <-chan ApplicationEvent {
 }
 
 func (b *ApplicationEventBus) PublishEvent(eventType ApplicationEventType, application *Application, payloadObjects ...interface{}) {
-
+	log.Tracef("Publishing event %q", eventType)
 	var payload interface{} = nil
 	if len(payloadObjects) == 1 {
 		payload = payloadObjects

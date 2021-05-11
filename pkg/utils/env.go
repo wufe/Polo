@@ -10,6 +10,7 @@ type Environment interface {
 	IsTest() bool
 	IsDev() bool
 	IsDebugRace() bool
+	IsDiagnostics() bool
 	DevServerURL() string
 	GetExecutableFolder() string
 }
@@ -22,6 +23,10 @@ func DetectEnvironment() Environment {
 
 func (e *environmentImpl) IsTest() bool {
 	return false
+}
+
+func (e *environmentImpl) IsDiagnostics() bool {
+	return os.Getenv("POLO_DIAGNOSTICS") == "true"
 }
 
 func (e *environmentImpl) IsDev() bool {

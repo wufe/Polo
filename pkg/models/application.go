@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
+	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/models/output"
 	"github.com/wufe/polo/pkg/utils"
 )
@@ -162,6 +163,7 @@ func (a *Application) SetStatus(status ApplicationStatus) {
 }
 
 func (a *Application) GetConfiguration() ApplicationConfiguration {
+	log.Trace("Getting application configuration")
 	a.RLock()
 	defer a.RUnlock()
 	return a.configuration
@@ -174,6 +176,7 @@ func (a *Application) SetConfiguration(conf ApplicationConfiguration) {
 }
 
 func (a *Application) GetEventBus() *ApplicationEventBus {
+	log.Trace("Getting application event bus")
 	a.RLock()
 	defer a.RUnlock()
 	return a.bus

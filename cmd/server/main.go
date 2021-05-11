@@ -6,13 +6,15 @@ import (
 
 func main() {
 
-	pkg.ConfigureLogging()
-
 	container := pkg.NewDIContainer()
 
 	// Environment
 
 	container.AddEnvironment()
+
+	// Logs
+
+	pkg.ConfigureLogging(container)
 
 	// Factories
 

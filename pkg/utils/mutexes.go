@@ -14,7 +14,7 @@ type RWLocker interface {
 }
 
 func GetMutex(environment Environment) RWLocker {
-	if environment.IsDev() && environment.IsDebugRace() {
+	if (environment.IsDev() && environment.IsDebugRace()) || environment.IsDiagnostics() {
 		return &deadlock.RWMutex{}
 	} else if environment.IsTest() {
 		return &deadlock.RWMutex{}

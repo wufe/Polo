@@ -8,7 +8,19 @@ import (
 	"github.com/sirupsen/logrus/hooks/writer"
 )
 
-func ConfigureLogging() {
+func ConfigureLogging(container DIContainer) {
+
+	environment := container.GetEnvironment()
+
+	if environment.IsDiagnostics() ||
+		environment.IsDev() ||
+		environment.IsDebugRace() ||
+		environment.IsTest() {
+		log.SetLevel(log.TraceLevel)
+	} else {
+		log.SetLevel(log.InfoLevel)
+	}
+
 	log.SetOutput(ioutil.Discard)
 
 	log.AddHook(&writer.Hook{
@@ -23,6 +35,8 @@ func ConfigureLogging() {
 	log.AddHook(&writer.Hook{
 		Writer: os.Stdout,
 		LogLevels: []log.Level{
+			log.TraceLevel,
+			log.DebugLevel,
 			log.InfoLevel,
 			log.DebugLevel,
 		},

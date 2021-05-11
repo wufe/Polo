@@ -22,6 +22,10 @@ type DI struct {
 	container *dig.Container
 }
 
+type DIContainer interface {
+	GetEnvironment() utils.Environment
+}
+
 func NewDIContainer() *DI {
 	return &DI{
 		container: dig.New(),
@@ -380,4 +384,14 @@ func (d *DI) GetStartup() *Startup {
 		log.Panic(err)
 	}
 	return startup
+}
+
+func (d *DI) GetEnvironment() utils.Environment {
+	var environment utils.Environment
+	if err := d.container.Invoke(func(e utils.Environment) {
+		environment = e
+	}); err != nil {
+		log.Panic(err)
+	}
+	return environment
 }

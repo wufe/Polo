@@ -125,6 +125,7 @@ func (s *Session) Delete(session *models.Session) {
 
 // AliveByApplicationCount retrieves the number of sessions of an application
 func (s *Session) AliveByApplicationCount(application *models.Application) int {
+	log.Trace("Getting alive sessions count by application")
 	count := 0
 	for _, session := range s.sessions {
 		if session.Application == application && session.Status.IsAlive() {
@@ -165,6 +166,7 @@ func (s *Session) GetByUUID(uuid string) *models.Session {
 // GetAllAliveSessions retrieves a slice of sessions whose status is "alive".
 // A session is "alive" if it can or is about to ready for being used
 func (s *Session) GetAllAliveSessions() []*models.Session {
+	log.Trace("Getting all alive sessions")
 	filteredSessions := []*models.Session{}
 	s.RLock()
 	sessions := s.sessions
@@ -181,6 +183,7 @@ func (s *Session) GetAllAliveSessions() []*models.Session {
 // GetAliveApplicationSessionByCheckout retrieves a single session identified by its
 // status (which must be "alvie") and by its checkout
 func (s *Session) GetAliveApplicationSessionByCheckout(checkout string, application *models.Application) *models.Session {
+	log.Trace("Getting alive session by checkout")
 	var foundSession *models.Session
 	s.RLock()
 	sessions := s.sessions
