@@ -43,7 +43,7 @@ func NewSessionBuildEventBus(mutexBuilder utils.MutexBuilder) *SessionLifetimeEv
 	eventBus := &SessionLifetimeEventBus{
 		RWLocker: mutexBuilder(),
 		bus:      bus,
-		ch:       make(chan SessionBuildEvent, 999),
+		ch:       make(chan SessionBuildEvent, eventsBuffer),
 	}
 	eventBus.start()
 	return eventBus
@@ -53,14 +53,29 @@ func (b *SessionLifetimeEventBus) start() {
 	history := []SessionBuildEvent{}
 	b.history = history
 
+	eventsCount := 0
+
 	b.bus.SubscribeAsync("session", func(ev interface{}) {
 		if sessionEv, ok := ev.(SessionBuildEvent); ok {
 			b.Lock()
 			defer b.Unlock()
 			history = append(history, sessionEv)
-			go func() {
-				b.ch <- sessionEv
-			}()
+			b.ch <- sessionEv
+			eventsCount++
+
+			// Hack to prevent saturation of the receiving channel
+			// if there are no listeners.
+			if eventsCount >= eventsBuffer/2 {
+			L:
+				for {
+					select {
+					case <-b.ch:
+					default:
+						break L
+					}
+				}
+				eventsCount = 0
+			}
 		}
 	}, true)
 }

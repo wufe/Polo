@@ -15,6 +15,8 @@ const (
 	ApplicationEventTypeHotSwap                 ApplicationEventType = "hot_swap"
 	ApplicationEventTypeAutoStart               ApplicationEventType = "auto_start"
 	ApplicationEventTypeSessionBuild            ApplicationEventType = "session_build"
+
+	eventsBuffer = 100
 )
 
 type ApplicationEventType string
@@ -40,7 +42,7 @@ func NewApplicationEventBus(mutexBuilder utils.MutexBuilder) *ApplicationEventBu
 	eventBus := &ApplicationEventBus{
 		RWLocker: mutexBuilder(),
 		bus:      EventBus.New(),
-		ch:       make(chan ApplicationEvent, 999),
+		ch:       make(chan ApplicationEvent, eventsBuffer),
 	}
 	eventBus.start()
 	return eventBus
@@ -50,12 +52,29 @@ func (b *ApplicationEventBus) start() {
 	history := []ApplicationEvent{}
 	b.history = history
 
+	eventsCount := 0
+
 	b.bus.Subscribe("application", func(ev interface{}) {
 		if appEv, ok := ev.(ApplicationEvent); ok {
 			b.Lock()
 			defer b.Unlock()
 			history = append(history, appEv)
 			b.ch <- appEv
+			eventsCount++
+
+			// Hack to prevent saturation of the receiving channel
+			// if there are no listeners.
+			if eventsCount >= eventsBuffer/2 {
+			L:
+				for {
+					select {
+					case <-b.ch:
+					default:
+						break L
+					}
+				}
+				eventsCount = 0
+			}
 		}
 	})
 }
