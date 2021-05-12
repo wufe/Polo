@@ -53,36 +53,26 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 			wg.Add(1)
 
 			go func() {
-				done := make(chan struct{})
 				sessionCleanContext, cancelSessionClean := context.WithTimeout(context.Background(), time.Second*300)
 
-				go func() {
-					for {
-						select {
-						case <-sessionCleanContext.Done():
-							session.LogWarn("Clean aborted")
-							done <- struct{}{}
-						case <-done:
-							done <- struct{}{}
-							return
-						}
-					}
-				}()
+				aborted := false
+				abort := func() {
+					aborted = true
+					cancelSessionClean()
+				}
 
 				for _, command := range appCleanCommands {
-					bus.PublishEvent(models.SessionEventTypeCleanCommandExecution, session)
 					select {
 					case <-sessionCleanContext.Done():
-						cancelSessionClean()
-						return
+						abort()
 					default:
+						bus.PublishEvent(models.SessionEventTypeCleanCommandExecution, session)
 						builtCommand, err := buildCommand(command.Command, session)
 						if err != nil {
 							session.LogError(err.Error())
 							if !command.ContinueOnError {
 								session.LogError("Halting")
-								cancelSessionClean()
-								return
+								abort()
 							}
 						}
 
@@ -102,14 +92,16 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 							session.LogError(err.Error())
 							if !command.ContinueOnError {
 								session.LogError("Halting")
-								cancelSessionClean()
-								return
+								abort()
+
 							}
 						}
 					}
 				}
 
-				done <- struct{}{}
+				if aborted {
+					session.LogWarn("Clean aborted")
+				}
 
 				cancelSessionClean()
 
