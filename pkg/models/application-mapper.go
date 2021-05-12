@@ -163,15 +163,20 @@ func MapCommand(model Command) output.Command {
 func mapCommands(model Commands) output.Commands {
 	start := []output.Command{}
 	stop := []output.Command{}
+	clean := []output.Command{}
 	for _, s := range model.Start {
 		start = append(start, MapCommand(s))
 	}
 	for _, s := range model.Stop {
 		stop = append(stop, MapCommand(s))
 	}
+	for _, c := range model.Clean {
+		clean = append(clean, MapCommand(c))
+	}
 	return output.Commands{
 		Start: start,
 		Stop:  stop,
+		Clean: clean,
 	}
 }
 

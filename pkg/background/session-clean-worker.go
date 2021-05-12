@@ -1,11 +1,15 @@
 package background
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
+	"github.com/wufe/polo/pkg/utils"
 )
 
 type SessionCleanWorker struct {
@@ -37,8 +41,83 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 			session.LogInfo("Cleaning up session")
 			session.SetStatus(sessionToClean.Status)
 			w.sessionStorage.Update(sessionToClean.Session)
-			session.LogInfo("Session cleaned up")
 			conf := session.GetConfiguration()
+
+			// Stopping running build for current session
+			if _, cancel, ok := session.Context.TryGet(models.SessionBuildContextKey); ok {
+				cancel()
+			}
+
+			appCleanCommands := conf.Commands.Clean
+			var wg sync.WaitGroup
+			wg.Add(1)
+
+			go func() {
+				done := make(chan struct{})
+				sessionCleanContext, cancelSessionClean := context.WithTimeout(context.Background(), time.Second*300)
+
+				go func() {
+					for {
+						select {
+						case <-sessionCleanContext.Done():
+							session.LogWarn("Clean aborted")
+							done <- struct{}{}
+						case <-done:
+							done <- struct{}{}
+							return
+						}
+					}
+				}()
+
+				for _, command := range appCleanCommands {
+					bus.PublishEvent(models.SessionEventTypeCleanCommandExecution, session)
+					select {
+					case <-sessionCleanContext.Done():
+						cancelSessionClean()
+						return
+					default:
+						builtCommand, err := buildCommand(command.Command, session)
+						if err != nil {
+							session.LogError(err.Error())
+							if !command.ContinueOnError {
+								session.LogError("Halting")
+								cancelSessionClean()
+								return
+							}
+						}
+
+						cmds := utils.ParseCommandContext(sessionCleanContext, builtCommand)
+						for _, cmd := range cmds {
+							cmd.Env = append(
+								os.Environ(),
+								command.Environment...,
+							)
+							cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
+						}
+						err = utils.ExecCmds(sessionCleanContext, func(sl *utils.StdLine) {
+							session.LogStdout(sl.Line)
+						}, cmds...)
+
+						if err != nil {
+							session.LogError(err.Error())
+							if !command.ContinueOnError {
+								session.LogError("Halting")
+								cancelSessionClean()
+								return
+							}
+						}
+					}
+				}
+
+				done <- struct{}{}
+
+				cancelSessionClean()
+
+				wg.Done()
+			}()
+			wg.Wait()
+
+			session.LogInfo("Session cleaned up")
 			appStartupRetries := conf.Startup.Retries
 			appCleanOnExit := *conf.CleanOnExit
 

@@ -13,9 +13,7 @@ func ConfigureLogging(container DIContainer) {
 	environment := container.GetEnvironment()
 
 	if environment.IsDiagnostics() ||
-		environment.IsDev() ||
-		environment.IsDebugRace() ||
-		environment.IsTest() {
+		environment.IsDebugRace() {
 		log.SetLevel(log.TraceLevel)
 	} else {
 		log.SetLevel(log.InfoLevel)

@@ -91,6 +91,7 @@ type Recycle struct {
 type Commands struct {
 	Start []Command `json:"start"`
 	Stop  []Command `json:"stop"`
+	Clean []Command `json:"clean"`
 }
 
 type Command struct {

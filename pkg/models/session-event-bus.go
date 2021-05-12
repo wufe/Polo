@@ -18,6 +18,7 @@ const (
 	SessionEventTypeStarted                  SessionEventType = "started"
 	SessionEventTypeBuildGettingRetried      SessionEventType = "build_getting_retried"
 	SessionEventTypeFolderClean              SessionEventType = "folder_clean"
+	SessionEventTypeCleanCommandExecution    SessionEventType = "clean_command_execution"
 )
 
 type SessionEventType string
