@@ -17,7 +17,7 @@ func (e *testEnvironmentImpl) IsTest() bool {
 }
 
 func (e *testEnvironmentImpl) IsDiagnostics() bool {
-	return true
+	return os.Getenv("POLO_DIAGNOSTICS") == "true"
 }
 
 func (e *testEnvironmentImpl) IsDev() bool {

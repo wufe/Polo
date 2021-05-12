@@ -32,7 +32,10 @@
 		"build:release:linux": "cross-env GOOS=linux GOARCH=amd64 go build -o release/polo-linux-amd64 cmd/server/main.go",
 		"test": "cross-env GO_ENV=development GO_CWD=$(pwd) go test -v ./cmd/tests/...",
 		"test:watch": "cross-env GO_ENV=development GO_CWD=$(pwd) gow test -v ./cmd/tests/...",
-		"test:prod": "cross-env GO_ENV=development GO_CWD=$(pwd) go test ./cmd/tests/..."
+		"test:trace": "cross-env GO_ENV=development GO_CWD=$(pwd) POLO_DIAGNOSTICS=true go test -v ./cmd/tests/...",
+		"test:trace:watch": "cross-env GO_ENV=development GO_CWD=$(pwd) POLO_DIAGNOSTICS=true gow test -v ./cmd/tests/...",
+		"test:prod": "cross-env GO_ENV=development GO_CWD=$(pwd) go test ./cmd/tests/...",
+		"test:prod:watch": "cross-env GO_ENV=development GO_CWD=$(pwd) gow test ./cmd/tests/..."
 	},
 	"devDependencies": {
 		"@babel/core": "^7.12.10",

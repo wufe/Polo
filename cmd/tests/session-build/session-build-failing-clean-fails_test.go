@@ -11,7 +11,16 @@ import (
 	"github.com/wufe/polo/pkg/models"
 )
 
-func Test_SessionBuildFailing(t *testing.T) {
+// The session gets built
+// the build process fails
+// the clean process starts
+// the first command of the clean process fails
+// 		since it is set "ContinueOnError: true", the clean process continues
+// the second command of the clean process fails
+// 		the clean process does not continue because "ContinueOnError: false"
+// the third command doesn't get executed
+// the clean process ends with folder deletion
+func Test_SessionBuildFailingCleanFails(t *testing.T) {
 
 	log.SetLevel(log.PanicLevel)
 
@@ -34,6 +43,11 @@ func Test_SessionBuildFailing(t *testing.T) {
 				},
 				Stop: []models.Command{
 					{Command: "notexistingcommand.exe"},
+				},
+				Clean: []models.Command{
+					{Command: "1st_cleancommand.sh", ContinueOnError: true},
+					{Command: "2nd_cleancommand.sh", ContinueOnError: false},
+					{Command: "3rd_cleancommand.sh", ContinueOnError: true},
 				},
 			},
 		},
@@ -102,6 +116,8 @@ func Test_SessionBuildFailing(t *testing.T) {
 			models.SessionEventTypePreparingFolders,
 			models.SessionEventTypeCommandsExecutionStarted,
 			models.SessionEventTypeCommandsExecutionFailed,
+			models.SessionEventTypeCleanCommandExecution,
+			models.SessionEventTypeCleanCommandExecution,
 			models.SessionEventTypeFolderClean,
 		},
 		t,

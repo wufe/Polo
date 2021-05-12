@@ -61,6 +61,7 @@ applications:
       stop: # At least one stop command is mandatory
         - command: "docker kill {{container_id}}"
         - command: "docker kill {{container_id_2}}"
+      clean: [] # Command executed after failing or kill a session
     branches:
       - test: ^dev$
         watch: true # The branch will be automatically started and updated at each commit
