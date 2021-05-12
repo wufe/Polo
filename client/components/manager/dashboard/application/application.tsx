@@ -52,7 +52,10 @@ export const Application = observer((props: TProps) => {
                 
                 history.push(`/_polo_/session/${newSession.payload.uuid}/`);
             } else {
-                alert('Could not create new session.\n' + newSession.reason);
+                notify({
+                    text: 'Could not create new session.\n' + newSession.reason,
+                    type: NotificationType.ERROR
+                });
             }
         }
     }
