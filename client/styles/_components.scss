@@ -9,7 +9,7 @@
             @apply flex-grow min-w-0 overflow-hidden;
 
             .__title {
-                @apply inline-block text-sm mr-3 flex-grow flex-1 whitespace-nowrap overflow-hidden overflow-ellipsis font-semibold lg:text-base;
+                @apply inline-block text-sm mr-3 flex-grow flex-1 whitespace-nowrap overflow-hidden overflow-ellipsis font-semibold lg:text-base max-w-full;
             }
         }
 
