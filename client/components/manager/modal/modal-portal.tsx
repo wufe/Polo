@@ -1,7 +1,7 @@
 import { store } from '@/state/models';
 import { IModal } from '@/state/models/modal-model';
 import { observer } from 'mobx-react-lite';
-import React, { useLayoutEffect } from 'react';
+import React, { useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useModal } from './modal-hooks';
 import './modal.scss';
@@ -38,5 +38,10 @@ export const ModalPortal = observer((props: React.PropsWithChildren<{ modal: IMo
 });
 
 export const Modal = (props: React.PropsWithChildren<{ name: string }>) => {
+
+    const { hide } = useModal();
+
+    useEffect(() => hide, []);
+
     return <ModalPortal modal={store.app.modal} name={props.name}>{props.children}</ModalPortal>
 }
