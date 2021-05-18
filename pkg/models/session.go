@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
-	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models/output"
 	"github.com/wufe/polo/pkg/utils"
 )
@@ -110,6 +110,7 @@ type Session struct {
 	replacedByUUID string
 	diagnostics    []DiagnosticsData
 	bus            *SessionLifetimeEventBus
+	log            logging.Logger
 }
 
 // Variables are those variables used by a single session.
@@ -131,7 +132,9 @@ func (v Variables) ApplyTo(str string) string {
 func newSession(
 	session *Session,
 	mutexBuilder utils.MutexBuilder,
+	logger logging.Logger,
 ) *Session {
+	session.log = logger
 	session.shortUUID = strings.Split(session.UUID, "-")[0]
 	session.RWLocker = mutexBuilder()
 	if session.bus == nil {
@@ -176,7 +179,7 @@ func (session *Session) ToOutput() output.Session {
 // SetReplaces thread-safely sets the session which will be replaced
 // when this session will go online
 func (session *Session) SetReplaces(previous *Session) {
-	log.Trace("Setting replaces")
+	session.log.Trace("Setting replaces")
 	session.Lock()
 	defer session.Unlock()
 	session.replaces = previous
@@ -210,7 +213,7 @@ func (session *Session) GetReplacedBy() string {
 // This configuration gets replaced whenever there's an update by the user.
 // So it is advisable to not store indefinitely this configuration, but to ask for it when needed
 func (session *Session) GetConfiguration() ApplicationConfiguration {
-	log.Trace("Getting session configuration")
+	session.log.Trace("Getting session configuration")
 	session.RLock()
 	defer session.RUnlock()
 	return session.configuration
@@ -254,7 +257,7 @@ func (session *Session) getMatchingConfiguration() ApplicationConfiguration {
 // LogCritical logs a message to stdout and stores it in the session logs slice
 func (session *Session) LogCritical(message string) {
 	session.Lock()
-	log.Errorf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
+	session.log.Errorf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
 	defer session.Unlock()
 	session.logs = append(
 		session.logs,
@@ -265,7 +268,7 @@ func (session *Session) LogCritical(message string) {
 // LogError logs a message to stdout and stores it in the session logs slice
 func (session *Session) LogError(message string) {
 	session.Lock()
-	log.Errorf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
+	session.log.Errorf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
 	defer session.Unlock()
 	session.logs = append(
 		session.logs,
@@ -276,7 +279,7 @@ func (session *Session) LogError(message string) {
 // LogWarn logs a message to stdout and stores it in the session logs slice
 func (session *Session) LogWarn(message string) {
 	session.Lock()
-	log.Warnf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
+	session.log.Warnf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
 	defer session.Unlock()
 	session.logs = append(
 		session.logs,
@@ -287,7 +290,7 @@ func (session *Session) LogWarn(message string) {
 // LogInfo logs a message to stdout and stores it in the session logs slice
 func (session *Session) LogInfo(message string) {
 	session.Lock()
-	log.Infof(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
+	session.log.Infof(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
 	defer session.Unlock()
 	session.logs = append(
 		session.logs,
@@ -298,7 +301,7 @@ func (session *Session) LogInfo(message string) {
 // LogDebug logs a message to stdout and stores it in the session logs slice
 func (session *Session) LogDebug(message string) {
 	session.Lock()
-	log.Debugf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
+	session.log.Debugf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
 	defer session.Unlock()
 	session.logs = append(
 		session.logs,
@@ -309,7 +312,7 @@ func (session *Session) LogDebug(message string) {
 // LogTrace logs a message to stdout and stores it in the session logs slice
 func (session *Session) LogTrace(message string) {
 	session.Lock()
-	log.Tracef(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
+	session.log.Tracef(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
 	defer session.Unlock()
 	session.logs = append(
 		session.logs,
@@ -320,7 +323,7 @@ func (session *Session) LogTrace(message string) {
 // LogStdin logs a message to stdout and stores it in the session logs slice
 func (session *Session) LogStdin(message string) {
 	session.Lock()
-	log.Infof(fmt.Sprintf("\t\t[%s (stdin)>]: %s", session.shortUUID, message))
+	session.log.Infof(fmt.Sprintf("\t\t[%s (stdin)>]: %s", session.shortUUID, message))
 	defer session.Unlock()
 	session.logs = append(
 		session.logs,
@@ -331,7 +334,7 @@ func (session *Session) LogStdin(message string) {
 // LogStdout logs a message to stdout and stores it in the session logs slice
 func (session *Session) LogStdout(message string) {
 	session.Lock()
-	log.Infof(fmt.Sprintf("\t\t[%s (stdout)>]: %s", session.shortUUID, message))
+	session.log.Infof(fmt.Sprintf("\t\t[%s (stdout)>]: %s", session.shortUUID, message))
 	defer session.Unlock()
 	session.logs = append(
 		session.logs,
@@ -342,7 +345,7 @@ func (session *Session) LogStdout(message string) {
 // LogStderr logs a message to stdout and stores it in the session logs slice
 func (session *Session) LogStderr(message string) {
 	session.Lock()
-	log.Infof(fmt.Sprintf("\t\t[%s (stderr)>]: %s", session.shortUUID, message))
+	session.log.Infof(fmt.Sprintf("\t\t[%s (stderr)>]: %s", session.shortUUID, message))
 	defer session.Unlock()
 	session.logs = append(
 		session.logs,
@@ -429,7 +432,7 @@ func (session *Session) GetStartupRetriesCount() int {
 
 // IncStartupRetriesCount thread-safely increments the current count of startup retries
 func (session *Session) IncStartupRetriesCount() {
-	log.Trace("Incrementing startup retries count")
+	session.log.Trace("Incrementing startup retries count")
 	session.Lock()
 	defer session.Unlock()
 	session.startupRetries++
@@ -445,7 +448,7 @@ func (session *Session) ResetStartupRetriesCount() {
 // GetKillReason returns the reason why the session has been killed thread-safely.
 // Returns KillReasonNone if the session has not been killed
 func (session *Session) GetKillReason() KillReason {
-	log.Trace("Getting kill reason")
+	session.log.Trace("Getting kill reason")
 	session.RLock()
 	defer session.RUnlock()
 	return session.killReason
@@ -467,7 +470,7 @@ func (session *Session) SetVariable(k string, v string) {
 
 // ResetVariables thread-safely resets the session variables dictionary
 func (session *Session) ResetVariables() {
-	log.Trace("Resetting variables")
+	session.log.Trace("Resetting variables")
 	session.Lock()
 	defer session.Unlock()
 	session.Variables = make(map[string]string)
@@ -493,7 +496,7 @@ func (session *Session) GetDiagnosticsData() []DiagnosticsData {
 }
 
 func (session *Session) GetEventBus() *SessionLifetimeEventBus {
-	log.Trace("Getting session event bus")
+	session.log.Trace("Getting session event bus")
 	session.RLock()
 	defer session.RUnlock()
 	return session.bus

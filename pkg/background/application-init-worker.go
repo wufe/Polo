@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/kennygrant/sanitize"
-	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/versioning"
 )
@@ -15,13 +15,15 @@ type ApplicationInitWorker struct {
 	global    *models.GlobalConfiguration
 	gitClient versioning.GitClient
 	mediator  *Mediator
+	log       logging.Logger
 }
 
-func NewApplicationInitWorker(globalConfiguration *models.GlobalConfiguration, gitClient versioning.GitClient, mediator *Mediator) *ApplicationInitWorker {
+func NewApplicationInitWorker(globalConfiguration *models.GlobalConfiguration, gitClient versioning.GitClient, mediator *Mediator, logger logging.Logger) *ApplicationInitWorker {
 	worker := &ApplicationInitWorker{
 		global:    globalConfiguration,
 		gitClient: gitClient,
 		mediator:  mediator,
+		log:       logger,
 	}
 	return worker
 }
@@ -47,7 +49,7 @@ func (w *ApplicationInitWorker) InitApplication(application *models.Application)
 	name := conf.Name
 	remote := conf.Remote
 
-	log.Infof("[APP:%s] Initializing", name)
+	w.log.Infof("[APP:%s] Initializing", name)
 	sessionsFolder, err := filepath.Abs(w.global.SessionsFolder)
 	if err != nil {
 		return err

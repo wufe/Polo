@@ -1,16 +1,15 @@
 package storage_fixture
 
 import (
-	log "github.com/sirupsen/logrus"
-
 	"github.com/dgraph-io/badger/v3"
+	"github.com/wufe/polo/pkg/logging"
 )
 
 type FixtureDatabase struct {
 	db *badger.DB
 }
 
-func NewDB() *FixtureDatabase {
+func NewDB(log logging.Logger) *FixtureDatabase {
 	options := badger.DefaultOptions("")
 	options = options.
 		WithSyncWrites(false).

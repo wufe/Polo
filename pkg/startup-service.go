@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/background"
 	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/http/rest"
+	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/services"
 	"github.com/wufe/polo/pkg/storage"
@@ -26,6 +26,7 @@ type Startup struct {
 	mediator           *background.Mediator
 	applicationBuilder *models.ApplicationBuilder
 	sessionBuilder     *models.SessionBuilder
+	log                logging.Logger
 
 	sessionBuildWorker       *background.SessionBuildWorker
 	sessionStartWorker       *background.SessionStartWorker
@@ -48,6 +49,7 @@ type StartupParams struct {
 	Mediator           *background.Mediator
 	ApplicationBuilder *models.ApplicationBuilder
 	SessionBuilder     *models.SessionBuilder
+	Logger             logging.Logger
 
 	SessionBuildWorker       *background.SessionBuildWorker
 	SessionStartWorker       *background.SessionStartWorker
@@ -76,6 +78,7 @@ func NewStartup(params StartupParams) *Startup {
 		mediator:           params.Mediator,
 		applicationBuilder: params.ApplicationBuilder,
 		sessionBuilder:     params.SessionBuilder,
+		log:                params.Logger,
 
 		sessionBuildWorker:       params.SessionBuildWorker,
 		sessionStartWorker:       params.SessionStartWorker,
@@ -126,7 +129,7 @@ func (s *Startup) loadApplications() {
 		go func(a *models.Application) {
 			err := s.mediator.ApplicationInit.Enqueue(a)
 			if err != nil {
-				log.Errorf("Error while loading application: %s", err.Error())
+				s.log.Errorf("Error while loading application: %s", err.Error())
 			}
 		}(application)
 	}
@@ -145,7 +148,7 @@ func (s *Startup) watchApplications(ctx context.Context) {
 			filename = a.Filename
 		})
 		conf := application.GetConfiguration()
-		log.Infof("Watching file %s for app %s", filename, conf.Name)
+		s.log.Infof("Watching file %s for app %s", filename, conf.Name)
 		go func(filename string, application *models.Application, conf models.ApplicationConfiguration) {
 			for {
 				select {
@@ -153,7 +156,7 @@ func (s *Startup) watchApplications(ctx context.Context) {
 					return
 				default:
 					time.Sleep(2 * time.Second)
-					rootConfig, err := storage.UnmarshalConfiguration(filename, s.applicationBuilder)
+					rootConfig, err := storage.UnmarshalConfiguration(filename, s.applicationBuilder, s.log)
 					if err != nil {
 						continue
 					}
@@ -162,7 +165,7 @@ func (s *Startup) watchApplications(ctx context.Context) {
 							if c.Name == conf.Name {
 								newConf := *c
 								if !models.ConfigurationAreEqual(conf, newConf) {
-									log.Infof(fmt.Sprintf("[APP:%s] Configuration changed", newConf.Name))
+									s.log.Infof(fmt.Sprintf("[APP:%s] Configuration changed", newConf.Name))
 									application.SetConfiguration(newConf)
 									conf = newConf
 									sessions := s.sesStorage.GetByApplicationName(conf.Name)
@@ -198,7 +201,7 @@ func (s *Startup) startServer() {
 		Handler: s.handler.Router,
 	}
 
-	log.Infof("Server started on port %s", port)
+	s.log.Infof("Server started on port %s", port)
 	if port == "443" {
 		if err := server.ListenAndServeTLS(s.configuration.Global.TLSCertFile, s.configuration.Global.TLSKeyFile); err != http.ErrServerClosed {
 			panic(err)

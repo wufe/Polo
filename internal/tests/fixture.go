@@ -15,7 +15,7 @@ func Fixture(applicationConfiguration *models.ApplicationConfiguration, injectab
 
 	// Logging
 
-	pkg.ConfigureLogging(container)
+	container.AddLog()
 
 	// Factories
 

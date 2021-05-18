@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/background/queues"
+	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
 	"github.com/wufe/polo/pkg/utils"
@@ -27,6 +27,7 @@ type SessionBuildWorker struct {
 	sessionStorage     *storage.Session
 	mediator           *Mediator
 	sessionBuilder     *models.SessionBuilder
+	log                logging.Logger
 }
 
 func NewSessionBuildWorker(
@@ -35,6 +36,7 @@ func NewSessionBuildWorker(
 	sessionStorage *storage.Session,
 	mediator *Mediator,
 	sessionBuilder *models.SessionBuilder,
+	log logging.Logger,
 ) *SessionBuildWorker {
 	worker := &SessionBuildWorker{
 		global:             globalConfiguration,
@@ -42,6 +44,7 @@ func NewSessionBuildWorker(
 		sessionStorage:     sessionStorage,
 		mediator:           mediator,
 		sessionBuilder:     sessionBuilder,
+		log:                log,
 	}
 	return worker
 }
@@ -148,7 +151,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 
 	freePort, err := getFreePort(appPort)
 	if err != nil {
-		log.Errorln("Could not get a free port", err)
+		w.log.Errorln("Could not get a free port", err)
 		return &queues.SessionBuildResult{
 			Result:        queues.SessionBuildResultFailed,
 			FailingReason: "Could not get a free port",

@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/wufe/polo/pkg/http/proxy"
+	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/services"
 	"github.com/wufe/polo/pkg/storage"
@@ -28,10 +29,11 @@ type Handler struct {
 	query              *services.QueryService
 	request            *services.RequestService
 	static             *services.StaticService
+	logger             logging.Logger
 }
 
 // NewHandler creates new routing handler
-func NewHandler(environment utils.Environment, proxy *proxy.Handler, sessionStorage *storage.Session, applicationStorage *storage.Application, query *services.QueryService, request *services.RequestService, static *services.StaticService) *Handler {
+func NewHandler(environment utils.Environment, proxy *proxy.Handler, sessionStorage *storage.Session, applicationStorage *storage.Application, query *services.QueryService, request *services.RequestService, static *services.StaticService, logger logging.Logger) *Handler {
 	return &Handler{
 		isDev:              environment.IsDev(),
 		proxy:              proxy,
@@ -40,6 +42,7 @@ func NewHandler(environment utils.Environment, proxy *proxy.Handler, sessionStor
 		query:              query,
 		request:            request,
 		static:             static,
+		logger:             logger,
 	}
 }
 
@@ -104,7 +107,7 @@ func (h *Handler) RouteReverseProxyRequests() http.Handler {
 						// got from the "smart url" pattern
 						temporaryRedirect(w, fmt.Sprintf("/%s", path))
 					} else {
-						forward := findForwardRules(r, session)
+						forward := h.findForwardRules(r, session)
 						h.serveRev(forward, builder)(w, r)
 					}
 					break
@@ -169,7 +172,7 @@ func (h *Handler) getMainSession(req *http.Request) *models.Session {
 			checkout := s.Checkout
 			s.RUnlock()
 			// Its branch is marked as "main"
-			if conf.Branches.BranchIsMain(checkout) {
+			if conf.Branches.BranchIsMain(checkout, h.logger) {
 				return s
 			}
 		}
@@ -245,17 +248,17 @@ func (h *Handler) tryGetSessionByRequestURL(req *http.Request) (*models.Session,
 	return nil, ""
 }
 
-func findForwardRules(req *http.Request, session *models.Session) ForwardRules {
+func (h *Handler) findForwardRules(req *http.Request, session *models.Session) ForwardRules {
 	conf := session.GetConfiguration()
 
-	defaultForward, err := BuildDefaultForwardRules(&conf, session.Variables)
+	defaultForward, err := BuildDefaultForwardRules(&conf, session.Variables, h.logger)
 	if err != nil {
 		panic(err)
 	}
 
 	for _, compiledPattern := range session.Application.CompiledForwardPatterns {
 		if compiledPattern.Pattern.MatchString(req.URL.Path) {
-			forward, err := BuildForwardRules(req, compiledPattern, &conf, session.Variables)
+			forward, err := BuildForwardRules(req, compiledPattern, &conf, session.Variables, h.logger)
 			if err != nil {
 				return defaultForward
 			}

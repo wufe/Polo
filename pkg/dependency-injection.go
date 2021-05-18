@@ -2,14 +2,14 @@ package pkg
 
 import (
 	"fmt"
-
-	log "github.com/sirupsen/logrus"
+	"log"
 
 	"github.com/wufe/polo/pkg/background"
 	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/http/proxy"
 	"github.com/wufe/polo/pkg/http/rest"
 	"github.com/wufe/polo/pkg/http/routing"
+	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/services"
 	"github.com/wufe/polo/pkg/storage"
@@ -40,6 +40,14 @@ func (d *DI) AddEnvironment() {
 	d.container.Provide(func() utils.Environment {
 		return utils.DetectEnvironment()
 	})
+}
+
+func (d *DI) AddLog() {
+	if err := d.container.Provide(func(environment utils.Environment) logging.Logger {
+		return logging.NewLogger(environment)
+	}); err != nil {
+		log.Panic(err)
+	}
 }
 
 // Factories
@@ -87,8 +95,8 @@ func (d *DI) AddRepositoryFetcher() {
 // Configuration (.yml)
 
 func (d *DI) AddConfiguration() {
-	if err := d.container.Provide(func(environment utils.Environment, applicationBuilder *models.ApplicationBuilder) (*models.RootConfiguration, []*models.Application) {
-		return storage.LoadConfigurations(environment, applicationBuilder)
+	if err := d.container.Provide(func(environment utils.Environment, applicationBuilder *models.ApplicationBuilder, logger logging.Logger) (*models.RootConfiguration, []*models.Application) {
+		return storage.LoadConfigurations(environment, applicationBuilder, logger)
 	}); err != nil {
 		log.Panic(err)
 	}
@@ -106,15 +114,15 @@ func (d *DI) AddInstance() {
 		instance.Persist(environment)
 		return instance, nil
 	}); err != nil {
-		log.Infof(err.Error())
+		log.Println(err.Error())
 	}
 }
 
 // Storage
 
 func (d *DI) AddDatabase() {
-	if err := d.container.Provide(func(environment utils.Environment) storage.Database {
-		return storage.NewDB(environment.GetExecutableFolder())
+	if err := d.container.Provide(func(environment utils.Environment, logger logging.Logger) storage.Database {
+		return storage.NewDB(environment.GetExecutableFolder(), logger)
 	}); err != nil {
 		log.Panic(err)
 	}
@@ -236,16 +244,17 @@ func (d *DI) AddSessionBuildWorker() {
 		sesStorage *storage.Session,
 		mediator *background.Mediator,
 		sessionBuilder *models.SessionBuilder,
+		logger logging.Logger,
 	) *background.SessionBuildWorker {
-		return background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, sessionBuilder)
+		return background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, sessionBuilder, logger)
 	}); err != nil {
 		log.Panic(err)
 	}
 }
 
 func (d *DI) AddSessionStartWorker() {
-	if err := d.container.Provide(func(sesStorage *storage.Session, mediator *background.Mediator) *background.SessionStartWorker {
-		return background.NewSessionStartWorker(sesStorage, mediator)
+	if err := d.container.Provide(func(sesStorage *storage.Session, mediator *background.Mediator, logger logging.Logger) *background.SessionStartWorker {
+		return background.NewSessionStartWorker(sesStorage, mediator, logger)
 	}); err != nil {
 		log.Panic(err)
 	}
@@ -276,24 +285,24 @@ func (d *DI) AddSessionDestroyWorker() {
 }
 
 func (d *DI) AddSessionHealthcheckWorker() {
-	if err := d.container.Provide(func(mediator *background.Mediator) *background.SessionHealthcheckWorker {
-		return background.NewSessionHealthcheckWorker(mediator)
+	if err := d.container.Provide(func(mediator *background.Mediator, logger logging.Logger) *background.SessionHealthcheckWorker {
+		return background.NewSessionHealthcheckWorker(mediator, logger)
 	}); err != nil {
 		log.Panic(err)
 	}
 }
 
 func (d *DI) AddApplicationInitWorker() {
-	if err := d.container.Provide(func(configuration *models.RootConfiguration, gitClient versioning.GitClient, mediator *background.Mediator) *background.ApplicationInitWorker {
-		return background.NewApplicationInitWorker(&configuration.Global, gitClient, mediator)
+	if err := d.container.Provide(func(configuration *models.RootConfiguration, gitClient versioning.GitClient, mediator *background.Mediator, logger logging.Logger) *background.ApplicationInitWorker {
+		return background.NewApplicationInitWorker(&configuration.Global, gitClient, mediator, logger)
 	}); err != nil {
 		log.Panic(err)
 	}
 }
 
 func (d *DI) AddApplicationFetchWorker() {
-	if err := d.container.Provide(func(sesStorage *storage.Session, fetcher versioning.RepositoryFetcher, mediator *background.Mediator) *background.ApplicationFetchWorker {
-		return background.NewApplicationFetchWorker(sesStorage, fetcher, mediator)
+	if err := d.container.Provide(func(sesStorage *storage.Session, fetcher versioning.RepositoryFetcher, mediator *background.Mediator, logger logging.Logger) *background.ApplicationFetchWorker {
+		return background.NewApplicationFetchWorker(sesStorage, fetcher, mediator, logger)
 	}); err != nil {
 		log.Panic(err)
 	}
@@ -302,8 +311,8 @@ func (d *DI) AddApplicationFetchWorker() {
 // Services
 
 func (d *DI) AddStaticService() {
-	if err := d.container.Provide(func(environment utils.Environment) *services.StaticService {
-		return services.NewStaticService(environment)
+	if err := d.container.Provide(func(environment utils.Environment, logger logging.Logger) *services.StaticService {
+		return services.NewStaticService(environment, logger)
 	}); err != nil {
 		log.Panic(err)
 	}
@@ -328,8 +337,8 @@ func (d *DI) AddRequestService() {
 // HTTP
 
 func (d *DI) AddHTTPProxy() {
-	if err := d.container.Provide(func(environment utils.Environment) *proxy.Handler {
-		return proxy.NewHandler(environment)
+	if err := d.container.Provide(func(environment utils.Environment, logger logging.Logger) *proxy.Handler {
+		return proxy.NewHandler(environment, logger)
 	}); err != nil {
 		log.Panic(err)
 	}
@@ -344,8 +353,9 @@ func (d *DI) AddHTTPRouter() {
 		queryService *services.QueryService,
 		requestService *services.RequestService,
 		staticService *services.StaticService,
+		logger logging.Logger,
 	) *routing.Handler {
-		return routing.NewHandler(environment, proxy, sesStorage, appStorage, queryService, requestService, staticService)
+		return routing.NewHandler(environment, proxy, sesStorage, appStorage, queryService, requestService, staticService, logger)
 	}); err != nil {
 		log.Panic(err)
 	}
@@ -359,8 +369,9 @@ func (d *DI) AddHTTPRestHandler() {
 		proxy *proxy.Handler,
 		queryService *services.QueryService,
 		requestService *services.RequestService,
+		logger logging.Logger,
 	) *rest.Handler {
-		return rest.NewHandler(environment, staticService, routing, proxy, queryService, requestService)
+		return rest.NewHandler(environment, staticService, routing, proxy, queryService, requestService, logger)
 	}); err != nil {
 		log.Panic(err)
 	}

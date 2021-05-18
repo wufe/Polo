@@ -6,33 +6,33 @@ import (
 	"path/filepath"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/utils"
 	"gopkg.in/yaml.v2"
 )
 
-func LoadConfigurations(environment utils.Environment, applicationBuilder *models.ApplicationBuilder) (*models.RootConfiguration, []*models.Application) {
+func LoadConfigurations(environment utils.Environment, applicationBuilder *models.ApplicationBuilder, logger logging.Logger) (*models.RootConfiguration, []*models.Application) {
 	dir := environment.GetExecutableFolder()
 
-	files := getYamlFiles(dir)
+	files := getYamlFiles(dir, logger)
 
-	return unmarshalConfigurations(files, applicationBuilder)
+	return unmarshalConfigurations(files, applicationBuilder, logger)
 
 }
 
-func getYamlFiles(root string) []string {
+func getYamlFiles(root string, logger logging.Logger) []string {
 	files := []string{}
 
 	fileInfos, err := ioutil.ReadDir(root)
 	if err != nil {
-		log.Fatalln("Error reading from directory", err)
+		logger.Fatalln("Error reading from directory", err)
 	}
 	for _, info := range fileInfos {
 		if !info.IsDir() && strings.HasSuffix(info.Name(), ".yml") {
 			abs, err := filepath.Abs(info.Name())
 			if err != nil {
-				log.Fatalln("Error resolving configuration file", err)
+				logger.Fatalln("Error resolving configuration file", err)
 			}
 			files = append(files, abs)
 		}
@@ -41,14 +41,14 @@ func getYamlFiles(root string) []string {
 	return files
 }
 
-func unmarshalConfigurations(files []string, applicationBuilder *models.ApplicationBuilder) (*models.RootConfiguration, []*models.Application) {
+func unmarshalConfigurations(files []string, applicationBuilder *models.ApplicationBuilder, logger logging.Logger) (*models.RootConfiguration, []*models.Application) {
 	rootConfiguration := &models.RootConfiguration{
 		ApplicationConfigurations: []*models.ApplicationConfiguration{},
 	}
 	applications := []*models.Application{}
 	for _, file := range files {
-		log.Infof("Found configuration file %s", file)
-		root, err := UnmarshalConfiguration(file, applicationBuilder)
+		logger.Infof("Found configuration file %s", file)
+		root, err := UnmarshalConfiguration(file, applicationBuilder, logger)
 		if err != nil {
 			continue
 		}
@@ -60,7 +60,7 @@ func unmarshalConfigurations(files []string, applicationBuilder *models.Applicat
 
 				builtApplication, err := applicationBuilder.Build(conf, file)
 				if err != nil {
-					log.Errorf("Application %s configuration error: %s", conf.Name, err.Error())
+					logger.Errorf("Application %s configuration error: %s", conf.Name, err.Error())
 				} else {
 					applications = append(applications, builtApplication)
 					conf := builtApplication.GetConfiguration()
@@ -86,23 +86,23 @@ func unmarshalConfigurations(files []string, applicationBuilder *models.Applicat
 	return rootConfiguration, applications
 }
 
-func UnmarshalConfiguration(file string, applicationBuilder *models.ApplicationBuilder) (models.RootConfiguration, error) {
+func UnmarshalConfiguration(file string, applicationBuilder *models.ApplicationBuilder, logger logging.Logger) (models.RootConfiguration, error) {
 	content, err := ioutil.ReadFile(file)
 	if err != nil {
-		log.Errorln(fmt.Sprintf("Could not retrieve content of file %s", file), err)
+		logger.Errorln(fmt.Sprintf("Could not retrieve content of file %s", file), err)
 		return models.RootConfiguration{}, err
 	}
 
 	var root models.RootConfiguration
 	err = yaml.Unmarshal(content, &root)
 	if err != nil {
-		log.Errorln(fmt.Sprintf("Error in configuration file %s", file), err)
+		logger.Errorln(fmt.Sprintf("Error in configuration file %s", file), err)
 	}
 	if root.ApplicationConfigurations != nil {
 		for i, c := range root.ApplicationConfigurations {
 			root.ApplicationConfigurations[i], err = applicationBuilder.BuildConfiguration(c)
 			if err != nil {
-				log.Errorln(err)
+				logger.Errorln(err)
 				return root, err
 			}
 		}

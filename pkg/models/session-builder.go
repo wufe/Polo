@@ -1,21 +1,23 @@
 package models
 
 import (
-	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/utils"
 )
 
 type SessionBuilder struct {
 	mutexBuilder utils.MutexBuilder
+	logger       logging.Logger
 }
 
-func NewSessionBuilder(mutexBuilder utils.MutexBuilder) *SessionBuilder {
+func NewSessionBuilder(mutexBuilder utils.MutexBuilder, logger logging.Logger) *SessionBuilder {
 	return &SessionBuilder{
 		mutexBuilder: mutexBuilder,
+		logger:       logger,
 	}
 }
 
 func (b *SessionBuilder) Build(session *Session) *Session {
-	log.Trace("Building new session")
-	return newSession(session, b.mutexBuilder)
+	b.logger.Trace("Building new session")
+	return newSession(session, b.mutexBuilder, b.logger)
 }

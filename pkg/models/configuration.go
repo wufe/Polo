@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-
-	_ "github.com/sirupsen/logrus"
 )
 
 var (

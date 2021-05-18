@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
 )
 
@@ -15,7 +15,7 @@ import (
 type ForwardRules func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request)
 
 // BuildDefaultForwardRules builds the rule set given the application configuration
-func BuildDefaultForwardRules(conf *models.ApplicationConfiguration, variables models.Variables) (ForwardRules, error) {
+func BuildDefaultForwardRules(conf *models.ApplicationConfiguration, variables models.Variables, log logging.Logger) (ForwardRules, error) {
 
 	target := conf.Target
 	target = variables.ApplyTo(target)
@@ -43,7 +43,7 @@ func BuildDefaultForwardRules(conf *models.ApplicationConfiguration, variables m
 	}), nil
 }
 
-func BuildForwardRules(r *http.Request, pattern models.CompiledForwardPattern, conf *models.ApplicationConfiguration, variables models.Variables) (ForwardRules, error) {
+func BuildForwardRules(r *http.Request, pattern models.CompiledForwardPattern, conf *models.ApplicationConfiguration, variables models.Variables, log logging.Logger) (ForwardRules, error) {
 	defaultTarget := conf.Target
 	defaultTarget = variables.ApplyTo(defaultTarget)
 	defaultTo, err := url.Parse(defaultTarget)

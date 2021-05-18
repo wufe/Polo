@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/rakyll/statik/fs"
-	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/utils"
 )
 
@@ -17,13 +17,15 @@ type StaticService struct {
 	devServer            string
 	FileSystem           http.FileSystem
 	sessionHelperContent string
+	log                  logging.Logger
 }
 
-func NewStaticService(environment utils.Environment) *StaticService {
+func NewStaticService(environment utils.Environment, logger logging.Logger) *StaticService {
 	service := &StaticService{
 		RWLocker:  utils.GetMutex(environment),
 		isDev:     environment.IsDev(),
 		devServer: environment.DevServerURL(),
+		log:       logger,
 	}
 	service.initStaticFileSystem()
 	return service
@@ -48,11 +50,11 @@ func (s *StaticService) LoadSessionHelper() {
 			for {
 				resp, err := http.Get(fmt.Sprintf("%s%s%s", s.devServer, "/_polo_/public", "/session-helper.html"))
 				if err != nil {
-					log.Errorf("Error while getting session helper: %s", err.Error())
+					s.log.Errorf("Error while getting session helper: %s", err.Error())
 				} else {
 					body, err := ioutil.ReadAll(resp.Body)
 					if err != nil {
-						log.Errorf("Error while reading session helper response: %s", err.Error())
+						s.log.Errorf("Error while reading session helper response: %s", err.Error())
 					} else {
 						s.SetSessionHelperContent(string(body))
 					}
@@ -65,12 +67,12 @@ func (s *StaticService) LoadSessionHelper() {
 	} else {
 		file, err := s.FileSystem.Open("/session-helper.html")
 		if err != nil {
-			log.Errorf("Error while getting session helper: %s", err.Error())
+			s.log.Errorf("Error while getting session helper: %s", err.Error())
 		} else {
 			defer file.Close()
 			content, err := ioutil.ReadAll(file)
 			if err != nil {
-				log.Errorf("Error while reading session helper content: %s", err.Error())
+				s.log.Errorf("Error while reading session helper content: %s", err.Error())
 			} else {
 				s.SetSessionHelperContent(string(content))
 			}
@@ -82,7 +84,7 @@ func (s *StaticService) GetManager() []byte {
 	file, err := s.FileSystem.Open("/manager.html")
 	content, err := ioutil.ReadAll(file)
 	if err != nil {
-		log.Errorf("Could not read /manager.html")
+		s.log.Errorf("Could not read /manager.html")
 		return nil
 	}
 	return content

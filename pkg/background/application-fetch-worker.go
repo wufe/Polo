@@ -1,7 +1,7 @@
 package background
 
 import (
-	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
 	"github.com/wufe/polo/pkg/versioning"
@@ -11,13 +11,15 @@ type ApplicationFetchWorker struct {
 	sessionStorage    *storage.Session
 	mediator          *Mediator
 	repositoryFetcher versioning.RepositoryFetcher
+	log               logging.Logger
 }
 
-func NewApplicationFetchWorker(sessionStorage *storage.Session, repositoryFetcher versioning.RepositoryFetcher, mediator *Mediator) *ApplicationFetchWorker {
+func NewApplicationFetchWorker(sessionStorage *storage.Session, repositoryFetcher versioning.RepositoryFetcher, mediator *Mediator, log logging.Logger) *ApplicationFetchWorker {
 	worker := &ApplicationFetchWorker{
 		sessionStorage:    sessionStorage,
 		repositoryFetcher: repositoryFetcher,
 		mediator:          mediator,
+		log:               log,
 	}
 	return worker
 }
@@ -56,7 +58,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 	fetchResult, errors := w.repositoryFetcher.Fetch(baseFolder)
 	if len(errors) > 0 {
 		for _, err := range errors {
-			defaultApplicationErrorLog(appName, err)
+			w.defaultApplicationErrorLog(appName, err)
 		}
 	}
 
@@ -79,7 +81,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 	})
 
 	if newCommitsCount > lastCommitsCount {
-		log.Infof("[APP:%s] Found %d new commits", appName, newCommitsCount-lastCommitsCount)
+		w.log.Infof("[APP:%s] Found %d new commits", appName, newCommitsCount-lastCommitsCount)
 	}
 
 	if !watchObjects {
@@ -108,7 +110,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 	}
 
 	for refName, hash := range fetchResult.ObjectsToHashMap {
-		if branches.BranchIsBeingWatched(refName) || aliveContains(refName) {
+		if branches.BranchIsBeingWatched(refName, w.log) || aliveContains(refName) {
 			if _, exists := watchedHashes[hash]; !exists {
 				watchedHashes[hash] = true
 				watchResults[refName] = hash
@@ -132,7 +134,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 		if foundSession != nil {
 			sessionCommitID := foundSession.CommitID
 			if sessionCommitID != hash {
-				log.Infof("[APP:%s][WATCH] Detected new commit on %s", appName, ref)
+				w.log.Infof("[APP:%s][WATCH] Detected new commit on %s", appName, ref)
 				// FEATURE: Hot swap
 				// Set the previous' session kill-reason to "replaced"
 				// and create a new session.
@@ -155,7 +157,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 			}
 
 			if lastSession == nil || !lastSession.GetKillReason().PreventsRebuild() {
-				log.Infof("[APP:%s][WATCH] Auto-start on %s", appName, ref)
+				w.log.Infof("[APP:%s][WATCH] Auto-start on %s", appName, ref)
 				bus.PublishEvent(models.ApplicationEventTypeAutoStart, application)
 				buildSession(w.mediator, nil)
 			}
@@ -169,7 +171,7 @@ func requestSessionBuilder(a *models.Application, ref string) func(*Mediator, *m
 	}
 }
 
-func defaultApplicationErrorLog(name string, err error, except ...error) {
+func (w *ApplicationFetchWorker) defaultApplicationErrorLog(name string, err error, except ...error) {
 	if err != nil {
 		var foundError error
 		for _, exceptErr := range except {
@@ -178,7 +180,7 @@ func defaultApplicationErrorLog(name string, err error, except ...error) {
 			}
 		}
 		if foundError == nil {
-			log.Errorf("[APP:%s] %s", name, err.Error())
+			w.log.Errorf("[APP:%s] %s", name, err.Error())
 		}
 	}
 }
