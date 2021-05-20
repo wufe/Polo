@@ -4,8 +4,8 @@ import dayjs from 'dayjs';
 import { observer } from 'mobx-react-lite';
 import { useScroll } from './scroll-hook';
 import { FixedSizeList as List } from 'react-window';
-import { Button } from '@/components/shared/elements/button/button';
-import { DownArrowIcon } from '@/components/shared/elements/icons/down-arrow/down-arrow-icon';
+import { Button } from '@/components/shared/ui-elements/button/button';
+import { DownArrowIcon } from '@/components/shared/ui-elements/icons/down-arrow/down-arrow-icon';
 import classnames from 'classnames';
 const { parse } = require('ansicolor');
 

@@ -7,9 +7,9 @@ import { CommitMessage } from '@/components/manager/shared/commit-message';
 import { CheckoutBuildConfirmationModal } from './modal/checkout-build-confirmation-modal';
 import { ApplicationCheckoutModal } from './modal/application-checkout-modal';
 import { CommitModal } from '@/components/manager/shared/commit-modal';
-import { Button } from '@/components/shared/elements/button/button';
-import { CubeIcon } from '@/components/shared/elements/icons/cube/cube-icon';
-import { HorizontalDotsIcon } from '@/components/shared/elements/icons/horizontal-dots/horizontal-dots-icon';
+import { Button } from '@/components/shared/ui-elements/button/button';
+import { CubeIcon } from '@/components/shared/ui-elements/icons/cube/cube-icon';
+import { HorizontalDotsIcon } from '@/components/shared/ui-elements/icons/horizontal-dots/horizontal-dots-icon';
 
 type TProps = {
     type                       : 'branch' | 'tag';

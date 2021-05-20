@@ -2,8 +2,8 @@ import React from 'react';
 import { DefaultModal } from '@/components/manager/modal/default-modal';
 import { ISession } from '@/state/models/session-model';
 import './application-session-deletion-modal.scss';
-import { Button } from '@/components/shared/elements/button/button';
-import { TrashIcon } from '@/components/shared/elements/icons/trash/trash-icon';
+import { Button } from '@/components/shared/ui-elements/button/button';
+import { TrashIcon } from '@/components/shared/ui-elements/icons/trash/trash-icon';
 
 type TProps = {
     name                         : string;

@@ -16,9 +16,9 @@ import { ApplicationSessionDeletionModal } from './modal/application-session-del
 import { useClipboard } from '@/components/shared/hooks/use-clipboard';
 import { useHistory } from 'react-router-dom';
 import loading from '@/assets/loading.svg';
-import { Button } from '@/components/shared/elements/button/button';
-import { LoginIcon } from '@/components/shared/elements/icons/login/login-icon';
-import { HorizontalDotsIcon } from '@/components/shared/elements/icons/horizontal-dots/horizontal-dots-icon';
+import { Button } from '@/components/shared/ui-elements/button/button';
+import { LoginIcon } from '@/components/shared/ui-elements/icons/login/login-icon';
+import { HorizontalDotsIcon } from '@/components/shared/ui-elements/icons/horizontal-dots/horizontal-dots-icon';
 
 export const validAgeValue = 1;
 

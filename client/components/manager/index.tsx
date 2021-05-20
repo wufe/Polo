@@ -10,8 +10,7 @@ import { Notifications } from './notifications/notifications';
 
 const Dashboard = React.lazy(() => import('@/components/manager/dashboard/dashboard-page'));
 const Session = React.lazy(() => import('@/components/manager/session/session-page'));
-
-
+const ApplicationEditPage = React.lazy(() => import('@/components/manager/application/edit-page/application-edit-page'));
 
 export const ManagerApp = observer(() => {
     return <>
@@ -56,6 +55,12 @@ export const ManagerApp = observer(() => {
                         </Route>
                         <Route path="/_polo_/session/:uuid">
                             <SessionRoute />
+                        </Route>
+                        <Route path="/_polo_/application/:id/edit">
+                            <ApplicationEditPage app={store.app} />
+                        </Route>
+                        <Route path="/_polo_/application/new">
+                            <ApplicationEditPage app={store.app} />
                         </Route>
                     </Switch>
                 </React.Suspense>

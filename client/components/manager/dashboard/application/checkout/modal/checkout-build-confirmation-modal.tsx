@@ -1,8 +1,8 @@
 import { DefaultModal } from '@/components/manager/modal/default-modal';
 import { useModal } from '@/components/manager/modal/modal-hooks';
 import { CommitMessage } from '@/components/manager/shared/commit-message';
-import { Button } from '@/components/shared/elements/button/button';
-import { CubeIcon } from '@/components/shared/elements/icons/cube/cube-icon';
+import { Button } from '@/components/shared/ui-elements/button/button';
+import { CubeIcon } from '@/components/shared/ui-elements/icons/cube/cube-icon';
 import React from 'react';
 import './checkout-build-confirmation-modal.scss';
 

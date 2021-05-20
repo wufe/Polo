@@ -1,8 +1,8 @@
 import React from 'react';
 import { DefaultModal } from '@/components/manager/modal/default-modal';
 import { DefaultModalDivider, DefaultModalHeader, DefaultModalItem, DefaultModalLayout, DefaultModalList } from '@/components/manager/modal/default-modal-layout/default-modal-layout';
-import { AnnotationIcon } from '@/components/shared/elements/icons/annotation/annotation-icon';
-import { CubeIcon } from '@/components/shared/elements/icons/cube/cube-icon';
+import { AnnotationIcon } from '@/components/shared/ui-elements/icons/annotation/annotation-icon';
+import { CubeIcon } from '@/components/shared/ui-elements/icons/cube/cube-icon';
 
 type TProps = {
     name                       : string;

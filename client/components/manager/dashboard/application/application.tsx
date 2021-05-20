@@ -13,8 +13,8 @@ import { DefaultModal } from '../../modal/default-modal';
 import { useModal } from '../../modal/modal-hooks';
 import { ApplicationOptionsModal } from './options/application-options-modal';
 import { ApplicationHeader } from './header/application-header';
-import { Button } from '@/components/shared/elements/button/button';
-import { CubeIcon } from '@/components/shared/elements/icons/cube/cube-icon';
+import { Button } from '@/components/shared/ui-elements/button/button';
+import { CubeIcon } from '@/components/shared/ui-elements/icons/cube/cube-icon';
 import { useSubscription } from '@/state/models/subscription-hook';
 import { NotificationType } from '@/state/models/notification-model';
 import { useNotification } from '@/state/models/notification-hook';
@@ -67,6 +67,7 @@ export const Application = observer((props: TProps) => {
         application`}>
 
         <ApplicationHeader
+            id={props.application.configuration.id}
             name={props.application.configuration.name}
             filename={props.application.filename}
             failures={props.failures} />

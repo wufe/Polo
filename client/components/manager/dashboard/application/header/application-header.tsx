@@ -7,14 +7,14 @@ import { ApplicationOptionsModal } from '../options/application-options-modal';
 import './application-header.scss';
 import { useHistory } from 'react-router';
 import dayjs from 'dayjs';
-import { Button } from '@/components/shared/elements/button/button';
-import { MenuIcon } from '@/components/shared/elements/icons/menu/menu-icon';
+import { Button } from '@/components/shared/ui-elements/button/button';
+import { MenuIcon } from '@/components/shared/ui-elements/icons/menu/menu-icon';
 import { FailureStatus, TFailuresDictionary } from '@/state/models/failures-model';
 
 type TProps = {
+    id: string;
     name: string;
-    filename: string;
-
+    filename: string
     failures: TFailuresDictionary | null;
 }
 export const ApplicationHeader = (props: TProps) => {
@@ -25,11 +25,15 @@ export const ApplicationHeader = (props: TProps) => {
 
     const applicationOptionsModalName = `application-options-${props.name}`;
 
-    const goTo = (session: ISession) => {
+    const goToFailingSession = (session: ISession) => {
         hide();
         history.push(`/_polo_/session/failing/${session.uuid}`);
     }
 
+    const goToApplicationConfigurationEditPage = () => {
+        hide();
+        history.push(`/_polo_/application/${props.id}/edit`);
+    }
 
     return <div className="application-header">
         <div className="flex justify-between min-w-0 max-w-full flex-nowrap items-center">
@@ -48,7 +52,8 @@ export const ApplicationHeader = (props: TProps) => {
             modalName={applicationOptionsModalName}
             applicationName={props.name}
             failures={props.failures}
-            onSessionClick={goTo} />
+            onFailingSessionClick={goToFailingSession}
+            onApplicationConfigurationEditClick={goToApplicationConfigurationEditPage} />
     </div>
 };
 

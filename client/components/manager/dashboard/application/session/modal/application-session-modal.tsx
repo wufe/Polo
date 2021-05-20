@@ -1,14 +1,14 @@
 import React from 'react';
 import { DefaultModal } from '@/components/manager/modal/default-modal';
 import { DefaultModalDivider, DefaultModalHeader, DefaultModalItem, DefaultModalLayout, DefaultModalList } from '@/components/manager/modal/default-modal-layout/default-modal-layout';
-import { AnnotationIcon } from '@/components/shared/elements/icons/annotation/annotation-icon';
-import { BeakerIcon } from '@/components/shared/elements/icons/beaker/beaker-icon';
-import { ClipboardIcon } from '@/components/shared/elements/icons/clipboard/clipboard-icon';
-import { CodeIcon } from '@/components/shared/elements/icons/code/code-icon';
-import { CubeIcon } from '@/components/shared/elements/icons/cube/cube-icon';
-import { LoginIcon } from '@/components/shared/elements/icons/login/login-icon';
-import { TextDocumentIcon } from '@/components/shared/elements/icons/text-document/text-document-icon';
-import { TrashIcon } from '@/components/shared/elements/icons/trash/trash-icon';
+import { AnnotationIcon } from '@/components/shared/ui-elements/icons/annotation/annotation-icon';
+import { BeakerIcon } from '@/components/shared/ui-elements/icons/beaker/beaker-icon';
+import { ClipboardIcon } from '@/components/shared/ui-elements/icons/clipboard/clipboard-icon';
+import { CodeIcon } from '@/components/shared/ui-elements/icons/code/code-icon';
+import { CubeIcon } from '@/components/shared/ui-elements/icons/cube/cube-icon';
+import { LoginIcon } from '@/components/shared/ui-elements/icons/login/login-icon';
+import { TextDocumentIcon } from '@/components/shared/ui-elements/icons/text-document/text-document-icon';
+import { TrashIcon } from '@/components/shared/ui-elements/icons/trash/trash-icon';
 import { ISession } from '@/state/models';
 
 type TProps = {
