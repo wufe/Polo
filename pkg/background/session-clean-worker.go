@@ -77,36 +77,6 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 								abort()
 							}
 						}
-
-						// builtCommand, err := buildCommand(command.Command, session)
-						// if err != nil {
-						// 	session.LogError(err.Error())
-						// 	if !command.ContinueOnError {
-						// 		session.LogError("Halting")
-						// 		abort()
-						// 	}
-						// }
-
-						// cmds := utils.ParseCommandContext(sessionCleanContext, builtCommand)
-						// for _, cmd := range cmds {
-						// 	cmd.Env = append(
-						// 		os.Environ(),
-						// 		command.Environment...,
-						// 	)
-						// 	cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
-						// }
-						// err = utils.ExecCmds(sessionCleanContext, func(sl *utils.StdLine) {
-						// 	session.LogStdout(sl.Line)
-						// }, cmds...)
-
-						// if err != nil {
-						// 	session.LogError(err.Error())
-						// 	if !command.ContinueOnError {
-						// 		session.LogError("Halting")
-						// 		abort()
-
-						// 	}
-						// }
 					}
 				}
 
@@ -140,13 +110,15 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 						bus.PublishEvent(models.SessionEventTypeBuildGettingRetried, session)
 						w.mediator.BuildSession.Enqueue(session.Checkout, session.Application, session)
 					} else {
-						shouldTryCleanFolders = true
 						session.LogWarn("Max startup retries exceeded.")
+						shouldTryCleanFolders = true
 						sessionFailed = true
 						deleteSession = false
 					}
 				} else {
 					shouldTryCleanFolders = true
+					sessionFailed = true
+					deleteSession = false
 				}
 			} else {
 				shouldTryCleanFolders = true

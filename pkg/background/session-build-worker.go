@@ -223,6 +223,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 		close(done)
 	}
 	abort := func() {
+		session.Application.GetEventBus().PublishEvent(models.ApplicationEventTypeSessionBuildFailed, session.Application)
 		close(quit)
 	}
 
@@ -308,6 +309,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 		}
 	}
 
+	session.Application.GetEventBus().PublishEvent(models.ApplicationEventTypeSessionBuildSucceeded, session.Application)
 	confirm()
 }
 

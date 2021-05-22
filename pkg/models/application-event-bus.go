@@ -15,6 +15,8 @@ const (
 	ApplicationEventTypeHotSwap                 ApplicationEventType = "hot_swap"
 	ApplicationEventTypeAutoStart               ApplicationEventType = "auto_start"
 	ApplicationEventTypeSessionBuild            ApplicationEventType = "session_build"
+	ApplicationEventTypeSessionBuildFailed      ApplicationEventType = "session_build_failed"
+	ApplicationEventTypeSessionBuildSucceeded   ApplicationEventType = "session_build_succeeded"
 
 	eventsBuffer = 100
 )
