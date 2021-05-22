@@ -41,6 +41,10 @@ func main() {
 	container.AddApplicationStorage()
 	container.AddSessionStorage()
 
+	// Command
+
+	container.AddCommandRunner()
+
 	// Mediator
 
 	container.AddSessionBuildQueue()
@@ -52,6 +56,10 @@ func main() {
 	container.AddApplicationInitQueue()
 	container.AddApplicationFetchQueue()
 	container.AddMediator()
+
+	// Workers command execution
+
+	container.AddSessionCommandExecution()
 
 	// Workers
 
@@ -72,6 +80,7 @@ func main() {
 
 	// HTTP
 
+	container.AddPortRetriever()
 	container.AddHTTPProxy()
 	container.AddHTTPRouter()
 	container.AddHTTPRestHandler()

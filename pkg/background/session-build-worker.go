@@ -5,15 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/wufe/polo/pkg/background/queues"
+	"github.com/wufe/polo/pkg/http/net"
 	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
-	"github.com/wufe/polo/pkg/utils"
 )
 
 var (
@@ -22,12 +21,14 @@ var (
 )
 
 type SessionBuildWorker struct {
-	global             *models.GlobalConfiguration
-	applicationStorage *storage.Application
-	sessionStorage     *storage.Session
-	mediator           *Mediator
-	sessionBuilder     *models.SessionBuilder
-	log                logging.Logger
+	global                  *models.GlobalConfiguration
+	applicationStorage      *storage.Application
+	sessionStorage          *storage.Session
+	mediator                *Mediator
+	sessionBuilder          *models.SessionBuilder
+	log                     logging.Logger
+	sessionCommandExecution SessionCommandExecution
+	portRetriever           net.PortRetriever
 }
 
 func NewSessionBuildWorker(
@@ -37,14 +38,18 @@ func NewSessionBuildWorker(
 	mediator *Mediator,
 	sessionBuilder *models.SessionBuilder,
 	log logging.Logger,
+	sessionCommandExecution SessionCommandExecution,
+	portRetriever net.PortRetriever,
 ) *SessionBuildWorker {
 	worker := &SessionBuildWorker{
-		global:             globalConfiguration,
-		applicationStorage: applicationStorage,
-		sessionStorage:     sessionStorage,
-		mediator:           mediator,
-		sessionBuilder:     sessionBuilder,
-		log:                log,
+		global:                  globalConfiguration,
+		applicationStorage:      applicationStorage,
+		sessionStorage:          sessionStorage,
+		mediator:                mediator,
+		sessionBuilder:          sessionBuilder,
+		log:                     log,
+		sessionCommandExecution: sessionCommandExecution,
+		portRetriever:           portRetriever,
 	}
 	return worker
 }
@@ -149,7 +154,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 
 	session.LogInfo(fmt.Sprintf("Creating session %s", session.UUID))
 
-	freePort, err := getFreePort(appPort)
+	freePort, err := w.portRetriever.GetFreePort(appPort)
 	if err != nil {
 		w.log.Errorln("Could not get a free port", err)
 		return &queues.SessionBuildResult{
@@ -336,7 +341,7 @@ func (w *SessionBuildWorker) execCommands(ctx context.Context, session *models.S
 				return healthcheckingStarted, ErrWrongSessionState
 			}
 
-			err := w.execCommand(ctx, &command, session)
+			err := w.sessionCommandExecution.ExecCommand(ctx, &command, session)
 
 			if err != nil {
 				if !command.ContinueOnError {
@@ -356,40 +361,6 @@ func (w *SessionBuildWorker) execCommands(ctx context.Context, session *models.S
 		}
 	}
 	return healthcheckingStarted, nil
-}
-
-func (w *SessionBuildWorker) execCommand(ctx context.Context, command *models.Command, session *models.Session) error {
-	builtCommand, err := buildCommand(command.Command, session)
-	if err != nil {
-		return err
-	}
-	session.LogStdin(builtCommand)
-
-	cmdCtx := ctx
-	if command.Timeout > 0 {
-		timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(command.Timeout)*time.Second)
-		defer cancel()
-		cmdCtx = timeoutCtx
-	}
-	cmds := utils.ParseCommandContext(cmdCtx, builtCommand)
-	for _, cmd := range cmds {
-		cmd.Env = append(
-			os.Environ(),
-			command.Environment...,
-		)
-		cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
-	}
-
-	err = utils.ExecCmds(ctx, func(line *utils.StdLine) {
-		if line.Type == utils.StdTypeOut {
-			session.LogStdout(line.Line)
-		} else {
-			session.LogStderr(line.Line)
-		}
-		parseSessionCommandOuput(session, command, line.Line)
-	}, cmds...)
-
-	return err
 }
 
 func (w *SessionBuildWorker) execWarmups(ctx context.Context, session *models.Session, conf models.ApplicationConfiguration) error {

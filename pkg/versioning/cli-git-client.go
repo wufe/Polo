@@ -6,25 +6,29 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/wufe/polo/pkg/utils"
+	"github.com/wufe/polo/pkg/execution"
 )
 
-type CLIGitClient struct{}
+type CLIGitClient struct {
+	commandRunner execution.CommandRunner
+}
 
-func NewCLIGitClient() GitClient {
-	return &CLIGitClient{}
+func NewCLIGitClient(commandRunner execution.CommandRunner) GitClient {
+	return &CLIGitClient{
+		commandRunner: commandRunner,
+	}
 }
 
 func (client *CLIGitClient) Clone(baseFolder string, outputFolder string, remote string) error {
 	cmd := exec.Command("git", "clone", remote, outputFolder)
 	cmd.Dir = baseFolder
-	return execCommands(cmd)
+	return client.execCommands(cmd)
 }
 
 func (client *CLIGitClient) FetchAll(repoFolder string) error {
 	cmd := exec.Command("git", "fetch", "--force", "-u", "origin", "+refs/*:refs/*", "--prune")
 	cmd.Dir = repoFolder
-	return execCommands(cmd)
+	return client.execCommands(cmd)
 }
 
 func (client *CLIGitClient) HardReset(repoFolder string, commit string) error {
@@ -34,14 +38,15 @@ func (client *CLIGitClient) HardReset(repoFolder string, commit string) error {
 	reset := exec.Command("git", "reset", "--hard", commit)
 	reset.Dir = repoFolder
 
-	return execCommands(stash, reset)
+	return client.execCommands(stash, reset)
 }
 
-func execCommands(cmds ...*exec.Cmd) error {
+func (client *CLIGitClient) execCommands(cmds ...*exec.Cmd) error {
 	for _, cmd := range cmds {
 		errorLines := []string{}
-		err := utils.ExecCmds(context.Background(), func(sl *utils.StdLine) {
-			if sl.Type == utils.StdTypeErr {
+
+		err := client.commandRunner.ExecCmds(context.Background(), func(sl *execution.StdLine) {
+			if sl.Type == execution.StdTypeErr {
 				errorLines = append(errorLines, sl.Line)
 			}
 		}, cmd)

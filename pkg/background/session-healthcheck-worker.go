@@ -57,7 +57,6 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 	session.GetEventBus().PublishEvent(models.SessionEventTypeHealthcheckStarted, session)
 	w.sessions.Push(session)
 	go func() {
-		time.Sleep(5 * time.Second)
 
 		conf := session.GetConfiguration()
 		maxRetries := conf.Healthcheck.MaxRetries
@@ -66,6 +65,8 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 		host := conf.Host
 
 		retryCount := 0
+
+		time.Sleep(time.Duration(healthcheck.RetryInterval) * time.Second)
 
 		for {
 			// Failed or destroyed
@@ -127,11 +128,13 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 					return
 				}
 
-				session.LogError(fmt.Sprintf("[%d/%d] Session healthcheck failed. Retrying in %d seconds", retryCount, maxRetries, healthcheck.RetryInterval))
+				session.LogError(fmt.Sprintf("[%d/%d] Session healthcheck failed. Retrying in %.2f seconds", retryCount, maxRetries, healthcheck.RetryInterval))
 			} else {
 				status := session.GetStatus()
 				if status == models.SessionStatusStarting {
 					session.LogInfo("Session available")
+					session.GetEventBus().PublishEvent(models.SessionEventTypeHealthcheckSucceded, session)
+					session.GetEventBus().PublishEvent(models.SessionEventTypeSessionAvailable, session)
 				}
 				if status != models.SessionStatusStarted {
 					w.mediator.StartSession.Enqueue(queues.SessionStartInput{

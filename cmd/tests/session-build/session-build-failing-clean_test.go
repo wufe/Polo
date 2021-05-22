@@ -28,7 +28,10 @@ func Test_SessionBuildFailingClean(t *testing.T) {
 	fetcher.AddCommitToBranch(firstCommit, branch)
 
 	// Setup the application
-	di := tests.Fixture(&models.ApplicationConfiguration{
+	di := tests.Fixture(&tests.InjectableServices{
+		RepositoryFetcher: fetcher,
+		GitClient:         versioning_fixture.NewGitClient(),
+	}, &models.ApplicationConfiguration{
 		SharedConfiguration: models.SharedConfiguration{
 			Remote: "FakeRemote",
 			Commands: models.Commands{
@@ -47,9 +50,6 @@ func Test_SessionBuildFailingClean(t *testing.T) {
 		},
 		Name:      "Test_SessionBuildFailing",
 		IsDefault: true,
-	}, &tests.InjectableServices{
-		RepositoryFetcher: fetcher,
-		GitClient:         versioning_fixture.NewGitClient(),
 	})
 
 	// Get events channel

@@ -46,12 +46,12 @@ type Headers struct {
 }
 
 type Healthcheck struct {
-	Method        string `json:"method"`
-	URL           string `json:"url"`
-	Status        int    `json:"status"`
-	MaxRetries    int    `json:"maxRetries"`
-	RetryInterval int    `json:"retryInterval"`
-	Timeout       int    `json:"timeout"`
+	Method        string  `json:"method"`
+	URL           string  `json:"url"`
+	Status        int     `json:"status"`
+	MaxRetries    int     `json:"maxRetries"`
+	RetryInterval float32 `json:"retryInterval"`
+	Timeout       int     `json:"timeout"`
 }
 
 type Startup struct {

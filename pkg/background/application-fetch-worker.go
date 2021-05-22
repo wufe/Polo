@@ -54,6 +54,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 
 	conf := application.GetConfiguration()
 	appName := conf.Name
+	appID := conf.ID
 
 	fetchResult, errors := w.repositoryFetcher.Fetch(baseFolder)
 	if len(errors) > 0 {
@@ -89,7 +90,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 	}
 
 	aliveRefs := []string{}
-	for _, s := range w.sessionStorage.GetAllAliveSessions() {
+	for _, s := range w.sessionStorage.GetAllAliveApplicationSessions(appID) {
 		s.RLock()
 		ref := s.Checkout
 		s.RUnlock()

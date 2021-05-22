@@ -27,3 +27,29 @@ applications:
             - command: nonexisting.exe
       - test: feature/my-watched-feature
         watch: false
+  - name: Test-server2
+    remote: "https://github.com/wufe/polo-testserver"
+    is_default: true
+    commands:
+      start:
+        - command: docker build --no-cache -t polo-testserver:{{commit}} .
+        - command: docker run -p {{port}}:3000 -d polo-testserver:{{commit}}
+          output_variable: container_id
+        - command: docker image prune -f
+          continue_on_error: true
+      stop:
+        - command: "docker kill {{container_id}}"
+          continue_on_error: true
+    recycle:
+      inactivity_timeout: 6000
+    startup:
+      retries: 5
+    branches:
+      - test: ^dev$
+        watch: false
+        main: false
+        commands:
+          start:
+            - command: nonexisting.exe
+      - test: feature/my-watched-feature
+        watch: false

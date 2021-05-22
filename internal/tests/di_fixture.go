@@ -9,6 +9,8 @@ import (
 	"github.com/wufe/polo/pkg"
 	"github.com/wufe/polo/pkg/background"
 	"github.com/wufe/polo/pkg/background/queues"
+	"github.com/wufe/polo/pkg/execution"
+	"github.com/wufe/polo/pkg/http/net"
 	"github.com/wufe/polo/pkg/http/proxy"
 	"github.com/wufe/polo/pkg/http/rest"
 	"github.com/wufe/polo/pkg/http/routing"
@@ -78,9 +80,9 @@ func (d *DI) AddApplicationBuilder() {
 // Git
 
 func (d *DI) AddGitClient() {
-	if err := d.container.Provide(func() versioning.GitClient {
+	if err := d.container.Provide(func(commandRunner execution.CommandRunner) versioning.GitClient {
 		if d.injectable == nil || d.injectable.GitClient == nil {
-			return versioning.GetGitClient()
+			return versioning.GetGitClient(commandRunner)
 		}
 		return d.injectable.GitClient
 	}); err != nil {
@@ -101,16 +103,14 @@ func (d *DI) AddRepositoryFetcher() {
 
 // Configuration (.yml)
 
-func (d *DI) AddConfiguration(applicationConfiguration *models.ApplicationConfiguration) {
+func (d *DI) AddConfiguration(applicationConfigurations ...*models.ApplicationConfiguration) {
 	if err := d.container.Provide(func(environment utils.Environment, applicationBuilder *models.ApplicationBuilder) (*models.RootConfiguration, []*models.Application) {
 		configuration := &models.RootConfiguration{
 			Global: models.GlobalConfiguration{
 				SessionsFolder:        environment.GetExecutableFolder() + "/.sessions",
 				MaxConcurrentSessions: 999,
 			},
-			ApplicationConfigurations: []*models.ApplicationConfiguration{
-				applicationConfiguration,
-			},
+			ApplicationConfigurations: applicationConfigurations,
 		}
 
 		applications := []*models.Application{}
@@ -165,6 +165,19 @@ func (d *DI) AddApplicationStorage() {
 
 func (d *DI) AddSessionStorage() {
 	if err := d.container.Provide(storage.NewSession); err != nil {
+		log.Panic(err)
+	}
+}
+
+// Command
+
+func (d *DI) AddCommandRunner() {
+	if err := d.container.Provide(func() execution.CommandRunner {
+		if d.injectable != nil && d.injectable.CommandRunner != nil {
+			return d.injectable.CommandRunner
+		}
+		return execution.NewCommandRunner()
+	}); err != nil {
 		log.Panic(err)
 	}
 }
@@ -261,6 +274,14 @@ func (d *DI) AddMediator() {
 	}
 }
 
+// Workers command execution
+
+func (d *DI) AddSessionCommandExecution() {
+	if err := d.container.Provide(background.NewSessionCommandExecution); err != nil {
+		log.Panic(err)
+	}
+}
+
 // Workers
 
 func (d *DI) AddSessionBuildWorker() {
@@ -271,8 +292,10 @@ func (d *DI) AddSessionBuildWorker() {
 		mediator *background.Mediator,
 		sessionBuilder *models.SessionBuilder,
 		logger logging.Logger,
+		sessionCommandExecution background.SessionCommandExecution,
+		portRetriever net.PortRetriever,
 	) *background.SessionBuildWorker {
-		return background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, sessionBuilder, logger)
+		return background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, sessionBuilder, logger, sessionCommandExecution, portRetriever)
 	}); err != nil {
 		log.Panic(err)
 	}
@@ -287,9 +310,7 @@ func (d *DI) AddSessionStartWorker() {
 }
 
 func (d *DI) AddSessionCleanWorker() {
-	if err := d.container.Provide(func(sesStorage *storage.Session, mediator *background.Mediator) *background.SessionCleanWorker {
-		return background.NewSessionCleanWorker(sesStorage, mediator)
-	}); err != nil {
+	if err := d.container.Provide(background.NewSessionCleanWorker); err != nil {
 		log.Panic(err)
 	}
 }
@@ -303,9 +324,7 @@ func (d *DI) AddSessionFilesystemWorker() {
 }
 
 func (d *DI) AddSessionDestroyWorker() {
-	if err := d.container.Provide(func(mediator *background.Mediator) *background.SessionDestroyWorker {
-		return background.NewSessionDestroyWorker(mediator)
-	}); err != nil {
+	if err := d.container.Provide(background.NewSessionDestroyWorker); err != nil {
 		log.Panic(err)
 	}
 }
@@ -361,6 +380,17 @@ func (d *DI) AddRequestService() {
 }
 
 // HTTP
+
+func (d *DI) AddPortRetriever() {
+	if err := d.container.Provide(func() net.PortRetriever {
+		if d.injectable != nil && d.injectable.PortRetriever != nil {
+			return d.injectable.PortRetriever
+		}
+		return net.NewPortRetriever()
+	}); err != nil {
+		log.Panic(err)
+	}
+}
 
 func (d *DI) AddHTTPProxy() {
 	if err := d.container.Provide(func(environment utils.Environment, logger logging.Logger) *proxy.Handler {
@@ -466,4 +496,6 @@ func (d *DI) GetEnvironment() utils.Environment {
 type InjectableServices struct {
 	RepositoryFetcher versioning.RepositoryFetcher
 	GitClient         versioning.GitClient
+	CommandRunner     execution.CommandRunner
+	PortRetriever     net.PortRetriever
 }

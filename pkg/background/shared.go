@@ -6,8 +6,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/phayes/freeport"
-	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/pkg/models"
 )
 
@@ -35,46 +33,4 @@ func parseSessionCommandOuput(session *models.Session, command *models.Command, 
 	if command.OutputVariable != "" {
 		session.SetVariable(command.OutputVariable, output)
 	}
-}
-
-func buildCommand(command string, session *models.Session) (string, error) {
-	addPortsOnDemand(command, session)
-	command = session.Variables.ApplyTo(command)
-	return strings.TrimSpace(command), nil
-}
-
-func addPortsOnDemand(input string, session *models.Session) (string, error) {
-	conf := session.GetConfiguration()
-	re := regexp.MustCompile(`{{(port\d*)}}`)
-	matches := re.FindAllStringSubmatch(input, -1)
-	for _, match := range matches {
-		portVariable := match[1]
-		if _, ok := session.Variables[portVariable]; !ok {
-			port, err := getFreePort(conf.Port)
-			if err != nil {
-				return "", err
-			}
-			session.SetVariable(portVariable, fmt.Sprint(port))
-		}
-	}
-	return input, nil
-}
-
-func getFreePort(portConfiguration models.PortConfiguration) (int, error) {
-	log.Trace("Getting a free port")
-	foundPort := 0
-L:
-	for foundPort == 0 {
-		freePort, err := freeport.GetFreePort()
-		if err != nil {
-			return 0, err
-		}
-		for _, port := range portConfiguration.Except {
-			if freePort == port {
-				continue L
-			}
-		}
-		foundPort = freePort
-	}
-	return foundPort, nil
 }
