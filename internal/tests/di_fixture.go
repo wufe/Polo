@@ -382,11 +382,11 @@ func (d *DI) AddRequestService() {
 // HTTP
 
 func (d *DI) AddPortRetriever() {
-	if err := d.container.Provide(func() net.PortRetriever {
+	if err := d.container.Provide(func(logger logging.Logger) net.PortRetriever {
 		if d.injectable != nil && d.injectable.PortRetriever != nil {
 			return d.injectable.PortRetriever
 		}
-		return net.NewPortRetriever()
+		return net.NewPortRetriever(logger)
 	}); err != nil {
 		log.Panic(err)
 	}

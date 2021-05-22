@@ -2,7 +2,7 @@ package net
 
 import (
 	"github.com/phayes/freeport"
-	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
 )
 
@@ -10,14 +10,18 @@ type PortRetriever interface {
 	GetFreePort(portConfiguration models.PortConfiguration) (int, error)
 }
 
-type portRetrieverImpl struct{}
+type portRetrieverImpl struct {
+	log logging.Logger
+}
 
-func NewPortRetriever() PortRetriever {
-	return &portRetrieverImpl{}
+func NewPortRetriever(logger logging.Logger) PortRetriever {
+	return &portRetrieverImpl{
+		log: logger,
+	}
 }
 
 func (r *portRetrieverImpl) GetFreePort(portConfiguration models.PortConfiguration) (int, error) {
-	log.Trace("Getting a free port")
+	r.log.Trace("Getting a free port")
 	foundPort := 0
 L:
 	for foundPort == 0 {
