@@ -14,7 +14,7 @@ func Test_ApplicationInit(t *testing.T) {
 
 	log.SetLevel(log.PanicLevel)
 
-	di := tests.Fixture(&models.ApplicationConfiguration{
+	di := tests.Fixture(nil, &models.ApplicationConfiguration{
 		SharedConfiguration: models.SharedConfiguration{
 			Remote: "https://github.com/wufe/polo-testserver",
 			Commands: models.Commands{
@@ -24,7 +24,7 @@ func Test_ApplicationInit(t *testing.T) {
 		},
 		Name:      "Test_ApplicationInit",
 		IsDefault: true,
-	}, nil)
+	})
 	applications := di.GetApplications()
 	firstApplicationBus := applications[0].GetEventBus()
 

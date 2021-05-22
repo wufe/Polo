@@ -1,25 +1,28 @@
-package session_build
+package session_healthcheck
 
 import (
 	"testing"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/internal/tests"
 	"github.com/wufe/polo/internal/tests/events_assertions"
+	"github.com/wufe/polo/internal/tests/execution_fixture"
+	"github.com/wufe/polo/internal/tests/net_fixture"
 	"github.com/wufe/polo/internal/tests/versioning_fixture"
 	"github.com/wufe/polo/pkg/models"
 )
 
-// The session gets build
-// the build process fails
-// the clean process starts
-// all command fails
-// 		since it is set "ContinueOnError: true", the clean process continues
-// the clean process ends with folder deletion
-func Test_SessionBuildFailingClean(t *testing.T) {
+// Session should become available using a mock http server
+func Test_SessionShouldBuildAndBeAvailableWithFixtureHTTPServer(t *testing.T) {
 
-	log.SetLevel(log.PanicLevel)
+	// Create the HTTP server and start it
+	httpServer := net_fixture.NewHTTPServerFixture()
+	port, tearDown := httpServer.Setup()
+	defer tearDown()
+
+	// Create port retriever to set up HTTP server port
+	portRetriever := net_fixture.NewPortRetrieverFixture()
+	portRetriever.SetFreePort(port)
 
 	fetcher := versioning_fixture.NewRepositoryFetcher()
 
@@ -34,25 +37,37 @@ func Test_SessionBuildFailingClean(t *testing.T) {
 	di := tests.Fixture(&tests.InjectableServices{
 		RepositoryFetcher: fetcher,
 		GitClient:         versioning_fixture.NewGitClient(),
+		CommandRunner:     execution_fixture.NewCommandRunnerFixture(),
+		PortRetriever:     portRetriever,
 	}, &models.ApplicationConfiguration{
 		SharedConfiguration: models.SharedConfiguration{
 			Remote: "FakeRemote",
 			Commands: models.Commands{
 				Start: []models.Command{
-					{Command: "notexistingcommand.exe"},
+					{Command: "valid-command.exe"},
 				},
 				Stop: []models.Command{
-					{Command: "notexistingcommand.exe"},
+					{Command: "valid-command.exe"},
 				},
-				Clean: []models.Command{
-					{Command: "1st_cleancommand.sh", ContinueOnError: true},
-					{Command: "2nd_cleancommand.sh", ContinueOnError: true},
-					{Command: "3rd_cleancommand.sh", ContinueOnError: true},
+			},
+			Startup: models.Startup{
+				Retries: 3,
+			},
+			Healthcheck: models.Healthcheck{
+				RetryInterval: 0.001,
+			},
+		},
+		Name:      "Test_SessionShouldBuildAndBeAvailableWithFixtureHTTPServer",
+		IsDefault: true,
+		Branches: []models.BranchConfigurationMatch{
+			{
+				Test: "main",
+				BranchConfiguration: models.BranchConfiguration{
+					Watch: false,
+					Main:  false,
 				},
 			},
 		},
-		Name:      "Test_SessionBuildFailing",
-		IsDefault: true,
 	})
 
 	// Get events channel
@@ -90,7 +105,7 @@ func Test_SessionBuildFailingClean(t *testing.T) {
 			models.ApplicationEventTypeFetchCompleted,
 		},
 		t,
-		10*time.Second,
+		2*time.Second,
 	)
 
 	// Request new session to be built
@@ -109,14 +124,13 @@ func Test_SessionBuildFailingClean(t *testing.T) {
 	events_assertions.AssertSessionEvents(
 		sessionChan,
 		[]models.SessionEventType{
+			// First build
 			models.SessionEventTypeBuildStarted,
 			models.SessionEventTypePreparingFolders,
 			models.SessionEventTypeCommandsExecutionStarted,
-			models.SessionEventTypeCommandsExecutionFailed,
-			models.SessionEventTypeCleanCommandExecution,
-			models.SessionEventTypeCleanCommandExecution,
-			models.SessionEventTypeCleanCommandExecution,
-			models.SessionEventTypeFolderClean,
+			models.SessionEventTypeHealthcheckStarted,
+			models.SessionEventTypeHealthcheckSucceded,
+			models.SessionEventTypeSessionAvailable,
 		},
 		t,
 		10*time.Second,

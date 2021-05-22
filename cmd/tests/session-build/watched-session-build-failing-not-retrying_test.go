@@ -25,7 +25,10 @@ func Test_WatchedSessionBuildFailingDoesNotGetRetriedAfterFetch(t *testing.T) {
 	fetcher.AddCommitToBranch(firstCommit, branch)
 
 	// Setup the application
-	di := tests.Fixture(&models.ApplicationConfiguration{
+	di := tests.Fixture(&tests.InjectableServices{
+		RepositoryFetcher: fetcher,
+		GitClient:         versioning_fixture.NewGitClient(),
+	}, &models.ApplicationConfiguration{
 		SharedConfiguration: models.SharedConfiguration{
 			Remote: "FakeRemote",
 			Commands: models.Commands{
@@ -51,9 +54,6 @@ func Test_WatchedSessionBuildFailingDoesNotGetRetriedAfterFetch(t *testing.T) {
 				},
 			},
 		},
-	}, &tests.InjectableServices{
-		RepositoryFetcher: fetcher,
-		GitClient:         versioning_fixture.NewGitClient(),
 	})
 
 	// Get events channel

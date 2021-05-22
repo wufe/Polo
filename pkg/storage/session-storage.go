@@ -180,6 +180,22 @@ func (s *Session) GetAllAliveSessions() []*models.Session {
 	return filteredSessions
 }
 
+// GetAllAliveApplicationSessions retrieves a slice of sessions whose status is "alive".
+// A session is "alive" if it can or is about to ready for being used
+// The sessions are further filtered by their application ID
+func (s *Session) GetAllAliveApplicationSessions(appID string) []*models.Session {
+	allSessions := s.GetAllAliveSessions()
+	filteredSessions := []*models.Session{}
+	for _, session := range allSessions {
+		conf := session.GetConfiguration()
+		id := conf.ID
+		if id == appID {
+			filteredSessions = append(filteredSessions, session)
+		}
+	}
+	return filteredSessions
+}
+
 // GetAliveApplicationSessionByCheckout retrieves a single session identified by its
 // status (which must be "alvie") and by its checkout
 func (s *Session) GetAliveApplicationSessionByCheckout(checkout string, application *models.Application) *models.Session {

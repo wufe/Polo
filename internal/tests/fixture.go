@@ -5,7 +5,7 @@ import (
 	"github.com/wufe/polo/pkg/models"
 )
 
-func Fixture(applicationConfiguration *models.ApplicationConfiguration, injectable *InjectableServices) *DI {
+func Fixture(injectable *InjectableServices, applicationConfigurations ...*models.ApplicationConfiguration) *DI {
 
 	container := NewDIContainer(injectable)
 
@@ -30,13 +30,17 @@ func Fixture(applicationConfiguration *models.ApplicationConfiguration, injectab
 
 	// Configuration
 
-	container.AddConfiguration(applicationConfiguration)
+	container.AddConfiguration(applicationConfigurations...)
 
 	// Storage
 
 	container.AddDatabase()
 	container.AddApplicationStorage()
 	container.AddSessionStorage()
+
+	// Command
+
+	container.AddCommandRunner()
 
 	// Mediator
 
@@ -49,6 +53,10 @@ func Fixture(applicationConfiguration *models.ApplicationConfiguration, injectab
 	container.AddApplicationInitQueue()
 	container.AddApplicationFetchQueue()
 	container.AddMediator()
+
+	// Workers command execution
+
+	container.AddSessionCommandExecution()
 
 	// Workers
 
@@ -69,6 +77,7 @@ func Fixture(applicationConfiguration *models.ApplicationConfiguration, injectab
 
 	// HTTP
 
+	container.AddPortRetriever()
 	container.AddHTTPProxy()
 	container.AddHTTPRouter()
 	container.AddHTTPRestHandler()

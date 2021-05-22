@@ -9,6 +9,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/kennygrant/sanitize v1.2.4
+	github.com/logrusorgru/aurora/v3 v3.0.0
 	github.com/mitranim/gow v0.0.0-20210325095449-f1abbc7b706a // indirect
 	github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 // indirect
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
