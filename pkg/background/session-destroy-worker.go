@@ -83,37 +83,6 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 						return
 					}
 				}
-
-				// builtCommand, err := buildCommand(command.Command, session)
-				// if err != nil {
-				// 	session.LogError(err.Error())
-				// 	if !command.ContinueOnError {
-				// 		session.LogError("Halting")
-				// 		cancelSessionStop()
-				// 		return
-				// 	}
-				// }
-
-				// cmds := utils.ParseCommandContext(sessionStopContext, builtCommand)
-				// for _, cmd := range cmds {
-				// 	cmd.Env = append(
-				// 		os.Environ(),
-				// 		command.Environment...,
-				// 	)
-				// 	cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
-				// }
-				// err = utils.ExecCmds(sessionStopContext, func(sl *utils.StdLine) {
-				// 	session.LogStdout(sl.Line)
-				// }, cmds...)
-
-				// if err != nil {
-				// 	session.LogError(err.Error())
-				// 	if !command.ContinueOnError {
-				// 		session.LogError("Halting")
-				// 		cancelSessionStop()
-				// 		return
-				// 	}
-				// }
 			}
 		}
 		done <- struct{}{}
