@@ -10,7 +10,7 @@ import (
 	"github.com/wufe/polo/pkg/models"
 )
 
-func Test_WatchedSessionBuildFailingDoesNotGetRetriedAfterFetch(t *testing.T) {
+func Test_HotSwapRetriesOnSessionFailAndNewChanges(t *testing.T) {
 
 	fetcher := versioning_fixture.NewRepositoryFetcher()
 
@@ -40,7 +40,7 @@ func Test_WatchedSessionBuildFailingDoesNotGetRetriedAfterFetch(t *testing.T) {
 				Retries: 3,
 			},
 		},
-		Name:      "Test_SessionBuildFailing",
+		Name:      "Test_HotSwapRetriesOnSessionFailAndNewChanges",
 		IsDefault: true,
 		Branches: []models.BranchConfigurationMatch{
 			{
