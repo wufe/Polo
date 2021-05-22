@@ -120,14 +120,12 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 	}
 
 	for ref, hash := range watchResults {
-		sessions := w.sessionStorage.GetAllAliveSessions()
+		sessions := w.sessionStorage.GetByApplicationName(appName)
 		var foundSession *models.Session
 		for _, session := range sessions {
-
-			sessionAppName := session.ApplicationName
 			sessionCheckout := session.Checkout
 
-			if sessionAppName == appName && (sessionCheckout == ref) {
+			if sessionCheckout == ref {
 				foundSession = session
 			}
 		}
