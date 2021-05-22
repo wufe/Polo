@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/dgraph-io/badger/v3"
-	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/logging"
 )
 
 type Database interface {
@@ -15,7 +15,7 @@ type DatabaseImpl struct {
 	db *badger.DB
 }
 
-func NewDB(folder string) *DatabaseImpl {
+func NewDB(folder string, log logging.Logger) *DatabaseImpl {
 	options := badger.DefaultOptions(filepath.Join(folder, "./db"))
 	options.Logger = nil
 	db, err := badger.Open(options)

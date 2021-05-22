@@ -14,7 +14,7 @@ func main() {
 
 	// Logs
 
-	pkg.ConfigureLogging(container)
+	container.AddLog()
 
 	// Factories
 

@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/asaskevich/EventBus"
-	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/utils"
 )
 
@@ -36,13 +36,15 @@ type ApplicationEventBus struct {
 	bus     EventBus.Bus
 	ch      chan ApplicationEvent
 	history []ApplicationEvent
+	log     logging.Logger
 }
 
-func NewApplicationEventBus(mutexBuilder utils.MutexBuilder) *ApplicationEventBus {
+func NewApplicationEventBus(mutexBuilder utils.MutexBuilder, logger logging.Logger) *ApplicationEventBus {
 	eventBus := &ApplicationEventBus{
 		RWLocker: mutexBuilder(),
 		bus:      EventBus.New(),
 		ch:       make(chan ApplicationEvent, eventsBuffer),
+		log:      logger,
 	}
 	eventBus.start()
 	return eventBus
@@ -84,7 +86,7 @@ func (b *ApplicationEventBus) GetChan() <-chan ApplicationEvent {
 }
 
 func (b *ApplicationEventBus) PublishEvent(eventType ApplicationEventType, application *Application, payloadObjects ...interface{}) {
-	log.Tracef("Publishing event %q", eventType)
+	b.log.Tracef("Publishing event %q", eventType)
 	var payload interface{} = nil
 	if len(payloadObjects) == 1 {
 		payload = payloadObjects

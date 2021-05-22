@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/wufe/polo/internal/tests"
 	"github.com/wufe/polo/internal/tests/events_assertions"
 	"github.com/wufe/polo/internal/tests/versioning_fixture"
@@ -18,8 +17,6 @@ import (
 // 		since it is set "ContinueOnError: true", the clean process continues
 // the clean process ends with folder deletion
 func Test_SessionBuildFailingClean(t *testing.T) {
-
-	log.SetLevel(log.PanicLevel)
 
 	fetcher := versioning_fixture.NewRepositoryFetcher()
 

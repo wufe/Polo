@@ -3,6 +3,7 @@ package background
 import (
 	"time"
 
+	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
 )
@@ -10,15 +11,18 @@ import (
 type SessionStartWorker struct {
 	sessionStorage *storage.Session
 	mediator       *Mediator
+	logger         logging.Logger
 }
 
 func NewSessionStartWorker(
 	sessionStorage *storage.Session,
 	mediator *Mediator,
+	logger logging.Logger,
 ) *SessionStartWorker {
 	worker := &SessionStartWorker{
 		sessionStorage: sessionStorage,
 		mediator:       mediator,
+		logger:         logger,
 	}
 	return worker
 }
@@ -41,7 +45,7 @@ func (w *SessionStartWorker) MarkSessionAsStarted(session *models.Session) {
 	session.SetStatus(models.SessionStatusStarted)
 	session.ResetStartupRetriesCount()
 	conf := session.GetConfiguration()
-	if conf.Branches.BranchIsBeingWatched(session.Checkout) {
+	if conf.Branches.BranchIsBeingWatched(session.Checkout, w.logger) {
 		session.SetMaxAge(-1)
 	} else {
 		session.SetMaxAge(conf.Recycle.InactivityTimeout)

@@ -3,7 +3,7 @@ package models
 import (
 	"regexp"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/logging"
 )
 
 type BranchConfigurationMatch struct {
@@ -19,21 +19,21 @@ type BranchConfiguration struct {
 
 type Branches []BranchConfigurationMatch
 
-func (branches Branches) BranchIsBeingWatched(branch string) bool {
-	foundBranch, ok := branches.findBranchConfiguration(branch)
+func (branches Branches) BranchIsBeingWatched(branch string, logger logging.Logger) bool {
+	foundBranch, ok := branches.findBranchConfiguration(branch, logger)
 	return ok && foundBranch.Watch
 }
 
-func (branches Branches) BranchIsMain(branch string) bool {
-	foundBranch, ok := branches.findBranchConfiguration(branch)
+func (branches Branches) BranchIsMain(branch string, logger logging.Logger) bool {
+	foundBranch, ok := branches.findBranchConfiguration(branch, logger)
 	return ok && foundBranch.Main
 }
 
-func (branches Branches) findBranchConfiguration(name string) (BranchConfigurationMatch, bool) {
+func (branches Branches) findBranchConfiguration(name string, logger logging.Logger) (BranchConfigurationMatch, bool) {
 	for _, b := range branches {
 		test, err := regexp.Compile(b.Test)
 		if err != nil {
-			log.Errorf("Could not compile branch test regexp: %s", err.Error())
+			logger.Errorf("Could not compile branch test regexp: %s", err.Error())
 			continue
 		}
 		if test.MatchString(name) {

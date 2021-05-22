@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/dgraph-io/badger/v3"
-	log "github.com/sirupsen/logrus"
+	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/utils"
 )
@@ -17,15 +17,17 @@ type Session struct {
 	database           Database
 	sessions           []*models.Session
 	sessionsByCategory *SessionsByCategory
+	log                logging.Logger
 }
 
 // NewSession creates new database storage
-func NewSession(db Database, mutexBuilder utils.MutexBuilder) *Session {
+func NewSession(db Database, mutexBuilder utils.MutexBuilder, logger logging.Logger) *Session {
 	session := &Session{
 		RWLocker:           mutexBuilder(),
 		database:           db,
 		sessions:           make([]*models.Session, 0),
 		sessionsByCategory: newSessionsByCategory(mutexBuilder),
+		log:                logger,
 	}
 	return session
 }
@@ -62,7 +64,7 @@ func (s *Session) LoadSessions(application *Application, sessionBuilder *models.
 		session.Application = app
 		session.InitializeConfiguration()
 		if session.Application == nil {
-			log.Errorf("Session with id %s and application name %s could not be attached to any configured application. Shutdown it manually.", session.UUID, session.ApplicationName)
+			s.log.Errorf("Session with id %s and application name %s could not be attached to any configured application. Shutdown it manually.", session.UUID, session.ApplicationName)
 			s.Delete(session)
 		} else {
 			s.Lock()
@@ -70,9 +72,9 @@ func (s *Session) LoadSessions(application *Application, sessionBuilder *models.
 			s.Unlock()
 		}
 	}
-	log.Infof("Loaded %d sessions", len(s.sessions))
+	s.log.Infof("Loaded %d sessions", len(s.sessions))
 	if err != nil {
-		log.Errorf("Error while loading sessions: %s", err.Error())
+		s.log.Errorf("Error while loading sessions: %s", err.Error())
 	}
 }
 
@@ -81,7 +83,7 @@ func (s *Session) LoadSessions(application *Application, sessionBuilder *models.
 func (s *Session) Add(session *models.Session) {
 	s.Lock()
 	defer s.Unlock()
-	log.Tracef("Storing session %s", session.UUID)
+	s.log.Tracef("Storing session %s", session.UUID)
 	s.sessions = append(s.sessions, session)
 	s.internalUpdate(session)
 }
@@ -89,7 +91,7 @@ func (s *Session) Add(session *models.Session) {
 // Update updates a session.
 // Database-wise works as an upsert
 func (s *Session) Update(session *models.Session) {
-	log.Tracef("Updating session %s", session.UUID)
+	s.log.Tracef("Updating session %s", session.UUID)
 	s.internalUpdate(session)
 }
 
@@ -108,24 +110,24 @@ func (s *Session) internalUpdate(session *models.Session) {
 		return nil
 	})
 	if err != nil {
-		log.Errorf("Error while persisting session %s: %s", session.UUID, err.Error())
+		s.log.Errorf("Error while persisting session %s: %s", session.UUID, err.Error())
 	}
 }
 
 // Delete removes a session
 func (s *Session) Delete(session *models.Session) {
-	log.Tracef("Deleting session %s", session.UUID)
+	s.log.Tracef("Deleting session %s", session.UUID)
 	err := s.database.GetDB().Update(func(txn *badger.Txn) error {
 		return txn.Delete([]byte(fmt.Sprintf("session/%s", session.UUID)))
 	})
 	if err != nil {
-		log.Errorf("Error while deleting session %s: %s", session.UUID, err.Error())
+		s.log.Errorf("Error while deleting session %s: %s", session.UUID, err.Error())
 	}
 }
 
 // AliveByApplicationCount retrieves the number of sessions of an application
 func (s *Session) AliveByApplicationCount(application *models.Application) int {
-	log.Trace("Getting alive sessions count by application")
+	s.log.Trace("Getting alive sessions count by application")
 	count := 0
 	for _, session := range s.sessions {
 		if session.Application == application && session.Status.IsAlive() {
@@ -166,7 +168,7 @@ func (s *Session) GetByUUID(uuid string) *models.Session {
 // GetAllAliveSessions retrieves a slice of sessions whose status is "alive".
 // A session is "alive" if it can or is about to ready for being used
 func (s *Session) GetAllAliveSessions() []*models.Session {
-	log.Trace("Getting all alive sessions")
+	s.log.Trace("Getting all alive sessions")
 	filteredSessions := []*models.Session{}
 	s.RLock()
 	sessions := s.sessions
@@ -199,7 +201,7 @@ func (s *Session) GetAllAliveApplicationSessions(appID string) []*models.Session
 // GetAliveApplicationSessionByCheckout retrieves a single session identified by its
 // status (which must be "alvie") and by its checkout
 func (s *Session) GetAliveApplicationSessionByCheckout(checkout string, application *models.Application) *models.Session {
-	log.Trace("Getting alive session by checkout")
+	s.log.Trace("Getting alive session by checkout")
 	var foundSession *models.Session
 	s.RLock()
 	sessions := s.sessions
