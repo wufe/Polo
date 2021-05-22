@@ -9,18 +9,19 @@ import (
 
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
-	"github.com/wufe/polo/pkg/utils"
 )
 
 type SessionCleanWorker struct {
-	sessionStorage *storage.Session
-	mediator       *Mediator
+	sessionStorage          *storage.Session
+	mediator                *Mediator
+	sessionCommandExecution SessionCommandExecution
 }
 
-func NewSessionCleanWorker(sessionStorage *storage.Session, mediator *Mediator) *SessionCleanWorker {
+func NewSessionCleanWorker(sessionStorage *storage.Session, mediator *Mediator, sessionCommandExecution SessionCommandExecution) *SessionCleanWorker {
 	worker := &SessionCleanWorker{
-		sessionStorage: sessionStorage,
-		mediator:       mediator,
+		sessionStorage:          sessionStorage,
+		mediator:                mediator,
+		sessionCommandExecution: sessionCommandExecution,
 	}
 	return worker
 }
@@ -67,7 +68,8 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 						abort()
 					default:
 						bus.PublishEvent(models.SessionEventTypeCleanCommandExecution, session)
-						builtCommand, err := buildCommand(command.Command, session)
+
+						err := w.sessionCommandExecution.ExecCommand(sessionCleanContext, &command, session)
 						if err != nil {
 							session.LogError(err.Error())
 							if !command.ContinueOnError {
@@ -76,26 +78,35 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 							}
 						}
 
-						cmds := utils.ParseCommandContext(sessionCleanContext, builtCommand)
-						for _, cmd := range cmds {
-							cmd.Env = append(
-								os.Environ(),
-								command.Environment...,
-							)
-							cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
-						}
-						err = utils.ExecCmds(sessionCleanContext, func(sl *utils.StdLine) {
-							session.LogStdout(sl.Line)
-						}, cmds...)
+						// builtCommand, err := buildCommand(command.Command, session)
+						// if err != nil {
+						// 	session.LogError(err.Error())
+						// 	if !command.ContinueOnError {
+						// 		session.LogError("Halting")
+						// 		abort()
+						// 	}
+						// }
 
-						if err != nil {
-							session.LogError(err.Error())
-							if !command.ContinueOnError {
-								session.LogError("Halting")
-								abort()
+						// cmds := utils.ParseCommandContext(sessionCleanContext, builtCommand)
+						// for _, cmd := range cmds {
+						// 	cmd.Env = append(
+						// 		os.Environ(),
+						// 		command.Environment...,
+						// 	)
+						// 	cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
+						// }
+						// err = utils.ExecCmds(sessionCleanContext, func(sl *utils.StdLine) {
+						// 	session.LogStdout(sl.Line)
+						// }, cmds...)
 
-							}
-						}
+						// if err != nil {
+						// 	session.LogError(err.Error())
+						// 	if !command.ContinueOnError {
+						// 		session.LogError("Halting")
+						// 		abort()
+
+						// 	}
+						// }
 					}
 				}
 

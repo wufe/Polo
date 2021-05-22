@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/wufe/polo/pkg/models"
+
+	aurora "github.com/logrusorgru/aurora/v3"
 )
 
 func AssertApplicationEvents(
@@ -55,11 +57,11 @@ L:
 
 	if timeoutFired {
 		stringifiedGotEvents := strings.Join(stringifiedGotEventsSlice, ", ")
-		t.Errorf("expected application events to be %s, but timeout fired and got %s events", stringifiedExpectedEvents, stringifiedGotEvents)
+		t.Error(aurora.Sprintf(aurora.Red("expected application events to be %s, but timeout fired and got %s events"), stringifiedExpectedEvents, stringifiedGotEvents))
 	} else {
 		if lastFoundIndex < len(events)-1 {
 			stringifiedGotEvents := strings.Join(stringifiedGotEventsSlice, ", ")
-			t.Errorf("expected application events to be %s, but got %s instead", stringifiedExpectedEvents, stringifiedGotEvents)
+			t.Error(aurora.Sprintf(aurora.Red("expected application events to be %s, but got %s instead"), stringifiedExpectedEvents, stringifiedGotEvents))
 		}
 	}
 	return gotEvents

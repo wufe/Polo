@@ -2,20 +2,20 @@ package background
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/wufe/polo/pkg/models"
-	"github.com/wufe/polo/pkg/utils"
 )
 
 type SessionDestroyWorker struct {
-	mediator *Mediator
+	mediator                *Mediator
+	sessionCommandExecution SessionCommandExecution
 }
 
-func NewSessionDestroyWorker(mediator *Mediator) *SessionDestroyWorker {
+func NewSessionDestroyWorker(mediator *Mediator, sessionCommandExecution SessionCommandExecution) *SessionDestroyWorker {
 	worker := &SessionDestroyWorker{
-		mediator: mediator,
+		mediator:                mediator,
+		sessionCommandExecution: sessionCommandExecution,
 	}
 	return worker
 }
@@ -73,7 +73,8 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 				cancelSessionStop()
 				return
 			default:
-				builtCommand, err := buildCommand(command.Command, session)
+
+				err := w.sessionCommandExecution.ExecCommand(sessionStopContext, &command, session)
 				if err != nil {
 					session.LogError(err.Error())
 					if !command.ContinueOnError {
@@ -83,26 +84,36 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 					}
 				}
 
-				cmds := utils.ParseCommandContext(sessionStopContext, builtCommand)
-				for _, cmd := range cmds {
-					cmd.Env = append(
-						os.Environ(),
-						command.Environment...,
-					)
-					cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
-				}
-				err = utils.ExecCmds(sessionStopContext, func(sl *utils.StdLine) {
-					session.LogStdout(sl.Line)
-				}, cmds...)
+				// builtCommand, err := buildCommand(command.Command, session)
+				// if err != nil {
+				// 	session.LogError(err.Error())
+				// 	if !command.ContinueOnError {
+				// 		session.LogError("Halting")
+				// 		cancelSessionStop()
+				// 		return
+				// 	}
+				// }
 
-				if err != nil {
-					session.LogError(err.Error())
-					if !command.ContinueOnError {
-						session.LogError("Halting")
-						cancelSessionStop()
-						return
-					}
-				}
+				// cmds := utils.ParseCommandContext(sessionStopContext, builtCommand)
+				// for _, cmd := range cmds {
+				// 	cmd.Env = append(
+				// 		os.Environ(),
+				// 		command.Environment...,
+				// 	)
+				// 	cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
+				// }
+				// err = utils.ExecCmds(sessionStopContext, func(sl *utils.StdLine) {
+				// 	session.LogStdout(sl.Line)
+				// }, cmds...)
+
+				// if err != nil {
+				// 	session.LogError(err.Error())
+				// 	if !command.ContinueOnError {
+				// 		session.LogError("Halting")
+				// 		cancelSessionStop()
+				// 		return
+				// 	}
+				// }
 			}
 		}
 		done <- struct{}{}

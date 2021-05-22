@@ -7,6 +7,8 @@ import (
 
 	"github.com/wufe/polo/pkg/background"
 	"github.com/wufe/polo/pkg/background/queues"
+	"github.com/wufe/polo/pkg/execution"
+	"github.com/wufe/polo/pkg/http/net"
 	"github.com/wufe/polo/pkg/http/proxy"
 	"github.com/wufe/polo/pkg/http/rest"
 	"github.com/wufe/polo/pkg/http/routing"
@@ -69,8 +71,8 @@ func (d *DI) AddApplicationBuilder() {
 // Git
 
 func (d *DI) AddGitClient() {
-	if err := d.container.Provide(func() versioning.GitClient {
-		return versioning.GetGitClient()
+	if err := d.container.Provide(func(commandRunner execution.CommandRunner) versioning.GitClient {
+		return versioning.GetGitClient(commandRunner)
 	}); err != nil {
 		log.Panic(err)
 	}
@@ -131,6 +133,14 @@ func (d *DI) AddApplicationStorage() {
 
 func (d *DI) AddSessionStorage() {
 	if err := d.container.Provide(storage.NewSession); err != nil {
+		log.Panic(err)
+	}
+}
+
+// Command
+
+func (d *DI) AddCommandRunner() {
+	if err := d.container.Provide(execution.NewCommandRunner); err != nil {
 		log.Panic(err)
 	}
 }
@@ -227,6 +237,14 @@ func (d *DI) AddMediator() {
 	}
 }
 
+// Workers command execution
+
+func (d *DI) AddSessionCommandExecution() {
+	if err := d.container.Provide(background.NewSessionCommandExecution); err != nil {
+		log.Panic(err)
+	}
+}
+
 // Workers
 
 func (d *DI) AddSessionBuildWorker() {
@@ -236,8 +254,10 @@ func (d *DI) AddSessionBuildWorker() {
 		sesStorage *storage.Session,
 		mediator *background.Mediator,
 		sessionBuilder *models.SessionBuilder,
+		sessionCommandExecution background.SessionCommandExecution,
+		portRetriever net.PortRetriever,
 	) *background.SessionBuildWorker {
-		return background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, sessionBuilder)
+		return background.NewSessionBuildWorker(&configuration.Global, appStorage, sesStorage, mediator, sessionBuilder, sessionCommandExecution, portRetriever)
 	}); err != nil {
 		log.Panic(err)
 	}
@@ -252,9 +272,7 @@ func (d *DI) AddSessionStartWorker() {
 }
 
 func (d *DI) AddSessionCleanWorker() {
-	if err := d.container.Provide(func(sesStorage *storage.Session, mediator *background.Mediator) *background.SessionCleanWorker {
-		return background.NewSessionCleanWorker(sesStorage, mediator)
-	}); err != nil {
+	if err := d.container.Provide(background.NewSessionCleanWorker); err != nil {
 		log.Panic(err)
 	}
 }
@@ -268,9 +286,7 @@ func (d *DI) AddSessionFilesystemWorker() {
 }
 
 func (d *DI) AddSessionDestroyWorker() {
-	if err := d.container.Provide(func(mediator *background.Mediator) *background.SessionDestroyWorker {
-		return background.NewSessionDestroyWorker(mediator)
-	}); err != nil {
+	if err := d.container.Provide(background.NewSessionDestroyWorker); err != nil {
 		log.Panic(err)
 	}
 }
@@ -326,6 +342,12 @@ func (d *DI) AddRequestService() {
 }
 
 // HTTP
+
+func (d *DI) AddPortRetriever() {
+	if err := d.container.Provide(net.NewPortRetriever); err != nil {
+		log.Panic(err)
+	}
+}
 
 func (d *DI) AddHTTPProxy() {
 	if err := d.container.Provide(func(environment utils.Environment) *proxy.Handler {

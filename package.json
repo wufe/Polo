@@ -1,6 +1,6 @@
 {
 	"name": "polo",
-	"version": "1.1.1",
+	"version": "1.2.0",
 	"repository": "https://github.com/Wufe/Polo.git",
 	"author": "Simone Bembi <simone.bembi@gmail.com>",
 	"license": "MIT",
@@ -31,6 +31,7 @@
 		"build:release:macos": "cross-env GOOS=darwin GOARCH=amd64 go build -o release/polo-darwin-amd64 cmd/server/main.go",
 		"build:release:linux": "cross-env GOOS=linux GOARCH=amd64 go build -o release/polo-linux-amd64 cmd/server/main.go",
 		"test": "cross-env GO_ENV=development GO_CWD=$(pwd) go test -v ./cmd/tests/...",
+		"test:file": "cross-env GO_ENV=development GO_CWD=$(pwd) go test -v ",
 		"test:watch": "cross-env GO_ENV=development GO_CWD=$(pwd) gow test -v ./cmd/tests/...",
 		"test:trace": "cross-env GO_ENV=development GO_CWD=$(pwd) POLO_DIAGNOSTICS=true go test -v ./cmd/tests/...",
 		"test:trace:watch": "cross-env GO_ENV=development GO_CWD=$(pwd) POLO_DIAGNOSTICS=true gow test -v ./cmd/tests/...",
