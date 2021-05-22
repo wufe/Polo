@@ -144,9 +144,13 @@ func Test_WatchedSessionBuildFailingDoesNotGetRetriedAfterFetch(t *testing.T) {
 		firstApplicationChan,
 		[]models.ApplicationEventType{
 			models.ApplicationEventTypeSessionBuild,
+			models.ApplicationEventTypeSessionBuildFailed,
 			models.ApplicationEventTypeSessionBuild,
+			models.ApplicationEventTypeSessionBuildFailed,
 			models.ApplicationEventTypeSessionBuild,
+			models.ApplicationEventTypeSessionBuildFailed,
 			models.ApplicationEventTypeSessionBuild,
+			models.ApplicationEventTypeSessionBuildFailed,
 		},
 		t,
 		3*time.Second,
@@ -164,6 +168,8 @@ func Test_WatchedSessionBuildFailingDoesNotGetRetriedAfterFetch(t *testing.T) {
 		firstApplicationChan,
 		[]models.ApplicationEventType{
 			models.ApplicationEventTypeFetchStarted,
+			models.ApplicationEventTypeHotSwap,
+			models.ApplicationEventTypeSessionBuild,
 			models.ApplicationEventTypeFetchCompleted,
 		},
 		t,
