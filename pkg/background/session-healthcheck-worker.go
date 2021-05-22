@@ -125,7 +125,7 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 					return
 				}
 
-				session.LogError(fmt.Sprintf("[%d/%d] Session healthcheck failed. Retrying in %d seconds", retryCount, maxRetries, healthcheck.RetryInterval))
+				session.LogError(fmt.Sprintf("[%d/%d] Session healthcheck failed. Retrying in %.2f seconds", retryCount, maxRetries, healthcheck.RetryInterval))
 			} else {
 				status := session.GetStatus()
 				if status == models.SessionStatusStarting {
