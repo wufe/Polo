@@ -57,11 +57,11 @@ L:
 
 	if timeoutFired {
 		stringifiedGotEvents := strings.Join(stringifiedGotEventsSlice, ", ")
-		t.Error(aurora.Sprintf(aurora.Red("expected application events to be %s, but timeout fired and got %s events"), stringifiedExpectedEvents, stringifiedGotEvents))
+		t.Error(aurora.Sprintf(aurora.Red("expected application events to be:\n%s,\nbut timeout fired and got:\n%s"), stringifiedExpectedEvents, stringifiedGotEvents))
 	} else {
 		if lastFoundIndex < len(events)-1 {
 			stringifiedGotEvents := strings.Join(stringifiedGotEventsSlice, ", ")
-			t.Error(aurora.Sprintf(aurora.Red("expected application events to be %s, but got %s instead"), stringifiedExpectedEvents, stringifiedGotEvents))
+			t.Error(aurora.Sprintf(aurora.Red("expected application events to be:\n%s,\nbut got:\n%s instead"), stringifiedExpectedEvents, stringifiedGotEvents))
 		}
 	}
 	return gotEvents

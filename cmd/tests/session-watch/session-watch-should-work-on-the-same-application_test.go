@@ -183,6 +183,7 @@ func Test_SessionWatchShouldWorkOnTheSameApplication(t *testing.T) {
 		firstApplicationChan,
 		[]models.ApplicationEventType{
 			models.ApplicationEventTypeSessionBuild,
+			models.ApplicationEventTypeSessionBuildSucceeded,
 		},
 		t,
 		2*time.Second,
