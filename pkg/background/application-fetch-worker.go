@@ -1,6 +1,9 @@
 package background
 
 import (
+	"fmt"
+
+	"github.com/logrusorgru/aurora/v3"
 	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/storage"
@@ -131,6 +134,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 		}
 		buildSession := requestSessionBuilder(application, ref)
 		if foundSession != nil {
+			fmt.Println(aurora.Sprintf("%s: %s", aurora.Blue("HERE"), aurora.BgRed(aurora.White((foundSession.GetReplacedBy())))))
 			sessionCommitID := foundSession.CommitID
 			if sessionCommitID != hash {
 				w.log.Infof("[APP:%s][WATCH] Detected new commit on %s", appName, ref)
@@ -139,6 +143,7 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 				// and create a new session.
 				// This new one will be aware that it is a replacement for another session that is going to expire.
 				// When the new one gets started, the old one gets destroyed.
+				fmt.Println(aurora.Sprintf("%v", aurora.Blue(foundSession.GetReplaces())))
 				foundSession.SetKillReason(models.KillReasonReplaced)
 				bus.PublishEvent(models.ApplicationEventTypeHotSwap, application, foundSession)
 				buildSession(w.mediator, foundSession)

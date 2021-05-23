@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/logrusorgru/aurora/v3"
 	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/http/net"
 	"github.com/wufe/polo/pkg/logging"
@@ -135,6 +136,12 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 	}
 
 	appBus.PublishEvent(models.ApplicationEventTypeSessionBuild, input.Application, session)
+
+	if session.GetReplaces() != nil {
+		fmt.Println(aurora.Sprintf("%s, %s, %t", aurora.Yellow(session.UUID), aurora.Green("REPLACES something"), aurora.Cyan(isAReplacement)))
+	} else {
+		fmt.Println(aurora.Sprintf("%s, %s, %t", aurora.Yellow(session.UUID), aurora.Yellow("DOES NOT replace something"), aurora.Cyan(isAReplacement)))
+	}
 
 	if isAReplacement {
 		session.SetReplaces(input.PreviousSession)

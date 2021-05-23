@@ -1,6 +1,7 @@
 package session_replace
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -58,7 +59,7 @@ func Test_SessionShouldBeReplacedAfterPreviousFailingBuild(t *testing.T) {
 				Retries: 3,
 			},
 			Healthcheck: models.Healthcheck{
-				RetryInterval: 0.001,
+				RetryInterval: 1,
 			},
 		},
 		Name:      "Test_SessionShouldBeReplacedAfterPreviousFailingBuild",
@@ -207,7 +208,40 @@ func Test_SessionShouldBeReplacedAfterPreviousFailingBuild(t *testing.T) {
 
 	// Assert alive session is just one
 	aliveSessions := sessionStorage.GetAllAliveSessions()
+
+	lastAliveSession := aliveSessions[len(aliveSessions)-1]
+	lastAliveSessionChan := lastAliveSession.GetEventBus().GetChan()
+
+	events_assertions.AssertSessionEvents(
+		lastAliveSessionChan,
+		[]models.SessionEventType{
+			models.SessionEventTypeBuildStarted,
+			models.SessionEventTypePreparingFolders,
+			models.SessionEventTypeCommandsExecutionStarted,
+			models.SessionEventTypeHealthcheckStarted,
+			models.SessionEventTypeHealthcheckSucceded,
+			models.SessionEventTypeSessionAvailable,
+			models.SessionEventTypeSessionStarted,
+		},
+		t,
+		2*time.Second,
+	)
+
+	aliveSessions = sessionStorage.GetAllAliveSessions()
+
+	time.Sleep(1 * time.Second)
+
 	if len(aliveSessions) > 1 {
+
 		t.Errorf(aurora.Sprintf(aurora.Red("expected number of alive sessions to be 1, but found %d"), len(aliveSessions)))
+		for i, s := range aliveSessions {
+			statusOutput, _ := json.MarshalIndent(s.ToOutput(), "", "    ")
+
+			t.Errorf(aurora.Sprintf(aurora.Red("session #%d:\n%s"), i, aurora.Cyan((statusOutput))))
+		}
+		return
 	}
+
+	time.Sleep(1 * time.Second)
+
 }

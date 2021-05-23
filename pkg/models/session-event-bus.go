@@ -16,11 +16,11 @@ const (
 	SessionEventTypeHealthcheckStarted       SessionEventType = "healthcheck_started"
 	SessionEventTypeHealthcheckFailed        SessionEventType = "healthcheck_failed"
 	SessionEventTypeHealthcheckSucceded      SessionEventType = "healthcheck_succeeded"
-	SessionEventTypeStarted                  SessionEventType = "started"
 	SessionEventTypeBuildGettingRetried      SessionEventType = "build_getting_retried"
 	SessionEventTypeFolderClean              SessionEventType = "folder_clean"
 	SessionEventTypeCleanCommandExecution    SessionEventType = "clean_command_execution"
 	SessionEventTypeSessionAvailable         SessionEventType = "session_available"
+	SessionEventTypeSessionStarted           SessionEventType = "session_started"
 )
 
 type SessionEventType string
