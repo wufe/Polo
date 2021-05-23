@@ -60,7 +60,7 @@ export const SessionModel = types.model({
     checkout         : types.string,
     age              : types.number,
     folder           : types.string,
-    replacesSession  : types.optional(types.string, ''),
+    replacesSessions : types.array(types.string),
     beingReplaced    : types.optional(types.boolean, false),
     configuration    : SessionConfigurationModel,
     killReason       : types.enumeration<SessionKillReason>(Object.values(SessionKillReason)),

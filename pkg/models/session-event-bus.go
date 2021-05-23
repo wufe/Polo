@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/asaskevich/EventBus"
+	uuid "github.com/iris-contrib/go.uuid"
 	"github.com/wufe/polo/pkg/utils"
 )
 
@@ -16,11 +17,11 @@ const (
 	SessionEventTypeHealthcheckStarted       SessionEventType = "healthcheck_started"
 	SessionEventTypeHealthcheckFailed        SessionEventType = "healthcheck_failed"
 	SessionEventTypeHealthcheckSucceded      SessionEventType = "healthcheck_succeeded"
-	SessionEventTypeStarted                  SessionEventType = "started"
 	SessionEventTypeBuildGettingRetried      SessionEventType = "build_getting_retried"
 	SessionEventTypeFolderClean              SessionEventType = "folder_clean"
 	SessionEventTypeCleanCommandExecution    SessionEventType = "clean_command_execution"
 	SessionEventTypeSessionAvailable         SessionEventType = "session_available"
+	SessionEventTypeSessionStarted           SessionEventType = "session_started"
 )
 
 type SessionEventType string
@@ -39,14 +40,17 @@ type SessionLifetimeEventBus struct {
 	bus     EventBus.Bus
 	ch      chan SessionBuildEvent
 	history []SessionBuildEvent
+	id      string
 }
 
 func NewSessionBuildEventBus(mutexBuilder utils.MutexBuilder) *SessionLifetimeEventBus {
 	bus := EventBus.New()
+
 	eventBus := &SessionLifetimeEventBus{
 		RWLocker: mutexBuilder(),
 		bus:      bus,
 		ch:       make(chan SessionBuildEvent, eventsBuffer),
+		id:       uuid.Must(uuid.NewV1()).String(),
 	}
 	eventBus.start()
 	return eventBus
@@ -58,7 +62,7 @@ func (b *SessionLifetimeEventBus) start() {
 
 	eventsCount := 0
 
-	b.bus.SubscribeAsync("session", func(ev interface{}) {
+	b.bus.SubscribeAsync("session:"+b.id, func(ev interface{}) {
 		if sessionEv, ok := ev.(SessionBuildEvent); ok {
 			b.Lock()
 			defer b.Unlock()
@@ -88,7 +92,7 @@ func (b *SessionLifetimeEventBus) GetChan() <-chan SessionBuildEvent {
 }
 
 func (b *SessionLifetimeEventBus) PublishEvent(eventType SessionEventType, session *Session) {
-	b.bus.Publish("session", SessionBuildEvent{
+	b.bus.Publish("session:"+b.id, SessionBuildEvent{
 		EventType: eventType,
 		Session:   session,
 	})

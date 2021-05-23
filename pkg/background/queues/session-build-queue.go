@@ -23,9 +23,10 @@ func NewSessionBuild() SessionBuildQueue {
 }
 
 type SessionBuildInput struct {
-	Checkout        string
-	Application     *models.Application
-	PreviousSession *models.Session
+	Checkout             string
+	Application          *models.Application
+	PreviousSession      *models.Session
+	SessionsToBeReplaced []*models.Session
 }
 type SessionBuildResultType string
 
@@ -36,11 +37,12 @@ type SessionBuildResult struct {
 	EventBus      *models.SessionLifetimeEventBus
 }
 
-func (q *SessionBuildQueue) Enqueue(checkout string, app *models.Application, prevSession *models.Session) *SessionBuildResult {
+func (q *SessionBuildQueue) Enqueue(checkout string, app *models.Application, prevSession *models.Session, sessionsToBeReplaced []*models.Session) *SessionBuildResult {
 	q.RequestChan <- &SessionBuildInput{
-		Checkout:        checkout,
-		Application:     app,
-		PreviousSession: prevSession,
+		Checkout:             checkout,
+		Application:          app,
+		PreviousSession:      prevSession,
+		SessionsToBeReplaced: sessionsToBeReplaced,
 	}
 	return <-q.ResponseChan
 }

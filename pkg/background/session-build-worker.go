@@ -73,7 +73,7 @@ func (w *SessionBuildWorker) startAcceptingNewSessionRequests() {
 }
 
 func (w *SessionBuildWorker) RequestNewSession(buildInput *queues.SessionBuildInput) *queues.SessionBuildResult {
-	return w.mediator.BuildSession.Enqueue(buildInput.Checkout, buildInput.Application, buildInput.PreviousSession)
+	return w.mediator.BuildSession.Enqueue(buildInput.Checkout, buildInput.Application, buildInput.PreviousSession, buildInput.SessionsToBeReplaced)
 }
 
 func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput) *queues.SessionBuildResult {
@@ -101,7 +101,6 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 
 	var basedOnPreviousSession bool
 	var recyclingPreviousSession bool
-	var isAReplacement bool
 
 	if input.PreviousSession != nil {
 		basedOnPreviousSession = true
@@ -109,8 +108,6 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 		switch killReason {
 		case models.KillReasonBuildFailed, models.KillReasonHealthcheckFailed:
 			recyclingPreviousSession = true
-		case models.KillReasonReplaced:
-			isAReplacement = true
 		default:
 		}
 	}
@@ -136,8 +133,8 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 
 	appBus.PublishEvent(models.ApplicationEventTypeSessionBuild, input.Application, session)
 
-	if isAReplacement {
-		session.SetReplaces(input.PreviousSession)
+	if input.SessionsToBeReplaced != nil && len(input.SessionsToBeReplaced) > 0 {
+		session.SetReplaces(input.SessionsToBeReplaced)
 	}
 
 	// Getting configuration matching this session

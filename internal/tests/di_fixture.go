@@ -443,6 +443,8 @@ func (d *DI) AddStartup() {
 	}
 }
 
+// Getters
+
 func (d *DI) GetStartup() *pkg.Startup {
 	var startup *pkg.Startup
 	if err := d.container.Invoke(func(s *pkg.Startup) {
@@ -491,6 +493,16 @@ func (d *DI) GetEnvironment() utils.Environment {
 		log.Panic(err)
 	}
 	return environment
+}
+
+func (d *DI) GetSessionStorage() *storage.Session {
+	var sessionStorage *storage.Session
+	if err := d.container.Invoke(func(s *storage.Session) {
+		sessionStorage = s
+	}); err != nil {
+		log.Panic(err)
+	}
+	return sessionStorage
 }
 
 type InjectableServices struct {

@@ -20,7 +20,7 @@ type Session struct {
 	Variables         map[string]string    `json:"variables"`
 	Logs              []SessionLog         `json:"-"`
 	Metrics           []Metric             `json:"metrics"`
-	ReplacesSession   string               `json:"replacesSession,omitempty"`
+	ReplacesSessions  []string             `json:"replacesSessions,omitempty"`
 	Configuration     SessionConfiguration `json:"configuration"`
 }
 

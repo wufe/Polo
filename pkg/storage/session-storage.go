@@ -81,9 +81,13 @@ func (s *Session) LoadSessions(application *Application, sessionBuilder *models.
 // Add stores a session
 // Database-wise works as an upsert
 func (s *Session) Add(session *models.Session) {
+	s.log.Tracef("Storing session %s", session.UUID)
+	existing := s.GetByUUID(session.UUID)
+	if existing != nil {
+		return
+	}
 	s.Lock()
 	defer s.Unlock()
-	s.log.Tracef("Storing session %s", session.UUID)
 	s.sessions = append(s.sessions, session)
 	s.internalUpdate(session)
 }

@@ -1,9 +1,11 @@
-package session_watch
+package session_replace
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
+	"github.com/logrusorgru/aurora/v3"
 	"github.com/wufe/polo/internal/tests"
 	"github.com/wufe/polo/internal/tests/events_assertions"
 	"github.com/wufe/polo/internal/tests/execution_fixture"
@@ -12,9 +14,8 @@ import (
 	"github.com/wufe/polo/pkg/models"
 )
 
-// Session watch and auto-start should be started from the same application
-// which has the session already started
-func Test_SessionWatchShouldWorkOnTheSameApplication(t *testing.T) {
+// Session should be replaced, even if the previous session builds failed
+func Test_SessionShouldBeReplacedAfterPreviousFailingBuild(t *testing.T) {
 
 	// Create the HTTP server and start it
 	httpServer := net_fixture.NewHTTPServerFixture()
@@ -24,6 +25,9 @@ func Test_SessionWatchShouldWorkOnTheSameApplication(t *testing.T) {
 	// Create port retriever to set up HTTP server port
 	portRetriever := net_fixture.NewPortRetrieverFixture()
 	portRetriever.SetFreePort(port)
+
+	// Create command runner fixture
+	commandRunner := execution_fixture.NewCommandRunnerFixture()
 
 	fetcher := versioning_fixture.NewRepositoryFetcher()
 
@@ -38,37 +42,8 @@ func Test_SessionWatchShouldWorkOnTheSameApplication(t *testing.T) {
 	di := tests.Fixture(&tests.InjectableServices{
 		RepositoryFetcher: fetcher,
 		GitClient:         versioning_fixture.NewGitClient(),
-		CommandRunner:     execution_fixture.NewCommandRunnerFixture(),
+		CommandRunner:     commandRunner,
 		PortRetriever:     portRetriever,
-	}, &models.ApplicationConfiguration{
-		SharedConfiguration: models.SharedConfiguration{
-			Remote: "FakeRemote",
-			Commands: models.Commands{
-				Start: []models.Command{
-					{Command: "valid-command.exe"},
-				},
-				Stop: []models.Command{
-					{Command: "valid-command.exe"},
-				},
-			},
-			Startup: models.Startup{
-				Retries: 3,
-			},
-			Healthcheck: models.Healthcheck{
-				RetryInterval: .1,
-			},
-		},
-		Name:      "Test_SessionWatchShouldWorkOnTheSameApplication",
-		IsDefault: true,
-		Branches: []models.BranchConfigurationMatch{
-			{
-				Test: "main",
-				BranchConfiguration: models.BranchConfiguration{
-					Watch: false,
-					Main:  false,
-				},
-			},
-		},
 	}, &models.ApplicationConfiguration{
 		SharedConfiguration: models.SharedConfiguration{
 			Remote: "FakeRemote",
@@ -87,8 +62,8 @@ func Test_SessionWatchShouldWorkOnTheSameApplication(t *testing.T) {
 				RetryInterval: 1,
 			},
 		},
-		Name:      "Test_SessionWatchShouldWorkOnTheSameApplication2",
-		IsDefault: false,
+		Name:      "Test_SessionShouldBeReplacedAfterPreviousFailingBuild",
+		IsDefault: true,
 		Branches: []models.BranchConfigurationMatch{
 			{
 				Test: "main",
@@ -103,26 +78,12 @@ func Test_SessionWatchShouldWorkOnTheSameApplication(t *testing.T) {
 	// Get events channel
 	applications := di.GetApplications()
 	firstApplication := applications[0]
-	firstApplicationChan := firstApplication.GetEventBus().GetChan()
-	secondApplication := applications[1]
-	secondApplicationChan := secondApplication.GetEventBus().GetChan()
+	firstApplicationBus := firstApplication.GetEventBus()
+	firstApplicationChan := firstApplicationBus.GetChan()
 
-	// Assert first application is being loaded
+	// Assert application is being loaded
 	events_assertions.AssertApplicationEvents(
 		firstApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeInitializationStarted,
-			models.ApplicationEventTypeFetchStarted,
-			models.ApplicationEventTypeFetchCompleted,
-			models.ApplicationEventTypeInitializationCompleted,
-		},
-		t,
-		10*time.Second,
-	)
-
-	// Assert second application is being loaded
-	events_assertions.AssertApplicationEvents(
-		secondApplicationChan,
 		[]models.ApplicationEventType{
 			models.ApplicationEventTypeInitializationStarted,
 			models.ApplicationEventTypeFetchStarted,
@@ -137,27 +98,13 @@ func Test_SessionWatchShouldWorkOnTheSameApplication(t *testing.T) {
 	secondCommit := fetcher.NewCommit("Second commit")
 	fetcher.AddCommitToBranch(secondCommit, branch)
 
-	// Re-fetch the first application
+	// Re-fetch the application
 	mediator := di.GetMediator()
 	mediator.ApplicationFetch.Enqueue(firstApplication, false)
 
-	// Assert first application gets fetched
+	// Assert application gets fetched
 	events_assertions.AssertApplicationEvents(
 		firstApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeFetchStarted,
-			models.ApplicationEventTypeFetchCompleted,
-		},
-		t,
-		2*time.Second,
-	)
-
-	// Re-fetch the second application
-	mediator.ApplicationFetch.Enqueue(secondApplication, false)
-
-	// Assert second application gets fetched
-	events_assertions.AssertApplicationEvents(
-		secondApplicationChan,
 		[]models.ApplicationEventType{
 			models.ApplicationEventTypeFetchStarted,
 			models.ApplicationEventTypeFetchCompleted,
@@ -173,12 +120,7 @@ func Test_SessionWatchShouldWorkOnTheSameApplication(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	// Get events channel
-	session := sessionBuildResult.Session
-	sessionBus := session.GetEventBus()
-	sessionChan := sessionBus.GetChan()
-
-	// Assert application builds the session
+	// Assert application session gets built
 	events_assertions.AssertApplicationEvents(
 		firstApplicationChan,
 		[]models.ApplicationEventType{
@@ -188,6 +130,11 @@ func Test_SessionWatchShouldWorkOnTheSameApplication(t *testing.T) {
 		t,
 		2*time.Second,
 	)
+
+	// Get session events channel
+	session := sessionBuildResult.Session
+	sessionBus := session.GetEventBus()
+	sessionChan := sessionBus.GetChan()
 
 	// Assert session fails to get created
 	events_assertions.AssertSessionEvents(
@@ -200,19 +147,23 @@ func Test_SessionWatchShouldWorkOnTheSameApplication(t *testing.T) {
 			models.SessionEventTypeHealthcheckStarted,
 			models.SessionEventTypeHealthcheckSucceded,
 			models.SessionEventTypeSessionAvailable,
+			models.SessionEventTypeSessionStarted,
 		},
 		t,
 		10*time.Second,
 	)
 
+	// Tell the command runner fixture to fail next command, and next 3 retries
+	commandRunner.FailNextNCommands(4)
+
 	// Creating the third commit
 	thirdCommit := fetcher.NewCommit("Third commit")
 	fetcher.AddCommitToBranch(thirdCommit, branch)
 
-	// Fetch the repo again, for the first application, watching started branches
+	// Re-fetch the application
 	mediator.ApplicationFetch.Enqueue(firstApplication, true)
 
-	// Assert first application gets fetched SWAPPING the previously built session
+	// Assert application gets fetched and build fails
 	events_assertions.AssertApplicationEvents(
 		firstApplicationChan,
 		[]models.ApplicationEventType{
@@ -220,24 +171,89 @@ func Test_SessionWatchShouldWorkOnTheSameApplication(t *testing.T) {
 			models.ApplicationEventTypeHotSwap,
 			models.ApplicationEventTypeSessionBuild,
 			models.ApplicationEventTypeFetchCompleted,
+			models.ApplicationEventTypeSessionBuildFailed,
+			models.ApplicationEventTypeSessionBuild,
+			models.ApplicationEventTypeSessionCleaned,
+			models.ApplicationEventTypeSessionBuildFailed,
+			models.ApplicationEventTypeSessionBuild,
+			models.ApplicationEventTypeSessionCleaned,
+			models.ApplicationEventTypeSessionBuildFailed,
+			models.ApplicationEventTypeSessionBuild,
+			models.ApplicationEventTypeSessionCleaned,
+			models.ApplicationEventTypeSessionBuildFailed,
+			models.ApplicationEventTypeSessionCleaned,
 		},
 		t,
 		2*time.Second,
 	)
 
-	// Fetch the repo again, for the second application, watching started branches
-	mediator.ApplicationFetch.Enqueue(secondApplication, true)
+	sessionStorage := di.GetSessionStorage()
+	aliveSessions := sessionStorage.GetAllAliveSessions()
 
-	// Assert first application gets fetched NOT swapping the session
-	// previously built by the other application NOR auto-starting a new session
-	// because there were no applications previously started by this application
+	if len(aliveSessions) > 1 {
+
+		t.Errorf(aurora.Sprintf(aurora.Red("expected number of alive sessions to be 1, but found %d"), len(aliveSessions)))
+		for i, s := range aliveSessions {
+			statusOutput, _ := json.MarshalIndent(s.ToOutput(), "", "    ")
+
+			t.Errorf(aurora.Sprintf(aurora.Red("session #%d:\n%s"), i, aurora.Cyan((statusOutput))))
+		}
+		return
+	}
+
+	// Creating the fourth commit
+	fourthCommit := fetcher.NewCommit("Fourth commit")
+	fetcher.AddCommitToBranch(fourthCommit, branch)
+
+	// Re-fetch the application
+	mediator.ApplicationFetch.Enqueue(firstApplication, true)
+
+	// Assert application gets fetched and build succeeds
 	events_assertions.AssertApplicationEvents(
-		secondApplicationChan,
+		firstApplicationChan,
 		[]models.ApplicationEventType{
 			models.ApplicationEventTypeFetchStarted,
+			models.ApplicationEventTypeHotSwap,
+			models.ApplicationEventTypeSessionBuild,
 			models.ApplicationEventTypeFetchCompleted,
+			models.ApplicationEventTypeSessionBuildSucceeded,
 		},
 		t,
 		2*time.Second,
 	)
+
+	// Assert alive session is just one
+	aliveSessions = sessionStorage.GetAllAliveSessions()
+
+	lastAliveSession := aliveSessions[len(aliveSessions)-1]
+	lastAliveSessionChan := lastAliveSession.GetEventBus().GetChan()
+
+	events_assertions.AssertSessionEvents(
+		lastAliveSessionChan,
+		[]models.SessionEventType{
+			models.SessionEventTypeBuildStarted,
+			models.SessionEventTypePreparingFolders,
+			models.SessionEventTypeCommandsExecutionStarted,
+			models.SessionEventTypeHealthcheckStarted,
+			models.SessionEventTypeHealthcheckSucceded,
+			models.SessionEventTypeSessionAvailable,
+			models.SessionEventTypeSessionStarted,
+		},
+		t,
+		2*time.Second,
+	)
+
+	aliveSessions = sessionStorage.GetAllAliveSessions()
+
+	if len(aliveSessions) > 1 {
+
+		t.Errorf(aurora.Sprintf(aurora.Red("expected number of alive sessions to be 1, but found %d"), len(aliveSessions)))
+		for i, s := range aliveSessions {
+			statusOutput, _ := json.MarshalIndent(s.ToOutput(), "", "    ")
+
+			t.Errorf(aurora.Sprintf(aurora.Red("session #%d:\n%s"), i, aurora.Cyan((statusOutput))))
+		}
+		return
+	}
+
 }

@@ -35,7 +35,7 @@ func (s *RequestService) NewSession(checkout string, app string) (*queues.Sessio
 	if a == nil {
 		return nil, ErrApplicationNotFound
 	}
-	response := s.mediator.BuildSession.Enqueue(checkout, a, nil)
+	response := s.mediator.BuildSession.Enqueue(checkout, a, nil, nil)
 	if response.Result == queues.SessionBuildResultFailed {
 		return nil, fmt.Errorf("Error requesting new session: %s", response.FailingReason)
 	}

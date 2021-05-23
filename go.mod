@@ -7,8 +7,10 @@ require (
 	github.com/dgraph-io/badger/v3 v3.2011.1
 	github.com/go-git/go-git/v5 v5.2.0
 	github.com/google/uuid v1.2.0
+	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/kennygrant/sanitize v1.2.4
+	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/logrusorgru/aurora/v3 v3.0.0
 	github.com/mitranim/gow v0.0.0-20210325095449-f1abbc7b706a // indirect
 	github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 // indirect

@@ -13,12 +13,14 @@ export const ApplicationSessions = observer((props: TProps) => {
     const [sessionsFilter, setSessionsFilter] = useState('');
 
     let visibleSessions = props.sessions
-        .filter(session => !session.replacesSession);
+        .filter(session => !session.replacesSessions.length);
 
     if (sessionsFilter) {
         visibleSessions = visibleSessions
             .filter(session => session.checkout.toLowerCase().indexOf(sessionsFilter.toLowerCase()) > -1);
     }
+
+    console.log(visibleSessions)
 
     return <div className="flex flex-col items-stretch">
         <input
