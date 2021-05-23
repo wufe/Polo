@@ -17,6 +17,7 @@ const (
 	ApplicationEventTypeSessionBuild            ApplicationEventType = "session_build"
 	ApplicationEventTypeSessionBuildFailed      ApplicationEventType = "session_build_failed"
 	ApplicationEventTypeSessionBuildSucceeded   ApplicationEventType = "session_build_succeeded"
+	ApplicationEventTypeSessionCleaned          ApplicationEventType = "session_cleaned"
 
 	eventsBuffer = 100
 )

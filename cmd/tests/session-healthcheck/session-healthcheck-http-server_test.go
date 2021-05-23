@@ -54,7 +54,7 @@ func Test_SessionShouldBuildAndBeAvailableWithFixtureHTTPServer(t *testing.T) {
 				Retries: 3,
 			},
 			Healthcheck: models.Healthcheck{
-				RetryInterval: 0.001,
+				RetryInterval: 1,
 			},
 		},
 		Name:      "Test_SessionShouldBuildAndBeAvailableWithFixtureHTTPServer",

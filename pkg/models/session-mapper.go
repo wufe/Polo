@@ -32,7 +32,7 @@ func MapSession(model *Session) *output.Session {
 		SessionStatus:     status,
 	}
 	model.RUnlock()
-	session.ReplacesSession = mapReplaces(model.GetReplaces())
+	session.ReplacesSessions = mapReplaces(model.GetReplaces())
 	return session
 }
 
@@ -44,11 +44,15 @@ func MapSessions(models []*Session) []output.Session {
 	return ret
 }
 
-func mapReplaces(model *Session) string {
+func mapReplaces(model []*Session) []string {
 	if model == nil {
-		return ""
+		return []string{}
 	}
-	return model.UUID
+	ids := make([]string, 0, len(model))
+	for _, s := range model {
+		ids = append(ids, s.UUID)
+	}
+	return ids
 }
 
 func mapConfiguration(model ApplicationConfiguration) output.SessionConfiguration {
@@ -65,8 +69,15 @@ func MapSessionStatus(model *Session) output.SessionStatus {
 		Status:     string(model.Status),
 		Age:        model.maxAge,
 		KillReason: string(model.killReason),
-		ReplacedBy: model.replacedByUUID,
+		ReplacedBy: MapReplacedBy(model.replacedBy),
 	}
+}
+
+func MapReplacedBy(model *Session) string {
+	if model == nil {
+		return ""
+	}
+	return model.UUID
 }
 
 func MapSessionLog(log Log) output.SessionLog {

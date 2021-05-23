@@ -14,19 +14,23 @@ applications:
       stop:
         - command: "docker kill {{container_id}}"
           continue_on_error: true
+    healthcheck:
+      retry_interval: 2
     recycle:
       inactivity_timeout: 6000
     startup:
       retries: 5
     branches:
-      - test: ^dev$
-        watch: false
-        main: false
-        commands:
-          start:
-            - command: nonexisting.exe
+      # - test: ^dev$
+      #   watch: false
+      #   main: false
+      #   commands:
+      #     start:
+      #       - command: nonexisting.exe
       - test: feature/my-watched-feature
         watch: false
+    fetch:
+      interval: 10
   - name: Test-server2
     remote: "https://github.com/wufe/polo-testserver"
     is_default: true

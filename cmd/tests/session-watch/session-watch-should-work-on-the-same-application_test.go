@@ -84,7 +84,7 @@ func Test_SessionWatchShouldWorkOnTheSameApplication(t *testing.T) {
 				Retries: 3,
 			},
 			Healthcheck: models.Healthcheck{
-				RetryInterval: 0.001,
+				RetryInterval: 1,
 			},
 		},
 		Name:      "Test_SessionWatchShouldWorkOnTheSameApplication2",

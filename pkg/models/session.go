@@ -106,11 +106,11 @@ type Session struct {
 	startupRetries  int
 	killReason      KillReason
 	// If set, states that this session replaces a previous one
-	replaces       *Session
-	replacedByUUID string
-	diagnostics    []DiagnosticsData
-	bus            *SessionLifetimeEventBus
-	log            logging.Logger
+	replaces    []*Session
+	replacedBy  *Session
+	diagnostics []DiagnosticsData
+	bus         *SessionLifetimeEventBus
+	log         logging.Logger
 }
 
 // Variables are those variables used by a single session.
@@ -162,6 +162,9 @@ func newSession(
 	if session.diagnostics == nil {
 		session.diagnostics = []DiagnosticsData{}
 	}
+	if session.replaces == nil {
+		session.replaces = []*Session{}
+	}
 	return session
 }
 
@@ -178,16 +181,20 @@ func (session *Session) ToOutput() output.Session {
 
 // SetReplaces thread-safely sets the session which will be replaced
 // when this session will go online
-func (session *Session) SetReplaces(previous *Session) {
+func (session *Session) SetReplaces(replaces []*Session) {
 	session.log.Trace("Setting replaces")
 	session.Lock()
 	defer session.Unlock()
-	session.replaces = previous
+	if replaces == nil {
+		session.replaces = []*Session{}
+	} else {
+		session.replaces = replaces
+	}
 }
 
 // GetReplaces thread-safely retrieves the session which will be replaced
 // when this session will go online
-func (session *Session) GetReplaces() *Session {
+func (session *Session) GetReplaces() []*Session {
 	session.RLock()
 	defer session.RUnlock()
 	return session.replaces
@@ -195,18 +202,18 @@ func (session *Session) GetReplaces() *Session {
 
 // SetReplacedBy thread-safely sets the UUID of the session by which
 // this session has been replaced
-func (session *Session) SetReplacedBy(newSessionUUID string) {
+func (session *Session) SetReplacedBy(newSession *Session) {
 	session.Lock()
 	defer session.Unlock()
-	session.replacedByUUID = newSessionUUID
+	session.replacedBy = newSession
 }
 
 // GetReplacedBy thread-safely retrieves the UUID of the session by which
 // this session has been replaced
-func (session *Session) GetReplacedBy() string {
+func (session *Session) GetReplacedBy() *Session {
 	session.RLock()
 	defer session.RUnlock()
-	return session.replacedByUUID
+	return session.replacedBy
 }
 
 // GetConfiguration allows to retrieve the CURRENT configuration in a thread-safe manner.
@@ -367,6 +374,7 @@ func (session *Session) MarkAsBeingRequested() {
 // SetStatus allows to set the session status thread-safely
 func (session *Session) SetStatus(status SessionStatus) {
 	session.Lock()
+	session.log.Tracef("[%s]: Updated status from %s to %s", session.shortUUID, session.Status, status)
 	defer session.Unlock()
 	previousStatus := session.Status
 	session.Status = status

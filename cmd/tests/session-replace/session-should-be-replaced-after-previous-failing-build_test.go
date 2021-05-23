@@ -147,6 +147,7 @@ func Test_SessionShouldBeReplacedAfterPreviousFailingBuild(t *testing.T) {
 			models.SessionEventTypeHealthcheckStarted,
 			models.SessionEventTypeHealthcheckSucceded,
 			models.SessionEventTypeSessionAvailable,
+			models.SessionEventTypeSessionStarted,
 		},
 		t,
 		10*time.Second,
@@ -172,15 +173,33 @@ func Test_SessionShouldBeReplacedAfterPreviousFailingBuild(t *testing.T) {
 			models.ApplicationEventTypeFetchCompleted,
 			models.ApplicationEventTypeSessionBuildFailed,
 			models.ApplicationEventTypeSessionBuild,
+			models.ApplicationEventTypeSessionCleaned,
 			models.ApplicationEventTypeSessionBuildFailed,
 			models.ApplicationEventTypeSessionBuild,
+			models.ApplicationEventTypeSessionCleaned,
 			models.ApplicationEventTypeSessionBuildFailed,
 			models.ApplicationEventTypeSessionBuild,
+			models.ApplicationEventTypeSessionCleaned,
 			models.ApplicationEventTypeSessionBuildFailed,
+			models.ApplicationEventTypeSessionCleaned,
 		},
 		t,
 		2*time.Second,
 	)
+
+	sessionStorage := di.GetSessionStorage()
+	aliveSessions := sessionStorage.GetAllAliveSessions()
+
+	if len(aliveSessions) > 1 {
+
+		t.Errorf(aurora.Sprintf(aurora.Red("expected number of alive sessions to be 1, but found %d"), len(aliveSessions)))
+		for i, s := range aliveSessions {
+			statusOutput, _ := json.MarshalIndent(s.ToOutput(), "", "    ")
+
+			t.Errorf(aurora.Sprintf(aurora.Red("session #%d:\n%s"), i, aurora.Cyan((statusOutput))))
+		}
+		return
+	}
 
 	// Creating the fourth commit
 	fourthCommit := fetcher.NewCommit("Fourth commit")
@@ -203,11 +222,8 @@ func Test_SessionShouldBeReplacedAfterPreviousFailingBuild(t *testing.T) {
 		2*time.Second,
 	)
 
-	// Retrieve session storage
-	sessionStorage := di.GetSessionStorage()
-
 	// Assert alive session is just one
-	aliveSessions := sessionStorage.GetAllAliveSessions()
+	aliveSessions = sessionStorage.GetAllAliveSessions()
 
 	lastAliveSession := aliveSessions[len(aliveSessions)-1]
 	lastAliveSessionChan := lastAliveSession.GetEventBus().GetChan()
@@ -229,8 +245,6 @@ func Test_SessionShouldBeReplacedAfterPreviousFailingBuild(t *testing.T) {
 
 	aliveSessions = sessionStorage.GetAllAliveSessions()
 
-	time.Sleep(1 * time.Second)
-
 	if len(aliveSessions) > 1 {
 
 		t.Errorf(aurora.Sprintf(aurora.Red("expected number of alive sessions to be 1, but found %d"), len(aliveSessions)))
@@ -241,7 +255,5 @@ func Test_SessionShouldBeReplacedAfterPreviousFailingBuild(t *testing.T) {
 		}
 		return
 	}
-
-	time.Sleep(1 * time.Second)
 
 }

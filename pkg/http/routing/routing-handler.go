@@ -149,11 +149,11 @@ func (h *Handler) detectSession(req *http.Request) *models.Session {
 		// FEATURE: Hot swap
 		// If the found tracked session links to a replacement session
 		// use that replacement UUID to look for the updated session.
-		replaced := session.GetReplacedBy()
+		replacement := session.GetReplacedBy()
 		// If it has been replaced
-		if replaced != "" {
+		if replacement != nil {
 			// Search instead for the replacement
-			session = h.sessionStorage.GetByUUID(replaced)
+			session = h.sessionStorage.GetByUUID(replacement.UUID)
 		}
 	}
 	return session

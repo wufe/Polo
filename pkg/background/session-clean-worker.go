@@ -108,7 +108,7 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 						retriesCount++
 						session.LogWarn(fmt.Sprintf("[%d/%d] Retrying session startup.", retriesCount, maxRetries))
 						bus.PublishEvent(models.SessionEventTypeBuildGettingRetried, session)
-						w.mediator.BuildSession.Enqueue(session.Checkout, session.Application, session)
+						w.mediator.BuildSession.Enqueue(session.Checkout, session.Application, session, nil)
 					} else {
 						session.LogWarn("Max startup retries exceeded.")
 						shouldTryCleanFolders = true
@@ -139,8 +139,9 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 				// FEATURE: Hot swap
 				// Check if the killed session should have been replaced by another session
 				for _, replacement := range w.sessionStorage.GetAllAliveSessions() {
-					if replacement.GetReplaces() == session {
-						// If so, tell this session that it is not a replacement anymore
+					if w.isSessionGettingReplacedBySession(session, replacement) {
+						// If so, tell this session that it does not
+						// replace anything anymore
 						replacement.SetReplaces(nil)
 						// And destroy it too
 						replacement.SetKillReason(models.KillReasonStopped)
@@ -162,6 +163,17 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 				bus := session.GetEventBus()
 				bus.Close()
 			}
+
+			session.Application.GetEventBus().PublishEvent(models.ApplicationEventTypeSessionCleaned, session.Application)
 		}
 	}()
+}
+
+func (w *SessionCleanWorker) isSessionGettingReplacedBySession(replaced *models.Session, replacement *models.Session) bool {
+	for _, s := range replacement.GetReplaces() {
+		if s == replaced {
+			return true
+		}
+	}
+	return false
 }
