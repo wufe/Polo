@@ -40,36 +40,18 @@ func Test_HotSwapDoesNotRetryOnSessionFail(t *testing.T) {
 		GitClient:         versioning_fixture.NewGitClient(),
 		CommandRunner:     commandRunner,
 		PortRetriever:     portRetriever,
-	}, &models.ApplicationConfiguration{
-		SharedConfiguration: models.SharedConfiguration{
-			Remote: "FakeRemote",
-			Commands: models.Commands{
-				Start: []models.Command{
-					{Command: "working_command.exe"},
-				},
-				Stop: []models.Command{
-					{Command: "working_command.exe"},
-				},
-			},
-			Startup: models.Startup{
-				Retries: 3,
-			},
-			Healthcheck: models.Healthcheck{
-				RetryInterval: 1,
-			},
-		},
-		Name:      "Test_HotSwapDoesNotRetryOnSessionFail",
-		IsDefault: true,
-		Branches: []models.BranchConfigurationMatch{
-			{
-				Test: "main",
-				BranchConfiguration: models.BranchConfiguration{
-					Watch: true,
-					Main:  true,
-				},
-			},
-		},
-	})
+	}, models.BuildApplicationConfiguration("Test_HotSwapDoesNotRetryOnSessionFail").
+		WithRemote("FakeRemote").
+		WithStartCommand("working_command.exe").
+		WithStopCommand("working_command.exe").
+		WithStartupRetries(3).
+		WithHealthcheckRetryInterval(1).
+		SetAsDefault(true).
+		WithBranch(
+			models.BuildBranchConfigurationMatch("main").
+				SetWatch(true).
+				SetMain(true),
+		))
 
 	// Get events channel
 	applications := di.GetApplications()
