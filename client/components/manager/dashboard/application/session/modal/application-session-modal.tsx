@@ -14,12 +14,12 @@ import { ISession } from '@/state/models';
 type TProps = {
     name                   : string;
     session                : ISession;
-    onCommitMessageSelect  : () => void;
+    onCommitMessageSelect  : (session: ISession) => void;
     onEnterSessionSelect   : () => void;
     onSessionDeletionSelect: () => void;
     onCopyPermalinkSelect  : () => void;
-    onShowLogsSelect       : () => void;
-    onAPISelect            : () => void;
+    onShowLogsSelect       : (session: ISession) => void;
+    onAPISelect            : (session: ISession) => void;
 }
 export const ApplicationSessionModal = (props: TProps) => {
     return <DefaultModal name={props.name}>
@@ -42,22 +42,45 @@ export const ApplicationSessionModal = (props: TProps) => {
                     <span>Copy permalink</span>
                 </DefaultModalItem>
 
-                <DefaultModalItem onClick={props.onCommitMessageSelect}>
+                <DefaultModalItem onClick={() => props.onCommitMessageSelect(props.session)}>
                     <AnnotationIcon />
                     <span>View commit message</span>
                 </DefaultModalItem>
 
-                <DefaultModalItem onClick={props.onShowLogsSelect}>
+                <DefaultModalItem onClick={() => props.onShowLogsSelect(props.session)}>
                     <TextDocumentIcon />
                     <span>View build logs</span>
                 </DefaultModalItem>
 
                 <DefaultModalDivider />
                 
-                <DefaultModalItem onClick={props.onAPISelect}>
+                <DefaultModalItem onClick={() => props.onAPISelect(props.session)}>
                     <CodeIcon />
                     <span>JSON API</span>
                 </DefaultModalItem>
+
+                {props.session.beingReplacedBySession && <>
+                    <DefaultModalDivider />
+
+                    <DefaultModalItem categoryHeader>
+                        Replacement build
+                    </DefaultModalItem>
+
+                    <DefaultModalItem indented onClick={() => props.onCommitMessageSelect(props.session.beingReplacedBySession)}>
+                        <AnnotationIcon />
+                        <span>View commit message</span>
+                    </DefaultModalItem>
+
+                    <DefaultModalItem indented onClick={() => props.onShowLogsSelect(props.session.beingReplacedBySession)}>
+                        <TextDocumentIcon />
+                        <span>View build logs</span>
+                    </DefaultModalItem>
+
+                    <DefaultModalItem indented onClick={() => props.onAPISelect(props.session.beingReplacedBySession)}>
+                        <CodeIcon />
+                        <span>JSON API</span>
+                    </DefaultModalItem>
+                </>}
 
                 <DefaultModalItem notImplemented>
                     <CodeIcon />

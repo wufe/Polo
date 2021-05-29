@@ -33,9 +33,11 @@ type TItemProps = TCommonProps & {
     dangerIcon?    : boolean;
     disabled?      : boolean;
     action?        : boolean;
+    categoryHeader?: boolean;
     multipleRows?  : boolean;
     showOnMobile?  : boolean;
     notImplemented?: boolean;
+    indented?      : boolean;
     onClick?       : () => void;
 };
 
@@ -43,9 +45,11 @@ export const DefaultModalItem = ({
     dangerIcon     = false,
     disabled       = false,
     action         = false,
+    categoryHeader = false,
     multipleRows   = false,
     showOnMobile   = false,
     notImplemented = false,
+    indented       = false,
     className,
     onClick,
     children
@@ -54,9 +58,11 @@ export const DefaultModalItem = ({
         '--danger-icon': dangerIcon,
         '--disabled': disabled,
         '--action': action,
+        '--category-header': categoryHeader,
         '--multiple-rows': multipleRows,
         '--show-on-mobile': showOnMobile,
         '--not-implemented': notImplemented,
+        '--indented': indented,
     })} onClick={onClick}>
         {children}
     </div>;
