@@ -1,6 +1,6 @@
 import { APIPayload, APIRequestResult } from "@/api/common";
 import { IAPISession, IAPISessionLogsAndStatus, killSessionAPI, retrieveLogsAndStatusAPI, retrieveSessionStatusAPI, trackSessionAPI, untrackSessionAPI } from "@/api/session";
-import { flow, Instance, types } from "mobx-state-tree";
+import { flow, IAnyModelType, Instance, types } from "mobx-state-tree";
 import { SessionStatus, SessionKillReason } from "./session-model-enums";
 
 export const SessionConfigurationModel = types.model({
@@ -61,11 +61,15 @@ export const SessionModel = types.model({
     age              : types.number,
     folder           : types.string,
     replacesSessions : types.array(types.string),
-    beingReplaced    : types.optional(types.boolean, false),
+    beingReplacedBy  : types.maybe(types.late((): IAnyModelType => SessionModel)),
     configuration    : SessionConfigurationModel,
     killReason       : types.enumeration<SessionKillReason>(Object.values(SessionKillReason)),
     replacedBy       : types.string,
-}).actions(self => {
+}).views(self => ({
+    get beingReplacedBySession() {
+        return self.beingReplacedBy as ISession;
+    }
+})).actions(self => {
     const track = flow(function* track() {
         const trackRequest: APIPayload<void> = yield trackSessionAPI(self.uuid);
         return trackRequest;

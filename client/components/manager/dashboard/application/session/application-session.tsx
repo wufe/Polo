@@ -27,9 +27,10 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
     const { show, hide } = useModal();
     const copy = useClipboard();
     const history = useHistory();
-    const optionsModalName = `session-${props.session.uuid}`;
-    const commitMessageModalName = `${optionsModalName}-commit`;
-    const deleteSessionModalName = `${optionsModalName}-session-deletion`;
+
+    const getOptionsModalName = (uuid = props.session.uuid) => `session-${uuid}`;
+    const deleteSessionModalName = `${getOptionsModalName()}-session-deletion`;
+    const getCommitMessageModalName = (uuid = props.session.uuid) => `${getOptionsModalName(uuid)}-commit`;
 
     const attachToSession = async () => {
         const track = await props.session.track();
@@ -47,17 +48,25 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
         hide();
     }
 
-    const showLogs = () => {
+    const showLogs = (session?: ISession) => {
+        if (!session) return;
         hide();
-        history.push(`/_polo_/session/${props.session.uuid}/logs`);
+        history.push(`/_polo_/session/${session.uuid}/logs`);
     }
 
-    const openAPIDocument = () => {
-        window.open(`/_polo_/api/session/${props.session.uuid}`, '_blank');
+    const openAPIDocument = (session?: ISession) => {
+        if (!session) return;
+        window.open(`/_polo_/api/session/${session.uuid}`, '_blank');
+    }
+
+    const openCommitModal = (session?: ISession) => {
+        if (!session) return;
+        hide();
+        show(getCommitMessageModalName(session.uuid));
     }
 
     const showLoadingIcon = props.session.status === SessionStatus.STARTING ||
-        props.session.beingReplaced;
+        props.session.beingReplacedBySession;
 
     const showStartedIcon = props.session.status === SessionStatus.STARTED && !showLoadingIcon;
 
@@ -115,25 +124,32 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
                 icon={<LoginIcon />} />
             <Button
                 ghost
-                onClick={() => show(optionsModalName)}
+                onClick={() => show(getOptionsModalName())}
                 icon={<HorizontalDotsIcon />} />
         </span>
         <ApplicationSessionModal
             session={props.session}
-            name={optionsModalName}
+            name={getOptionsModalName()}
             onAPISelect={openAPIDocument}
-            onCommitMessageSelect={() => show(commitMessageModalName)}
+            onCommitMessageSelect={openCommitModal}
             onEnterSessionSelect={attachToSession}
             onSessionDeletionSelect={() => show(deleteSessionModalName)}
             onCopyPermalinkSelect={() => copyPermalink()}
             onShowLogsSelect={showLogs} />
         <CommitModal
-            name={commitMessageModalName}
+            name={getCommitMessageModalName()}
             title={props.session.checkout}
             commitAuthorEmail={props.session.commitAuthorEmail}
             commitAuthorName={props.session.commitAuthorName}
             commitDate={props.session.commitDate}
             commitMessage={props.session.commitMessage} />
+        {props.session.beingReplacedBySession && <CommitModal
+            name={getCommitMessageModalName(props.session.beingReplacedBySession.uuid)}
+            title={props.session.beingReplacedBySession.checkout}
+            commitAuthorEmail={props.session.beingReplacedBySession.commitAuthorEmail}
+            commitAuthorName={props.session.beingReplacedBySession.commitAuthorName}
+            commitDate={props.session.beingReplacedBySession.commitDate}
+            commitMessage={props.session.beingReplacedBySession.commitMessage} />}
         <ApplicationSessionDeletionModal
             name={deleteSessionModalName}
             session={props.session}

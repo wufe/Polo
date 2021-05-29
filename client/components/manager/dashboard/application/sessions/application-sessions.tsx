@@ -20,8 +20,6 @@ export const ApplicationSessions = observer((props: TProps) => {
             .filter(session => session.checkout.toLowerCase().indexOf(sessionsFilter.toLowerCase()) > -1);
     }
 
-    console.log(visibleSessions)
-
     return <div className="flex flex-col items-stretch">
         <input
             type="text"
