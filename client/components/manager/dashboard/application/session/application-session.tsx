@@ -52,6 +52,10 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
         history.push(`/_polo_/session/${props.session.uuid}/logs`);
     }
 
+    const openAPIDocument = () => {
+        window.open(`/_polo_/api/session/${props.session.uuid}`, '_blank');
+    }
+
     const showLoadingIcon = props.session.status === SessionStatus.STARTING ||
         props.session.beingReplaced;
 
@@ -117,6 +121,7 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
         <ApplicationSessionModal
             session={props.session}
             name={optionsModalName}
+            onAPISelect={openAPIDocument}
             onCommitMessageSelect={() => show(commitMessageModalName)}
             onEnterSessionSelect={attachToSession}
             onSessionDeletionSelect={() => show(deleteSessionModalName)}
