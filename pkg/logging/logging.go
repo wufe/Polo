@@ -68,5 +68,17 @@ func NewLogger(environment utils.Environment) Logger {
 		},
 	})
 
+	log.SetFormatter(&logrus.TextFormatter{
+		ForceColors: onTerminal(),
+	})
+
 	return log
+}
+
+func onTerminal() bool {
+	if fileInfo, _ := os.Stdout.Stat(); (fileInfo.Mode() & os.ModeCharDevice) != 0 {
+		return true
+	} else {
+		return false
+	}
 }
