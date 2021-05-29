@@ -32,25 +32,49 @@ func AssertApplicationSessionSucceeded(appChan <-chan models.ApplicationEvent, t
 }
 
 func AssertApplicationSessionBuildFails4Times(appChan <-chan models.ApplicationEvent, t *testing.T) {
-	AssertApplicationEvents(
+	_, succeded := AssertApplicationEvents(
 		appChan,
 		[]models.ApplicationEventType{
 			models.ApplicationEventTypeSessionBuild,
 			models.ApplicationEventTypeSessionBuildFailed,
 			models.ApplicationEventTypeSessionBuild,
-			models.ApplicationEventTypeSessionCleaned,
-			models.ApplicationEventTypeSessionBuildFailed,
-			models.ApplicationEventTypeSessionBuild,
-			models.ApplicationEventTypeSessionCleaned,
-			models.ApplicationEventTypeSessionBuildFailed,
-			models.ApplicationEventTypeSessionBuild,
-			models.ApplicationEventTypeSessionCleaned,
-			models.ApplicationEventTypeSessionBuildFailed,
-			models.ApplicationEventTypeSessionCleaned,
 		},
 		t,
 		3*time.Second,
 	)
+
+	if succeded {
+		_, succeded = ConcurrentlyAssertCleanedAndFailed(appChan, t)
+	}
+
+	if succeded {
+		_, succeded = AssertApplicationEvents(
+			appChan,
+			[]models.ApplicationEventType{
+				models.ApplicationEventTypeSessionBuild,
+			},
+			t,
+			2*time.Second,
+		)
+	}
+
+	if succeded {
+		_, succeded = ConcurrentlyAssertCleanedAndFailed(appChan, t)
+	}
+
+	if succeded {
+		_, succeded = AssertApplicationEvents(
+			appChan,
+			[]models.ApplicationEventType{
+				models.ApplicationEventTypeSessionBuild,
+			},
+			t,
+			2*time.Second,
+		)
+	}
+	if succeded {
+		_, succeded = ConcurrentlyAssertCleanedFailedAndCleaned(appChan, t)
+	}
 }
 
 func AssertApplicationGetsInitializedAndFetched(appChan <-chan models.ApplicationEvent, t *testing.T) {
@@ -96,7 +120,7 @@ func AssertApplicationGetsFetchedWithHotSwapAndFailingBuild(appChan <-chan model
 }
 
 func AssertApplicationGetsFetchedWithHotSwapAndFailingBuildWith3Retries(appChan <-chan models.ApplicationEvent, t *testing.T) {
-	AssertApplicationEvents(
+	_, succeded := AssertApplicationEvents(
 		appChan,
 		[]models.ApplicationEventType{
 			models.ApplicationEventTypeFetchStarted,
@@ -105,12 +129,57 @@ func AssertApplicationGetsFetchedWithHotSwapAndFailingBuildWith3Retries(appChan 
 			models.ApplicationEventTypeFetchCompleted,
 			models.ApplicationEventTypeSessionBuildFailed,
 			models.ApplicationEventTypeSessionBuild,
+		},
+		t,
+		2*time.Second,
+	)
+	if succeded {
+		_, succeded = ConcurrentlyAssertCleanedAndFailed(appChan, t)
+	}
+	if succeded {
+		_, succeded = AssertApplicationEvents(
+			appChan,
+			[]models.ApplicationEventType{
+				models.ApplicationEventTypeSessionBuild,
+			},
+			t,
+			2*time.Second,
+		)
+	}
+	if succeded {
+		_, succeded = ConcurrentlyAssertCleanedAndFailed(appChan, t)
+	}
+	if succeded {
+		_, succeded = AssertApplicationEvents(
+			appChan,
+			[]models.ApplicationEventType{
+				models.ApplicationEventTypeSessionBuild,
+			},
+			t,
+			2*time.Second,
+		)
+	}
+	if succeded {
+		_, succeded = ConcurrentlyAssertCleanedFailedAndCleaned(appChan, t)
+	}
+}
+
+func ConcurrentlyAssertCleanedAndFailed(appChan <-chan models.ApplicationEvent, t *testing.T) ([]models.ApplicationEventType, bool) {
+	return AssertConcurrentApplicationEvents(
+		appChan,
+		[]models.ApplicationEventType{
 			models.ApplicationEventTypeSessionCleaned,
 			models.ApplicationEventTypeSessionBuildFailed,
-			models.ApplicationEventTypeSessionBuild,
-			models.ApplicationEventTypeSessionCleaned,
-			models.ApplicationEventTypeSessionBuildFailed,
-			models.ApplicationEventTypeSessionBuild,
+		},
+		t,
+		2*time.Second,
+	)
+}
+
+func ConcurrentlyAssertCleanedFailedAndCleaned(appChan <-chan models.ApplicationEvent, t *testing.T) ([]models.ApplicationEventType, bool) {
+	return AssertConcurrentApplicationEvents(
+		appChan,
+		[]models.ApplicationEventType{
 			models.ApplicationEventTypeSessionCleaned,
 			models.ApplicationEventTypeSessionBuildFailed,
 			models.ApplicationEventTypeSessionCleaned,

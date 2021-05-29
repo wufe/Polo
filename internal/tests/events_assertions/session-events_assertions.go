@@ -17,16 +17,9 @@ func AssertSessionEvents(
 	timeout time.Duration,
 ) {
 
-	stringifiedExpectedEventsSlice := []string{}
-	for _, ev := range events {
-		stringifiedExpectedEventsSlice = append(stringifiedExpectedEventsSlice, ev.String())
-	}
-	stringifiedExpectedEvents := strings.Join(stringifiedExpectedEventsSlice, ", ")
-
 	lastFoundIndex := -1
-	stringifiedGotEventsSlice := []string{}
-
 	timeoutFired := false
+	gotEvents := []models.SessionEventType{}
 
 L:
 	for {
@@ -35,8 +28,8 @@ L:
 			if !ok {
 				break L
 			}
-			fmt.Printf("[SESSION_EVENT]: %s\n", ev.EventType)
-			stringifiedGotEventsSlice = append(stringifiedGotEventsSlice, ev.EventType.String())
+			fmt.Println(aurora.Sprintf(aurora.Cyan("[SESSION_EVENT]: %s"), ev.EventType))
+			gotEvents = append(gotEvents, ev.EventType)
 			if ev.EventType == events[lastFoundIndex+1] {
 				lastFoundIndex++
 				if lastFoundIndex == len(events)-1 {
@@ -51,13 +44,21 @@ L:
 		}
 	}
 
+	stringifiedExpectedEvents := stringifySessionEvents(events)
+	stringifiedGotEvents := stringifySessionEvents(gotEvents)
 	if timeoutFired {
-		stringifiedGotEvents := strings.Join(stringifiedGotEventsSlice, ", ")
 		t.Error(aurora.Sprintf(aurora.Red("expected application events to be:\n%s,\nbut timeout fired and got:\n%s"), stringifiedExpectedEvents, stringifiedGotEvents))
 	} else {
 		if lastFoundIndex < len(events)-1 {
-			stringifiedGotEvents := strings.Join(stringifiedGotEventsSlice, ", ")
 			t.Error(aurora.Sprintf(aurora.Red("expected application events to be:\n%s,\nbut got:\n%s instead"), stringifiedExpectedEvents, stringifiedGotEvents))
 		}
 	}
+}
+
+func stringifySessionEvents(events []models.SessionEventType) string {
+	stringifiedExpectedEventsSlice := []string{}
+	for _, ev := range events {
+		stringifiedExpectedEventsSlice = append(stringifiedExpectedEventsSlice, ev.String())
+	}
+	return strings.Join(stringifiedExpectedEventsSlice, ", ")
 }

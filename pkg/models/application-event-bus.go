@@ -22,6 +22,12 @@ const (
 	eventsBuffer = 100
 )
 
+type BusEventType string
+
+func (t BusEventType) String() string {
+	return string(t)
+}
+
 type ApplicationEventType string
 
 func (t ApplicationEventType) String() string {
