@@ -74,7 +74,6 @@ func AssertApplicationGetsFetchedWithHotSwap(appChan <-chan models.ApplicationEv
 			models.ApplicationEventTypeFetchStarted,
 			models.ApplicationEventTypeHotSwap,
 			models.ApplicationEventTypeSessionBuild,
-			models.ApplicationEventTypeFetchCompleted,
 		},
 		t,
 		2*time.Second,
