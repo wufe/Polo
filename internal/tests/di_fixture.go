@@ -379,6 +379,12 @@ func (d *DI) AddRequestService() {
 	}
 }
 
+func (d *DI) AddAliasingService() {
+	if err := d.container.Provide(services.NewAliasingService); err != nil {
+		log.Panic(err)
+	}
+}
+
 // HTTP
 
 func (d *DI) AddPortRetriever() {

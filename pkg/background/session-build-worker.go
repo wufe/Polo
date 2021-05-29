@@ -81,7 +81,6 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 	appBus := input.Application.GetEventBus()
 
 	conf := input.Application.GetConfiguration()
-	appName := conf.Name
 	appMaxConcurrentSessions := conf.MaxConcurrentSessions
 
 	aliveCount := len(w.sessionStorage.GetAllAliveSessions())
@@ -119,17 +118,20 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 		session.IncStartupRetriesCount()
 	} else {
 		sessionUUID := uuid.NewString()
-
 		session = w.sessionBuilder.Build(&models.Session{
 			UUID:        sessionUUID,
-			Name:        appName,
 			Port:        0,
 			Status:      models.SessionStatusStarting,
 			Application: input.Application,
-			CommitID:    input.Checkout,
-			Checkout:    input.Checkout,
+			CommitID:    input.Checkout, // Commit ID
+			Checkout:    input.Checkout, // The branch name or the commit ID
+			DisplayName: input.Checkout, // The branch name or the alias
 		})
 	}
+
+	// Build new alias
+	sessionsNames := w.sessionStorage.GetAllSessionsNames()
+	session.Alias = models.NewSessionAlias(sessionsNames)
 
 	appBus.PublishEvent(models.ApplicationEventTypeSessionBuild, input.Application, session)
 
@@ -141,7 +143,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 	conf = session.GetConfiguration()
 	appPort := conf.Port
 
-	checkout, ok := input.Application.ObjectsToHashMap[input.Checkout]
+	commitID, ok := input.Application.ObjectsToHashMap[input.Checkout]
 	if !ok {
 		return &queues.SessionBuildResult{
 			Result:        queues.SessionBuildResultFailed,
@@ -162,15 +164,24 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 	session.Port = freePort
 	session.LogInfo(fmt.Sprintf("Found new free port: %d", session.Port))
 
-	session.CommitID = checkout
-	session.Commit = *input.Application.CommitMap[checkout]
+	session.CommitID = commitID
+	session.Commit = *input.Application.CommitMap[commitID]
 	session.LogInfo(fmt.Sprintf("Requested checkout to %s (%s)", input.Checkout, session.CommitID))
+
+	// Set display-name based on checkout being a commit ID or not
+	_, checkoutIsTag := input.Application.TagsMap[input.Checkout]
+	_, checkoutIsBranch := input.Application.BranchesMap[input.Checkout]
+	if !checkoutIsTag && !checkoutIsBranch {
+		session.DisplayName = session.Alias
+	} else {
+		session.DisplayName = input.Checkout
+	}
 
 	if !basedOnPreviousSession {
 		// Check if someone else just requested the same type of session
 		// looking through all open session and comparing applications and checkouts
 		sessionAlreadyBeingBuilt := w.sessionStorage.GetAliveApplicationSessionByCheckout(
-			checkout,
+			commitID,
 			input.Application,
 		)
 		if sessionAlreadyBeingBuilt != nil {
@@ -185,7 +196,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 	session.LogInfo(fmt.Sprintf("Session target is %s", session.GetTarget()))
 
 	session.Variables["uuid"] = session.UUID
-	session.Variables["name"] = session.Name
+	session.Variables["name"] = session.Alias
 	session.Variables["port"] = fmt.Sprint(session.Port)
 	session.Variables["commit"] = session.CommitID
 

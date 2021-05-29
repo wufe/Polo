@@ -45,7 +45,8 @@ export const castAPISessionToSessionModel = (apiSession: IAPISession): ISession 
 
 export const SessionModel = types.model({
     uuid             : types.string,
-    name             : types.string,
+    displayName      : types.string,
+    alias            : types.string,
     target           : types.string,
     port             : types.number,
     applicationName  : types.string,

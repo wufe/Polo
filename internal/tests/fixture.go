@@ -74,6 +74,7 @@ func Fixture(injectable *InjectableServices, applicationConfigurations ...*model
 	container.AddStaticService()
 	container.AddQueryService()
 	container.AddRequestService()
+	container.AddAliasingService()
 
 	// HTTP
 

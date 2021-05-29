@@ -44,7 +44,7 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
     }
 
     const copyPermalink = () => {
-        copy(`${location.origin}/s/${props.session.checkout}`);
+        copy(`${location.origin}/s/${props.session.displayName}`);
         hide();
     }
 
@@ -87,7 +87,7 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
             <div className="__title-container">
                 <span
                     className="__title">
-                    {props.session.checkout}
+                    {props.session.displayName}
                 </span>
                 <div className="__subtitle-container">
                     <span className="__subtitle-item">
@@ -138,14 +138,14 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
             onShowLogsSelect={showLogs} />
         <CommitModal
             name={getCommitMessageModalName()}
-            title={props.session.checkout}
+            title={props.session.displayName}
             commitAuthorEmail={props.session.commitAuthorEmail}
             commitAuthorName={props.session.commitAuthorName}
             commitDate={props.session.commitDate}
             commitMessage={props.session.commitMessage} />
         {props.session.beingReplacedBySession && <CommitModal
             name={getCommitMessageModalName(props.session.beingReplacedBySession.uuid)}
-            title={props.session.beingReplacedBySession.checkout}
+            title={props.session.beingReplacedBySession.displayName}
             commitAuthorEmail={props.session.beingReplacedBySession.commitAuthorEmail}
             commitAuthorName={props.session.beingReplacedBySession.commitAuthorName}
             commitDate={props.session.beingReplacedBySession.commitDate}

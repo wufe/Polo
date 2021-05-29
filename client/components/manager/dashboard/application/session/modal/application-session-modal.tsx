@@ -26,7 +26,7 @@ export const ApplicationSessionModal = (props: TProps) => {
         <DefaultModalLayout>
 
             <DefaultModalHeader
-                title={props.session.checkout}
+                title={props.session.displayName}
                 subtitle={props.session.uuid} />
 
             <DefaultModalList>

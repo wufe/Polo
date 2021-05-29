@@ -13,7 +13,8 @@ func MapSession(model *Session) *output.Session {
 	model.RLock()
 	session := &output.Session{
 		UUID:              model.UUID,
-		Name:              model.Name,
+		Alias:             model.Alias,
+		DisplayName:       model.DisplayName,
 		Target:            model.getTargetInternal(),
 		Port:              model.Port,
 		ApplicationName:   model.ApplicationName,

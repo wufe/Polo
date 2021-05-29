@@ -271,3 +271,13 @@ func (s *Session) GetSessionsByCategory(category SessionCategory) []*models.Sess
 	}
 	return foundSessions
 }
+
+func (s *Session) GetAllSessionsNames() []string {
+	s.RLock()
+	defer s.RUnlock()
+	names := make([]string, 0, len(s.sessions))
+	for _, session := range s.sessions {
+		names = append(names, session.Alias)
+	}
+	return names
+}

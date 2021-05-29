@@ -14,7 +14,7 @@ export const ApplicationSessionDeletionModal = (props: TProps) => {
     return <DefaultModal name={props.name}>
         <div className="application-session-deletion-modal">
             <div className="__header">
-                <div className="text-base lg:text-lg font-bold whitespace-nowrap overflow-hidden overflow-ellipsis">{props.session.checkout}</div>
+                <div className="text-base lg:text-lg font-bold whitespace-nowrap overflow-hidden overflow-ellipsis">{props.session.displayName}</div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 opacity-80">{props.session.uuid}</div>
             </div>
             <div className="__description">

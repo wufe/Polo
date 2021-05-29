@@ -46,7 +46,7 @@ export const Session = observer((props: TProps) => {
             Session
         </h1>
         <div className="text-lg text-nord1 dark:text-nord5 mb-4 z-10 border-l pl-3 border-gray-500">
-            <span>{props.session.checkout}</span>
+            <span>{props.session.displayName}</span>
         </div>
         <CommitMessage {...props.session} maxHeight />
         <SessionLogs
