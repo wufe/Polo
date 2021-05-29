@@ -25,6 +25,7 @@ export interface IApplicationBranchModel extends Instance<typeof ApplicationBran
 export const ApplicationConfigurationModel = types.model({
     id                   : types.string,
     name                 : types.string,
+    hash                 : types.string,
     remote               : types.string,
     target               : types.string,
     host                 : types.string,
