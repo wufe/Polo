@@ -77,6 +77,7 @@ func main() {
 	container.AddStaticService()
 	container.AddQueryService()
 	container.AddRequestService()
+	container.AddAliasingService()
 
 	// HTTP
 
