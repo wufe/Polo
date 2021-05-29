@@ -1,13 +1,23 @@
 package services
 
-import uuid "github.com/iris-contrib/go.uuid"
+import (
+	"github.com/wufe/polo/pkg/models"
+	"github.com/wufe/polo/pkg/storage"
+)
 
-type AliasingService struct{}
-
-func NewAliasingService() *AliasingService {
-	return &AliasingService{}
+type AliasingService struct {
+	sessionStorage *storage.Session
 }
 
-func (a *AliasingService) Next(exclude []string) string {
-	return uuid.Must(uuid.NewV1()).String()
+func NewAliasingService(
+	sessionStorage *storage.Session,
+) *AliasingService {
+	return &AliasingService{
+		sessionStorage: sessionStorage,
+	}
+}
+
+func (a *AliasingService) Next() string {
+	names := a.sessionStorage.GetAllSessionsNames()
+	return models.NewSessionAlias(names)
 }

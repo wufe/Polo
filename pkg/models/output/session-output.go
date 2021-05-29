@@ -5,7 +5,8 @@ import "time"
 type Session struct {
 	SessionStatus     `json:",inline"`
 	UUID              string               `json:"uuid"`
-	Name              string               `json:"name"`
+	Alias             string               `json:"alias"`
+	DisplayName       string               `json:"displayName"`
 	Target            string               `json:"target"`
 	Port              int                  `json:"port"`
 	ApplicationName   string               `json:"applicationName"`

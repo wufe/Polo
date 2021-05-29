@@ -31,7 +31,7 @@ export const HelperSession = (props: TProps) => {
     const copyPermalink = () => {
         let fullpath = location.pathname + location.search;
         fullpath = fullpath === '/' ? '' : fullpath;
-        copy(`${location.origin}/s/${props.session.checkout}${fullpath}`);
+        copy(`${location.origin}/s/${props.session.displayName}${fullpath}`);
         setOpen(false);
     }
     const goToLogs = () => location.href = `/_polo_/session/${props.session.uuid}/logs`;
@@ -40,7 +40,7 @@ export const HelperSession = (props: TProps) => {
         <div className={`__visible ${open && '--open'}`} onClick={() => setOpen(open => !open)}>
             <div className="__content">
                 <div className="__checkout">
-                    <span>On <b className="__checkout-title" title={props.session.checkout}>{props.session.checkout}</b></span>
+                    <span>On <b className="__checkout-title" title={props.session.displayName}>{props.session.displayName}</b></span>
                 </div>
                 {age && <div className="__info">
                     <SessionAge />

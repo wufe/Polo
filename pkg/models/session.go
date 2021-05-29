@@ -85,7 +85,8 @@ func (reason KillReason) PreventsRebuild() bool {
 type Session struct {
 	utils.RWLocker  `json:"-"`
 	UUID            string       `json:"uuid"`
-	Name            string       `json:"name"`
+	Alias           string       `json:"alias"`
+	DisplayName     string       `json:"displayName"`
 	Port            int          `json:"port"`
 	ApplicationName string       `json:"applicationName"`
 	Application     *Application `json:"-"`

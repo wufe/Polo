@@ -17,7 +17,7 @@ export const ApplicationSessions = observer((props: TProps) => {
 
     if (sessionsFilter) {
         visibleSessions = visibleSessions
-            .filter(session => session.checkout.toLowerCase().indexOf(sessionsFilter.toLowerCase()) > -1);
+            .filter(session => session.displayName.toLowerCase().indexOf(sessionsFilter.toLowerCase()) > -1);
     }
 
     return <div className="flex flex-col items-stretch">
