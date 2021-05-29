@@ -34,26 +34,15 @@ func Test_SessionBuildFailingCleanFails(t *testing.T) {
 	di := tests.Fixture(&tests.InjectableServices{
 		RepositoryFetcher: fetcher,
 		GitClient:         versioning_fixture.NewGitClient(),
-	}, &models.ApplicationConfiguration{
-		SharedConfiguration: models.SharedConfiguration{
-			Remote: "FakeRemote",
-			Commands: models.Commands{
-				Start: []models.Command{
-					{Command: "notexistingcommand.exe"},
-				},
-				Stop: []models.Command{
-					{Command: "notexistingcommand.exe"},
-				},
-				Clean: []models.Command{
-					{Command: "1st_cleancommand.sh", ContinueOnError: true},
-					{Command: "2nd_cleancommand.sh", ContinueOnError: false},
-					{Command: "3rd_cleancommand.sh", ContinueOnError: true},
-				},
-			},
-		},
-		Name:      "Test_SessionBuildFailing",
-		IsDefault: true,
-	})
+	}, models.BuildApplicationConfiguration("Test_SessionBuildFailingClean").
+		WithRemote("FakeRemote").
+		WithStartCommand("notexistingcommand.exe").
+		WithStopCommand("notexistingcommand.exe").
+		WithCleanCommand_ContinueOnError("1st_cleancommand.sh").
+		WithCleanCommand_ContinueOnError("2nd_cleancommand.sh").
+		WithCleanCommand_ContinueOnError("3rd_cleancommand.sh").
+		SetAsDefault(true),
+	)
 
 	// Get events channel
 	applications := di.GetApplications()
@@ -62,17 +51,7 @@ func Test_SessionBuildFailingCleanFails(t *testing.T) {
 	firstApplicationChan := firstApplicationBus.GetChan()
 
 	// Assert application is being loaded
-	events_assertions.AssertApplicationEvents(
-		firstApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeInitializationStarted,
-			models.ApplicationEventTypeFetchStarted,
-			models.ApplicationEventTypeFetchCompleted,
-			models.ApplicationEventTypeInitializationCompleted,
-		},
-		t,
-		10*time.Second,
-	)
+	events_assertions.AssertApplicationGetsInitializedAndFetched(firstApplicationChan, t)
 
 	// Creating the second commit
 	secondCommit := fetcher.NewCommit("Second commit")
@@ -83,15 +62,7 @@ func Test_SessionBuildFailingCleanFails(t *testing.T) {
 	mediator.ApplicationFetch.Enqueue(firstApplication, false)
 
 	// Assert application gets fetched
-	events_assertions.AssertApplicationEvents(
-		firstApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeFetchStarted,
-			models.ApplicationEventTypeFetchCompleted,
-		},
-		t,
-		10*time.Second,
-	)
+	events_assertions.AssertApplicationGetsFetched(firstApplicationChan, t)
 
 	// Request new session to be built
 	requestService := di.GetRequestService()
@@ -113,6 +84,7 @@ func Test_SessionBuildFailingCleanFails(t *testing.T) {
 			models.SessionEventTypePreparingFolders,
 			models.SessionEventTypeCommandsExecutionStarted,
 			models.SessionEventTypeCommandsExecutionFailed,
+			models.SessionEventTypeCleanCommandExecution,
 			models.SessionEventTypeCleanCommandExecution,
 			models.SessionEventTypeCleanCommandExecution,
 			models.SessionEventTypeFolderClean,

@@ -2,7 +2,6 @@ package session_healthcheck
 
 import (
 	"testing"
-	"time"
 
 	"github.com/wufe/polo/internal/tests"
 	"github.com/wufe/polo/internal/tests/events_assertions"
@@ -39,36 +38,19 @@ func Test_SessionShouldBuildAndBeAvailableWithFixtureHTTPServer(t *testing.T) {
 		GitClient:         versioning_fixture.NewGitClient(),
 		CommandRunner:     execution_fixture.NewCommandRunnerFixture(),
 		PortRetriever:     portRetriever,
-	}, &models.ApplicationConfiguration{
-		SharedConfiguration: models.SharedConfiguration{
-			Remote: "FakeRemote",
-			Commands: models.Commands{
-				Start: []models.Command{
-					{Command: "valid-command.exe"},
-				},
-				Stop: []models.Command{
-					{Command: "valid-command.exe"},
-				},
-			},
-			Startup: models.Startup{
-				Retries: 3,
-			},
-			Healthcheck: models.Healthcheck{
-				RetryInterval: 1,
-			},
-		},
-		Name:      "Test_SessionShouldBuildAndBeAvailableWithFixtureHTTPServer",
-		IsDefault: true,
-		Branches: []models.BranchConfigurationMatch{
-			{
-				Test: "main",
-				BranchConfiguration: models.BranchConfiguration{
-					Watch: false,
-					Main:  false,
-				},
-			},
-		},
-	})
+	}, models.BuildApplicationConfiguration("Test_SessionShouldBuildAndBeAvailableWithFixtureHTTPServer").
+		WithRemote("FakeRemote").
+		WithStartCommand("valid-command.exe").
+		WithStopCommand("valid-command.exe").
+		WithStartupRetries(3).
+		SetAsDefault(true).
+		WithHealthcheckRetryInterval(1).
+		WithBranch(
+			models.BuildBranchConfigurationMatch("main").
+				SetWatch(false).
+				SetMain(false),
+		),
+	)
 
 	// Get events channel
 	applications := di.GetApplications()
@@ -77,17 +59,7 @@ func Test_SessionShouldBuildAndBeAvailableWithFixtureHTTPServer(t *testing.T) {
 	firstApplicationChan := firstApplicationBus.GetChan()
 
 	// Assert application is being loaded
-	events_assertions.AssertApplicationEvents(
-		firstApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeInitializationStarted,
-			models.ApplicationEventTypeFetchStarted,
-			models.ApplicationEventTypeFetchCompleted,
-			models.ApplicationEventTypeInitializationCompleted,
-		},
-		t,
-		10*time.Second,
-	)
+	events_assertions.AssertApplicationGetsInitializedAndFetched(firstApplicationChan, t)
 
 	// Creating the second commit
 	secondCommit := fetcher.NewCommit("Second commit")
@@ -98,15 +70,7 @@ func Test_SessionShouldBuildAndBeAvailableWithFixtureHTTPServer(t *testing.T) {
 	mediator.ApplicationFetch.Enqueue(firstApplication, false)
 
 	// Assert application gets fetched
-	events_assertions.AssertApplicationEvents(
-		firstApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeFetchStarted,
-			models.ApplicationEventTypeFetchCompleted,
-		},
-		t,
-		2*time.Second,
-	)
+	events_assertions.AssertApplicationGetsFetched(firstApplicationChan, t)
 
 	// Request new session to be built
 	requestService := di.GetRequestService()
@@ -121,18 +85,5 @@ func Test_SessionShouldBuildAndBeAvailableWithFixtureHTTPServer(t *testing.T) {
 	sessionChan := sessionBus.GetChan()
 
 	// Assert session fails to get created
-	events_assertions.AssertSessionEvents(
-		sessionChan,
-		[]models.SessionEventType{
-			// First build
-			models.SessionEventTypeBuildStarted,
-			models.SessionEventTypePreparingFolders,
-			models.SessionEventTypeCommandsExecutionStarted,
-			models.SessionEventTypeHealthcheckStarted,
-			models.SessionEventTypeHealthcheckSucceded,
-			models.SessionEventTypeSessionAvailable,
-		},
-		t,
-		10*time.Second,
-	)
+	events_assertions.AssertSessionGetsBuiltAndGetsAvailable(sessionChan, t)
 }

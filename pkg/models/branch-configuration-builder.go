@@ -1,7 +1,9 @@
 package models
 
 func BuildBranchConfigurationMatch(branch string) *BranchConfigurationMatch {
-	return &BranchConfigurationMatch{}
+	return &BranchConfigurationMatch{
+		Test: branch,
+	}
 }
 
 func (c *BranchConfigurationMatch) SetWatch(watch bool) *BranchConfigurationMatch {

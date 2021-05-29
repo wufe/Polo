@@ -2,7 +2,6 @@ package application_init
 
 import (
 	"testing"
-	"time"
 
 	"github.com/wufe/polo/internal/tests"
 	"github.com/wufe/polo/internal/tests/events_assertions"
@@ -16,15 +15,5 @@ func Test_ApplicationInit(t *testing.T) {
 	applications := di.GetApplications()
 	firstApplicationBus := applications[0].GetEventBus()
 
-	events_assertions.AssertApplicationEvents(
-		firstApplicationBus.GetChan(),
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeInitializationStarted,
-			models.ApplicationEventTypeFetchStarted,
-			models.ApplicationEventTypeFetchCompleted,
-			models.ApplicationEventTypeInitializationCompleted,
-		},
-		t,
-		10*time.Second,
-	)
+	events_assertions.AssertApplicationGetsInitializedAndFetched(firstApplicationBus.GetChan(), t)
 }

@@ -44,36 +44,19 @@ func Test_SessionShouldBeReplacedAfterPreviousFailingBuild(t *testing.T) {
 		GitClient:         versioning_fixture.NewGitClient(),
 		CommandRunner:     commandRunner,
 		PortRetriever:     portRetriever,
-	}, &models.ApplicationConfiguration{
-		SharedConfiguration: models.SharedConfiguration{
-			Remote: "FakeRemote",
-			Commands: models.Commands{
-				Start: []models.Command{
-					{Command: "valid-command.exe"},
-				},
-				Stop: []models.Command{
-					{Command: "valid-command.exe"},
-				},
-			},
-			Startup: models.Startup{
-				Retries: 3,
-			},
-			Healthcheck: models.Healthcheck{
-				RetryInterval: 1,
-			},
-		},
-		Name:      "Test_SessionShouldBeReplacedAfterPreviousFailingBuild",
-		IsDefault: true,
-		Branches: []models.BranchConfigurationMatch{
-			{
-				Test: "main",
-				BranchConfiguration: models.BranchConfiguration{
-					Watch: false,
-					Main:  false,
-				},
-			},
-		},
-	})
+	}, models.BuildApplicationConfiguration("Test_SessionShouldBeReplacedAfterPreviousFailingBuild").
+		WithRemote("FakeRemote").
+		WithStartCommand("valid-command.exe").
+		WithStopCommand("valid-command.exe").
+		WithStartupRetries(3).
+		WithHealthcheckRetryInterval(1).
+		SetAsDefault(true).
+		WithBranch(
+			models.BuildBranchConfigurationMatch("main").
+				SetWatch(false).
+				SetMain(false),
+		),
+	)
 
 	// Get events channel
 	applications := di.GetApplications()
@@ -82,17 +65,7 @@ func Test_SessionShouldBeReplacedAfterPreviousFailingBuild(t *testing.T) {
 	firstApplicationChan := firstApplicationBus.GetChan()
 
 	// Assert application is being loaded
-	events_assertions.AssertApplicationEvents(
-		firstApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeInitializationStarted,
-			models.ApplicationEventTypeFetchStarted,
-			models.ApplicationEventTypeFetchCompleted,
-			models.ApplicationEventTypeInitializationCompleted,
-		},
-		t,
-		10*time.Second,
-	)
+	events_assertions.AssertApplicationGetsInitializedAndFetched(firstApplicationChan, t)
 
 	// Creating the second commit
 	secondCommit := fetcher.NewCommit("Second commit")
@@ -103,15 +76,7 @@ func Test_SessionShouldBeReplacedAfterPreviousFailingBuild(t *testing.T) {
 	mediator.ApplicationFetch.Enqueue(firstApplication, false)
 
 	// Assert application gets fetched
-	events_assertions.AssertApplicationEvents(
-		firstApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeFetchStarted,
-			models.ApplicationEventTypeFetchCompleted,
-		},
-		t,
-		2*time.Second,
-	)
+	events_assertions.AssertApplicationGetsFetched(firstApplicationChan, t)
 
 	// Request new session to be built
 	requestService := di.GetRequestService()
@@ -121,15 +86,7 @@ func Test_SessionShouldBeReplacedAfterPreviousFailingBuild(t *testing.T) {
 	}
 
 	// Assert application session gets built
-	events_assertions.AssertApplicationEvents(
-		firstApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeSessionBuild,
-			models.ApplicationEventTypeSessionBuildSucceeded,
-		},
-		t,
-		2*time.Second,
-	)
+	events_assertions.AssertApplicationSessionSucceeded(firstApplicationChan, t)
 
 	// Get session events channel
 	session := sessionBuildResult.Session
@@ -164,28 +121,7 @@ func Test_SessionShouldBeReplacedAfterPreviousFailingBuild(t *testing.T) {
 	mediator.ApplicationFetch.Enqueue(firstApplication, true)
 
 	// Assert application gets fetched and build fails
-	events_assertions.AssertApplicationEvents(
-		firstApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeFetchStarted,
-			models.ApplicationEventTypeHotSwap,
-			models.ApplicationEventTypeSessionBuild,
-			models.ApplicationEventTypeFetchCompleted,
-			models.ApplicationEventTypeSessionBuildFailed,
-			models.ApplicationEventTypeSessionBuild,
-			models.ApplicationEventTypeSessionCleaned,
-			models.ApplicationEventTypeSessionBuildFailed,
-			models.ApplicationEventTypeSessionBuild,
-			models.ApplicationEventTypeSessionCleaned,
-			models.ApplicationEventTypeSessionBuildFailed,
-			models.ApplicationEventTypeSessionBuild,
-			models.ApplicationEventTypeSessionCleaned,
-			models.ApplicationEventTypeSessionBuildFailed,
-			models.ApplicationEventTypeSessionCleaned,
-		},
-		t,
-		2*time.Second,
-	)
+	events_assertions.AssertApplicationGetsFetchedWithHotSwapAndFailingBuildWith3Retries(firstApplicationChan, t)
 
 	sessionStorage := di.GetSessionStorage()
 	aliveSessions := sessionStorage.GetAllAliveSessions()

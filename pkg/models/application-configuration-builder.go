@@ -32,6 +32,16 @@ func (a *ApplicationConfiguration) WithStopCommand(command string) *ApplicationC
 	return a
 }
 
+func (a *ApplicationConfiguration) WithCleanCommand(command string) *ApplicationConfiguration {
+	a.Commands.Clean = append(a.Commands.Clean, Command{Command: command})
+	return a
+}
+
+func (a *ApplicationConfiguration) WithCleanCommand_ContinueOnError(command string) *ApplicationConfiguration {
+	a.Commands.Clean = append(a.Commands.Clean, Command{Command: command, ContinueOnError: true})
+	return a
+}
+
 func (a *ApplicationConfiguration) WithStartupRetries(n int) *ApplicationConfiguration {
 	a.Startup.Retries = n
 	return a
