@@ -2,7 +2,6 @@ package session_watch
 
 import (
 	"testing"
-	"time"
 
 	"github.com/wufe/polo/internal/tests"
 	"github.com/wufe/polo/internal/tests/events_assertions"
@@ -40,65 +39,31 @@ func Test_SessionWatchShouldWorkOnTheSameApplication(t *testing.T) {
 		GitClient:         versioning_fixture.NewGitClient(),
 		CommandRunner:     execution_fixture.NewCommandRunnerFixture(),
 		PortRetriever:     portRetriever,
-	}, &models.ApplicationConfiguration{
-		SharedConfiguration: models.SharedConfiguration{
-			Remote: "FakeRemote",
-			Commands: models.Commands{
-				Start: []models.Command{
-					{Command: "valid-command.exe"},
-				},
-				Stop: []models.Command{
-					{Command: "valid-command.exe"},
-				},
-			},
-			Startup: models.Startup{
-				Retries: 3,
-			},
-			Healthcheck: models.Healthcheck{
-				RetryInterval: .1,
-			},
-		},
-		Name:      "Test_SessionWatchShouldWorkOnTheSameApplication",
-		IsDefault: true,
-		Branches: []models.BranchConfigurationMatch{
-			{
-				Test: "main",
-				BranchConfiguration: models.BranchConfiguration{
-					Watch: false,
-					Main:  false,
-				},
-			},
-		},
-	}, &models.ApplicationConfiguration{
-		SharedConfiguration: models.SharedConfiguration{
-			Remote: "FakeRemote",
-			Commands: models.Commands{
-				Start: []models.Command{
-					{Command: "valid-command.exe"},
-				},
-				Stop: []models.Command{
-					{Command: "valid-command.exe"},
-				},
-			},
-			Startup: models.Startup{
-				Retries: 3,
-			},
-			Healthcheck: models.Healthcheck{
-				RetryInterval: 1,
-			},
-		},
-		Name:      "Test_SessionWatchShouldWorkOnTheSameApplication2",
-		IsDefault: false,
-		Branches: []models.BranchConfigurationMatch{
-			{
-				Test: "main",
-				BranchConfiguration: models.BranchConfiguration{
-					Watch: false,
-					Main:  false,
-				},
-			},
-		},
-	})
+	}, models.BuildApplicationConfiguration("Test_SessionWatchShouldWorkOnTheSameApplication1").
+		WithRemote("FakeRemote").
+		WithStartCommand("valid-command.exe").
+		WithStopCommand("valid-command.exe").
+		WithStartupRetries(3).
+		WithHealthcheckRetryInterval(1).
+		SetAsDefault(true).
+		WithBranch(
+			models.BuildBranchConfigurationMatch("main").
+				SetWatch(false).
+				SetMain(false),
+		),
+		models.BuildApplicationConfiguration("Test_SessionWatchShouldWorkOnTheSameApplication2").
+			WithRemote("FakeRemote").
+			WithStartCommand("valid-command.exe").
+			WithStopCommand("valid-command.exe").
+			WithStartupRetries(3).
+			WithHealthcheckRetryInterval(1).
+			SetAsDefault(false).
+			WithBranch(
+				models.BuildBranchConfigurationMatch("main").
+					SetWatch(false).
+					SetMain(false),
+			),
+	)
 
 	// Get events channel
 	applications := di.GetApplications()
@@ -108,30 +73,10 @@ func Test_SessionWatchShouldWorkOnTheSameApplication(t *testing.T) {
 	secondApplicationChan := secondApplication.GetEventBus().GetChan()
 
 	// Assert first application is being loaded
-	events_assertions.AssertApplicationEvents(
-		firstApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeInitializationStarted,
-			models.ApplicationEventTypeFetchStarted,
-			models.ApplicationEventTypeFetchCompleted,
-			models.ApplicationEventTypeInitializationCompleted,
-		},
-		t,
-		10*time.Second,
-	)
+	events_assertions.AssertApplicationGetsInitializedAndFetched(firstApplicationChan, t)
 
 	// Assert second application is being loaded
-	events_assertions.AssertApplicationEvents(
-		secondApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeInitializationStarted,
-			models.ApplicationEventTypeFetchStarted,
-			models.ApplicationEventTypeFetchCompleted,
-			models.ApplicationEventTypeInitializationCompleted,
-		},
-		t,
-		10*time.Second,
-	)
+	events_assertions.AssertApplicationGetsInitializedAndFetched(secondApplicationChan, t)
 
 	// Creating the second commit
 	secondCommit := fetcher.NewCommit("Second commit")
@@ -142,29 +87,13 @@ func Test_SessionWatchShouldWorkOnTheSameApplication(t *testing.T) {
 	mediator.ApplicationFetch.Enqueue(firstApplication, false)
 
 	// Assert first application gets fetched
-	events_assertions.AssertApplicationEvents(
-		firstApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeFetchStarted,
-			models.ApplicationEventTypeFetchCompleted,
-		},
-		t,
-		2*time.Second,
-	)
+	events_assertions.AssertApplicationGetsFetched(firstApplicationChan, t)
 
 	// Re-fetch the second application
 	mediator.ApplicationFetch.Enqueue(secondApplication, false)
 
 	// Assert second application gets fetched
-	events_assertions.AssertApplicationEvents(
-		secondApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeFetchStarted,
-			models.ApplicationEventTypeFetchCompleted,
-		},
-		t,
-		2*time.Second,
-	)
+	events_assertions.AssertApplicationGetsFetched(secondApplicationChan, t)
 
 	// Request new session to be built
 	requestService := di.GetRequestService()
@@ -179,31 +108,10 @@ func Test_SessionWatchShouldWorkOnTheSameApplication(t *testing.T) {
 	sessionChan := sessionBus.GetChan()
 
 	// Assert application builds the session
-	events_assertions.AssertApplicationEvents(
-		firstApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeSessionBuild,
-			models.ApplicationEventTypeSessionBuildSucceeded,
-		},
-		t,
-		2*time.Second,
-	)
+	events_assertions.AssertApplicationSessionSucceeded(firstApplicationChan, t)
 
 	// Assert session fails to get created
-	events_assertions.AssertSessionEvents(
-		sessionChan,
-		[]models.SessionEventType{
-			// First build
-			models.SessionEventTypeBuildStarted,
-			models.SessionEventTypePreparingFolders,
-			models.SessionEventTypeCommandsExecutionStarted,
-			models.SessionEventTypeHealthcheckStarted,
-			models.SessionEventTypeHealthcheckSucceded,
-			models.SessionEventTypeSessionAvailable,
-		},
-		t,
-		10*time.Second,
-	)
+	events_assertions.AssertSessionGetsBuiltAndGetsAvailable(sessionChan, t)
 
 	// Creating the third commit
 	thirdCommit := fetcher.NewCommit("Third commit")
@@ -213,17 +121,7 @@ func Test_SessionWatchShouldWorkOnTheSameApplication(t *testing.T) {
 	mediator.ApplicationFetch.Enqueue(firstApplication, true)
 
 	// Assert first application gets fetched SWAPPING the previously built session
-	events_assertions.AssertApplicationEvents(
-		firstApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeFetchStarted,
-			models.ApplicationEventTypeHotSwap,
-			models.ApplicationEventTypeSessionBuild,
-			models.ApplicationEventTypeFetchCompleted,
-		},
-		t,
-		2*time.Second,
-	)
+	events_assertions.AssertApplicationGetsFetchedWithHotSwap(firstApplicationChan, t)
 
 	// Fetch the repo again, for the second application, watching started branches
 	mediator.ApplicationFetch.Enqueue(secondApplication, true)
@@ -231,13 +129,5 @@ func Test_SessionWatchShouldWorkOnTheSameApplication(t *testing.T) {
 	// Assert first application gets fetched NOT swapping the session
 	// previously built by the other application NOR auto-starting a new session
 	// because there were no applications previously started by this application
-	events_assertions.AssertApplicationEvents(
-		secondApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeFetchStarted,
-			models.ApplicationEventTypeFetchCompleted,
-		},
-		t,
-		2*time.Second,
-	)
+	events_assertions.AssertApplicationGetsFetched(secondApplicationChan, t)
 }

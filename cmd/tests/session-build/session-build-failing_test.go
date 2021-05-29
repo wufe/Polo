@@ -25,21 +25,12 @@ func Test_SessionBuildFailing(t *testing.T) {
 	di := tests.Fixture(&tests.InjectableServices{
 		RepositoryFetcher: fetcher,
 		GitClient:         versioning_fixture.NewGitClient(),
-	}, &models.ApplicationConfiguration{
-		SharedConfiguration: models.SharedConfiguration{
-			Remote: "FakeRemote",
-			Commands: models.Commands{
-				Start: []models.Command{
-					{Command: "notexistingcommand.exe"},
-				},
-				Stop: []models.Command{
-					{Command: "notexistingcommand.exe"},
-				},
-			},
-		},
-		Name:      "Test_SessionBuildFailing",
-		IsDefault: true,
-	})
+	}, models.BuildApplicationConfiguration("Test_SessionBuildFailing").
+		WithRemote("FakeRemote").
+		WithStartCommand("notexistingcommand.exe").
+		WithStopCommand("notexistingcommand.exe").
+		SetAsDefault(true),
+	)
 
 	// Get events channel
 	applications := di.GetApplications()
@@ -48,17 +39,7 @@ func Test_SessionBuildFailing(t *testing.T) {
 	firstApplicationChan := firstApplicationBus.GetChan()
 
 	// Assert application is being loaded
-	events_assertions.AssertApplicationEvents(
-		firstApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeInitializationStarted,
-			models.ApplicationEventTypeFetchStarted,
-			models.ApplicationEventTypeFetchCompleted,
-			models.ApplicationEventTypeInitializationCompleted,
-		},
-		t,
-		10*time.Second,
-	)
+	events_assertions.AssertApplicationGetsInitializedAndFetched(firstApplicationChan, t)
 
 	// Creating the second commit
 	secondCommit := fetcher.NewCommit("Second commit")
@@ -69,15 +50,7 @@ func Test_SessionBuildFailing(t *testing.T) {
 	mediator.ApplicationFetch.Enqueue(firstApplication, false)
 
 	// Assert application gets fetched
-	events_assertions.AssertApplicationEvents(
-		firstApplicationChan,
-		[]models.ApplicationEventType{
-			models.ApplicationEventTypeFetchStarted,
-			models.ApplicationEventTypeFetchCompleted,
-		},
-		t,
-		10*time.Second,
-	)
+	events_assertions.AssertApplicationGetsFetched(firstApplicationChan, t)
 
 	// Request new session to be built
 	requestService := di.GetRequestService()

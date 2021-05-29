@@ -6,17 +6,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/wufe/polo/pkg/models"
-
 	aurora "github.com/logrusorgru/aurora/v3"
+	"github.com/wufe/polo/pkg/models"
 )
 
-func AssertApplicationEvents(
-	ch <-chan models.ApplicationEvent,
-	events []models.ApplicationEventType,
+func AssertSessionEvents(
+	ch <-chan models.SessionBuildEvent,
+	events []models.SessionEventType,
 	t *testing.T,
 	timeout time.Duration,
-) []models.ApplicationEvent {
+) {
 
 	stringifiedExpectedEventsSlice := []string{}
 	for _, ev := range events {
@@ -29,8 +28,6 @@ func AssertApplicationEvents(
 
 	timeoutFired := false
 
-	gotEvents := []models.ApplicationEvent{}
-
 L:
 	for {
 		select {
@@ -38,8 +35,7 @@ L:
 			if !ok {
 				break L
 			}
-			fmt.Printf("[APP_EVENT]: %s\n", ev.EventType)
-			gotEvents = append(gotEvents, ev)
+			fmt.Printf("[SESSION_EVENT]: %s\n", ev.EventType)
 			stringifiedGotEventsSlice = append(stringifiedGotEventsSlice, ev.EventType.String())
 			if ev.EventType == events[lastFoundIndex+1] {
 				lastFoundIndex++
@@ -64,5 +60,4 @@ L:
 			t.Error(aurora.Sprintf(aurora.Red("expected application events to be:\n%s,\nbut got:\n%s instead"), stringifiedExpectedEvents, stringifiedGotEvents))
 		}
 	}
-	return gotEvents
 }
