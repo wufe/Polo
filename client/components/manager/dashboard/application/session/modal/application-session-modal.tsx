@@ -19,6 +19,7 @@ type TProps = {
     onSessionDeletionSelect: () => void;
     onCopyPermalinkSelect  : () => void;
     onShowLogsSelect       : () => void;
+    onAPISelect            : () => void;
 }
 export const ApplicationSessionModal = (props: TProps) => {
     return <DefaultModal name={props.name}>
@@ -50,7 +51,14 @@ export const ApplicationSessionModal = (props: TProps) => {
                     <TextDocumentIcon />
                     <span>View build logs</span>
                 </DefaultModalItem>
+
+                <DefaultModalDivider />
                 
+                <DefaultModalItem onClick={props.onAPISelect}>
+                    <CodeIcon />
+                    <span>JSON API</span>
+                </DefaultModalItem>
+
                 <DefaultModalItem notImplemented>
                     <CodeIcon />
                     <span>Advanced commands</span>
