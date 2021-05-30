@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/models/output"
 	"github.com/wufe/polo/pkg/storage"
@@ -84,9 +85,9 @@ func (s *QueryService) GetSessionLogsAndStatus(uuid string, lastLogUUID string) 
 	return retLogs, session.Status, nil
 }
 
-// GetMatchingCheckout
+// GetMatchingCheckoutBySmartUrl
 // The rawInput parameter is without prefix "/s/"
-func (s *QueryService) GetMatchingCheckout(rawInput string) (checkout string, application string, path string, found bool) {
+func (s *QueryService) GetMatchingCheckoutBySmartUrl(rawInput string) (checkout string, application string, path string, found bool) {
 	var defaultApp *models.Application
 	apps := s.applicationStorage.GetAll()
 	for _, app := range apps {
@@ -114,6 +115,50 @@ func (s *QueryService) GetMatchingCheckout(rawInput string) (checkout string, ap
 		}
 	}
 	return "", "", "", false
+}
+
+func (s *QueryService) GetMatchingCheckoutByPermalink(rawInput string) (checkout string, application string, path string, found bool) {
+	// Format: <app-hash>/<commit-id>/<path>?
+	if !strings.Contains(rawInput, "/") {
+		return "", "", "", false
+	}
+	var foundApp *models.Application
+	apps := s.applicationStorage.GetAll()
+	appHashPrefix := ""
+	for _, app := range apps {
+		conf := app.GetConfiguration()
+		appHashPrefix = conf.Hash + "/"
+		if strings.HasPrefix(rawInput, appHashPrefix) {
+			rawInput = strings.TrimPrefix(rawInput, appHashPrefix)
+			foundApp = app
+			application = conf.Name
+			break
+		}
+	}
+	if foundApp == nil {
+		return "", "", "", false
+	}
+	// "rawInput" is now stripped of the app-hash prefix
+	// New format: <commit-id>/<path>?
+	// where <path> may contain other "/"s
+	// That's why we are using SplitN with N = 2
+	// e.g. <commit-id>/1/2/3 -> [<commit-id>, "1/2/3"]
+	chunks := strings.SplitN(rawInput, "/", 2)
+	commitID := chunks[0]
+	var commitMap map[string]*object.Commit
+	foundApp.WithRLock(func(a *models.Application) {
+		commitMap = a.CommitMap
+	})
+	_, found = commitMap[commitID]
+	if !found {
+		// Does not exist a commit with that ID
+		return "", "", "", false
+	}
+	checkout = commitID
+	if len(chunks) > 1 {
+		path = chunks[1]
+	}
+	return checkout, application, path, found
 }
 
 func (s *QueryService) GetFailedSessions() []*models.Session {

@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/logrusorgru/aurora/v3"
 	"github.com/wufe/polo/pkg/http/proxy"
 	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
@@ -234,7 +235,19 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 
 func (h *Handler) tryGetSessionByRequestURL(req *http.Request) (*models.Session, string) {
 	if strings.HasPrefix(req.URL.Path, "/s/") {
-		if checkout, application, path, found := h.query.GetMatchingCheckout(req.URL.Path[3:]); found {
+		if checkout, application, path, found := h.query.GetMatchingCheckoutBySmartUrl(req.URL.Path[3:]); found {
+			result, err := h.request.NewSession(checkout, application)
+			if err != nil {
+				return nil, ""
+			}
+			if req.URL.RawQuery != "" {
+				path = path + "?" + req.URL.RawQuery
+			}
+			return result.Session, path
+		}
+	} else if strings.HasPrefix(req.URL.Path, "/p/") {
+		if checkout, application, path, found := h.query.GetMatchingCheckoutByPermalink(req.URL.Path[3:]); found {
+			fmt.Println(aurora.Sprintf(aurora.Blue("%s, %s, %s"), checkout, application, path))
 			result, err := h.request.NewSession(checkout, application)
 			if err != nil {
 				return nil, ""
