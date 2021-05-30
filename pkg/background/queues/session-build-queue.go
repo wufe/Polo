@@ -27,6 +27,7 @@ type SessionBuildInput struct {
 	Application          *models.Application
 	PreviousSession      *models.Session
 	SessionsToBeReplaced []*models.Session
+	DetectBranchOrTag    bool
 }
 type SessionBuildResultType string
 
@@ -37,12 +38,13 @@ type SessionBuildResult struct {
 	EventBus      *models.SessionLifetimeEventBus
 }
 
-func (q *SessionBuildQueue) Enqueue(checkout string, app *models.Application, prevSession *models.Session, sessionsToBeReplaced []*models.Session) *SessionBuildResult {
+func (q *SessionBuildQueue) Enqueue(checkout string, app *models.Application, prevSession *models.Session, sessionsToBeReplaced []*models.Session, detectBranchOrTag bool) *SessionBuildResult {
 	q.RequestChan <- &SessionBuildInput{
 		Checkout:             checkout,
 		Application:          app,
 		PreviousSession:      prevSession,
 		SessionsToBeReplaced: sessionsToBeReplaced,
+		DetectBranchOrTag:    detectBranchOrTag,
 	}
 	return <-q.ResponseChan
 }

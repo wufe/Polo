@@ -236,7 +236,7 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 func (h *Handler) tryGetSessionByRequestURL(req *http.Request) (*models.Session, string) {
 	if strings.HasPrefix(req.URL.Path, "/s/") {
 		if checkout, application, path, found := h.query.GetMatchingCheckoutBySmartUrl(req.URL.Path[3:]); found {
-			result, err := h.request.NewSession(checkout, application)
+			result, err := h.request.NewSession(checkout, application, false)
 			if err != nil {
 				return nil, ""
 			}
@@ -248,7 +248,7 @@ func (h *Handler) tryGetSessionByRequestURL(req *http.Request) (*models.Session,
 	} else if strings.HasPrefix(req.URL.Path, "/p/") {
 		if checkout, application, path, found := h.query.GetMatchingCheckoutByPermalink(req.URL.Path[3:]); found {
 			fmt.Println(aurora.Sprintf(aurora.Blue("%s, %s, %s"), checkout, application, path))
-			result, err := h.request.NewSession(checkout, application)
+			result, err := h.request.NewSession(checkout, application, true)
 			if err != nil {
 				return nil, ""
 			}

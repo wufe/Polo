@@ -108,7 +108,7 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 						retriesCount++
 						session.LogWarn(fmt.Sprintf("[%d/%d] Retrying session startup.", retriesCount, maxRetries))
 						bus.PublishEvent(models.SessionEventTypeBuildGettingRetried, session)
-						w.mediator.BuildSession.Enqueue(session.Checkout, session.Application, session, nil)
+						w.mediator.BuildSession.Enqueue(session.Checkout, session.Application, session, nil, false)
 					} else {
 						session.LogWarn("Max startup retries exceeded.")
 						shouldTryCleanFolders = true
