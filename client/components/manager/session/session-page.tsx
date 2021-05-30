@@ -40,7 +40,7 @@ export const SessionPage = observer((props: TProps) => {
                 session.track()
                     .then(request => {
                         if (request.result === APIRequestResult.SUCCEEDED) {
-                            location.href = `/${catchall}`;
+                            location.href = `/${catchall}${location.search}`;
                         }
                     });
             }
