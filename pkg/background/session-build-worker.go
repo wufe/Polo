@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/logrusorgru/aurora/v3"
 	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/http/net"
 	"github.com/wufe/polo/pkg/logging"
@@ -73,7 +74,7 @@ func (w *SessionBuildWorker) startAcceptingNewSessionRequests() {
 }
 
 func (w *SessionBuildWorker) RequestNewSession(buildInput *queues.SessionBuildInput) *queues.SessionBuildResult {
-	return w.mediator.BuildSession.Enqueue(buildInput.Checkout, buildInput.Application, buildInput.PreviousSession, buildInput.SessionsToBeReplaced)
+	return w.mediator.BuildSession.Enqueue(buildInput.Checkout, buildInput.Application, buildInput.PreviousSession, buildInput.SessionsToBeReplaced, buildInput.DetectBranchOrTag)
 }
 
 func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput) *queues.SessionBuildResult {
@@ -169,9 +170,22 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 	session.LogInfo(fmt.Sprintf("Requested checkout to %s (%s)", input.Checkout, session.CommitID))
 
 	// Set display-name based on checkout being a commit ID or not
+	// If input.detectBranchOrTag is set to true, the session's display name
+	// will be set with the name of the branch or the name of the tag,
+	// if given checkout name corresponds to a commitID
 	_, checkoutIsTag := input.Application.TagsMap[input.Checkout]
 	_, checkoutIsBranch := input.Application.BranchesMap[input.Checkout]
-	if !checkoutIsTag && !checkoutIsBranch {
+	object, checkoutIsObject := input.Application.HashToObjectsMap[input.Checkout]
+	fmt.Println(aurora.Red(checkoutIsTag), aurora.Red(checkoutIsBranch), aurora.Red(checkoutIsObject))
+	if input.DetectBranchOrTag && checkoutIsObject {
+		// input.checkout is a commitID
+		// corresponding to a branch or a tag
+		if len(object.Branches) > 0 {
+			session.DisplayName = object.Branches[0]
+		} else if len(object.Tags) > 0 {
+			session.DisplayName = object.Tags[0]
+		}
+	} else if !checkoutIsTag && !checkoutIsBranch {
 		session.DisplayName = session.Alias
 	} else {
 		session.DisplayName = input.Checkout

@@ -64,7 +64,7 @@ func Test_HotSwapDoesNotRetryOnSessionFail(t *testing.T) {
 
 	// Request new session to be built
 	requestService := di.GetRequestService()
-	sessionBuildResult, err := requestService.NewSession(branch.Name, firstApplication.GetConfiguration().Name)
+	sessionBuildResult, err := requestService.NewSession(branch.Name, firstApplication.GetConfiguration().Name, false)
 	if err != nil {
 		t.Error(err.Error())
 	}

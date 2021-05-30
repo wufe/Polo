@@ -1,6 +1,7 @@
 package models
 
 import (
+	"crypto/sha1"
 	"errors"
 	"fmt"
 	"reflect"
@@ -20,6 +21,7 @@ type ApplicationConfiguration struct {
 	utils.RWLocker        `json:"-"`
 	ID                    string   `json:"id"`
 	Name                  string   `json:"name"`
+	Hash                  string   `json:"hash"`
 	Fetch                 Fetch    `json:"fetch"`
 	IsDefault             bool     `yaml:"is_default" json:"isDefault"`
 	MaxConcurrentSessions int      `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
@@ -34,6 +36,10 @@ func NewApplicationConfiguration(configuration *ApplicationConfiguration, mutexB
 		return nil, errors.New("application.name (required) not defined")
 	}
 	configuration.ID = sanitize.Name(configuration.Name)
+
+	// Hash generation from sha1 of sanitized name
+	configuration.Hash = newConfigurationHashFromAppID(configuration.ID)
+
 	if configuration.CleanOnExit == nil {
 		cleanOnExit := true
 		configuration.CleanOnExit = &cleanOnExit
@@ -218,6 +224,13 @@ func (a *ApplicationConfiguration) OverrideWith(override SharedConfiguration) {
 // ToOutput converts this model into an output model
 func (a ApplicationConfiguration) ToOutput() output.ApplicationConfiguration {
 	return mapApplicationConfiguration(a)
+}
+
+func newConfigurationHashFromAppID(appID string) string {
+	h := sha1.New()
+	h.Write([]byte(appID))
+	bs := h.Sum(nil)
+	return fmt.Sprintf("%x", bs)
 }
 
 func ConfigurationAreEqual(c1 ApplicationConfiguration, c2 ApplicationConfiguration) bool {

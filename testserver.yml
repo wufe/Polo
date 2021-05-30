@@ -33,7 +33,7 @@ applications:
       interval: 10
   - name: Test-server2
     remote: "https://github.com/wufe/polo-testserver"
-    is_default: true
+    is_default: false
     commands:
       start:
         - command: docker build --no-cache -t polo-testserver:{{commit}} .

@@ -30,12 +30,17 @@ func NewRequestService(
 	}
 }
 
-func (s *RequestService) NewSession(checkout string, app string) (*queues.SessionBuildResult, error) {
+// NewSession requests for a new session to be built
+// at a specific checkout (can be a commit ID, a branch name or a tag)
+// for a specific app
+// If detectBranchOrTag is set to true, if the checkout is a commit ID,
+// the builder will try to detect if the commit belongs to a branch or a tag
+func (s *RequestService) NewSession(checkout string, app string, detectBranchOrTag bool) (*queues.SessionBuildResult, error) {
 	a := s.applicationStorage.Get(app)
 	if a == nil {
 		return nil, ErrApplicationNotFound
 	}
-	response := s.mediator.BuildSession.Enqueue(checkout, a, nil, nil)
+	response := s.mediator.BuildSession.Enqueue(checkout, a, nil, nil, detectBranchOrTag)
 	if response.Result == queues.SessionBuildResultFailed {
 		return nil, fmt.Errorf("Error requesting new session: %s", response.FailingReason)
 	}

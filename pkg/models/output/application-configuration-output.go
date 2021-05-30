@@ -2,6 +2,7 @@ package output
 
 type ApplicationConfiguration struct {
 	Name                  string            `json:"name"`
+	Hash                  string            `json:"hash"`
 	ID                    string            `json:"id"`
 	Remote                string            `json:"remote"`
 	Target                string            `json:"target"`

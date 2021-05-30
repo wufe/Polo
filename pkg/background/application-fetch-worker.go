@@ -183,7 +183,7 @@ func (w *ApplicationFetchWorker) getAllAppSessionsToBeReplaced(appID, appName st
 
 func requestSessionBuilder(a *models.Application, ref string) func(*Mediator, *models.Session, []*models.Session) {
 	return func(mediator *Mediator, previousSession *models.Session, sessionsToBeReplaced []*models.Session) {
-		mediator.BuildSession.Enqueue(ref, a, previousSession, sessionsToBeReplaced)
+		mediator.BuildSession.Enqueue(ref, a, previousSession, sessionsToBeReplaced, false)
 	}
 }
 

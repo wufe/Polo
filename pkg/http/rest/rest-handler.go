@@ -249,7 +249,7 @@ func (h *Handler) addSession(req *services.RequestService) httprouter.Handle {
 			return
 		}
 
-		response, err := req.NewSession(input.Checkout, input.ApplicationName)
+		response, err := req.NewSession(input.Checkout, input.ApplicationName, false)
 		if err != nil {
 			if err == services.ErrApplicationNotFound {
 				write(h.notFound())

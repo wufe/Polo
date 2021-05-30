@@ -66,6 +66,8 @@ export const SessionModel = types.model({
     configuration    : SessionConfigurationModel,
     killReason       : types.enumeration<SessionKillReason>(Object.values(SessionKillReason)),
     replacedBy       : types.string,
+    permalink        : types.string,
+    smartURL         : types.string,
 }).views(self => ({
     get beingReplacedBySession() {
         return self.beingReplacedBy as ISession;

@@ -27,6 +27,7 @@ func mapApplication(model *Application) *output.Application {
 func mapApplicationConfiguration(model ApplicationConfiguration) output.ApplicationConfiguration {
 	return output.ApplicationConfiguration{
 		Name:                  model.Name,
+		Hash:                  model.Hash,
 		ID:                    model.ID,
 		Remote:                model.Remote,
 		Target:                model.Target,

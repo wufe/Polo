@@ -10,6 +10,7 @@ import { LoginIcon } from '@/components/shared/elements/icons/login/login-icon';
 import { TextDocumentIcon } from '@/components/shared/elements/icons/text-document/text-document-icon';
 import { TrashIcon } from '@/components/shared/elements/icons/trash/trash-icon';
 import { ISession } from '@/state/models';
+import { LinkIcon } from '@heroicons/react/outline';
 
 type TProps = {
     name                   : string;
@@ -17,6 +18,7 @@ type TProps = {
     onCommitMessageSelect  : (session: ISession) => void;
     onEnterSessionSelect   : () => void;
     onSessionDeletionSelect: () => void;
+    onCopySmartURLSelect   : () => void;
     onCopyPermalinkSelect  : () => void;
     onShowLogsSelect       : (session: ISession) => void;
     onAPISelect            : (session: ISession) => void;
@@ -37,8 +39,13 @@ export const ApplicationSessionModal = (props: TProps) => {
                 
                 <DefaultModalDivider />
                 
-                <DefaultModalItem onClick={props.onCopyPermalinkSelect}>
+                {props.session.smartURL && <DefaultModalItem onClick={props.onCopySmartURLSelect}>
                     <ClipboardIcon />
+                    <span>Copy link</span>
+                </DefaultModalItem>}
+
+                <DefaultModalItem onClick={props.onCopyPermalinkSelect}>
+                    <LinkIcon />
                     <span>Copy permalink</span>
                 </DefaultModalItem>
 
