@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/jxskiss/base62"
 	"github.com/kennygrant/sanitize"
 	"github.com/wufe/polo/pkg/models/output"
 	"github.com/wufe/polo/pkg/utils"
@@ -230,7 +231,7 @@ func newConfigurationHashFromAppID(appID string) string {
 	h := sha1.New()
 	h.Write([]byte(appID))
 	bs := h.Sum(nil)
-	return fmt.Sprintf("%x", bs)
+	return base62.EncodeToString(bs)[:6]
 }
 
 func ConfigurationAreEqual(c1 ApplicationConfiguration, c2 ApplicationConfiguration) bool {

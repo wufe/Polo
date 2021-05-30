@@ -9,6 +9,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible
 	github.com/julienschmidt/httprouter v1.3.0
+	github.com/jxskiss/base62 v0.0.0-20191017122030-4f11678b909b // indirect
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/logrusorgru/aurora/v3 v3.0.0
