@@ -21,12 +21,9 @@ applications:
     startup:
       retries: 5
     branches:
-      # - test: ^dev$
-      #   watch: false
-      #   main: false
-      #   commands:
-      #     start:
-      #       - command: nonexisting.exe
+      - test: ^dev$
+        watch: true
+        main: true
       - test: feature/my-watched-feature
         watch: false
     fetch:
@@ -57,3 +54,28 @@ applications:
             - command: nonexisting.exe
       - test: feature/my-watched-feature
         watch: false
+  - name: todo-mvc
+    remote: https://github.com/Wufe/todomvc
+    fetch:
+      interval: 10
+    is_default: false
+    startup:
+      retries: 3
+    commands:
+      start:
+        - command: docker build -t todo-mvc:{{commit}} .
+        - command: docker run -p {{port}}:80 -d todo-mvc:{{commit}}
+          output_variable: container_id
+      stop:
+        - command: "docker kill {{container_id}}"
+          continue_on_error: true
+      clean:
+        - command: docker rm -f {{container_id}}
+          continue_on_error: true
+        - command: docker image prune -f -a --filter label=name=todo-mvc
+    recycle:
+      inactivity_timeout: 360
+    healthcheck:
+      max_retries: 2
+      retry_interval: 5
+      retry_timeout: 10
