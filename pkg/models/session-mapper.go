@@ -31,6 +31,8 @@ func MapSession(model *Session) *output.Session {
 		Metrics:           mapMetrics(model.Metrics),
 		Configuration:     mapConfiguration(conf),
 		SessionStatus:     status,
+		Permalink:         mapPermalink(model, conf),
+		SmartURL:          mapSmartURL(model, conf),
 	}
 	model.RUnlock()
 	session.ReplacesSessions = mapReplaces(model.GetReplaces())
@@ -114,4 +116,15 @@ func mapMetrics(models []Metric) []output.Metric {
 		})
 	}
 	return ret
+}
+
+func mapPermalink(session *Session, conf ApplicationConfiguration) string {
+	return "/p/" + conf.Hash + "/" + session.CommitID
+}
+
+func mapSmartURL(session *Session, conf ApplicationConfiguration) string {
+	if !conf.IsDefault {
+		return ""
+	}
+	return "/s/" + session.Checkout
 }

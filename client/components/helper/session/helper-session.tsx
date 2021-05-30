@@ -5,6 +5,7 @@ import { useHistory } from 'react-router-dom';
 import { HelperStatus, HelperStatusContext } from '../contexts';
 import { expiredAgeValue, noExpirationAgeValue } from '../status/helper-status-provider';
 import { SessionAge } from './helper-session-age';
+import { LinkIcon } from '@heroicons/react/outline';
 import './helper-session.scss';
 import { useClipboard } from '../../shared/hooks/use-clipboard';
 
@@ -28,10 +29,17 @@ export const HelperSession = (props: TProps) => {
         props.session.age > noExpirationAgeValue &&
         props.session.age > expiredAgeValue;
 
+    const copySmartURL = () => {
+        let fullpath = location.pathname + location.search;
+        fullpath = fullpath === '/' ? '' : fullpath;
+        copy(`${location.origin}${props.session.smartURL}${fullpath}`);
+        setOpen(false);
+    }
+
     const copyPermalink = () => {
         let fullpath = location.pathname + location.search;
         fullpath = fullpath === '/' ? '' : fullpath;
-        copy(`${location.origin}/s/${props.session.checkout}${fullpath}`);
+        copy(`${location.origin}${props.session.permalink}${fullpath}`);
         setOpen(false);
     }
     const goToLogs = () => location.href = `/_polo_/session/${props.session.uuid}/logs`;
@@ -54,9 +62,9 @@ export const HelperSession = (props: TProps) => {
         </div>
         
         <div className="__collapsible">
-            {props.session.configuration?.isDefault &&
-                <div className="__shortcut" onClick={copyPermalink}>
-                    <span className="__desc">Copy permalink</span>
+            {props.session.smartURL &&
+                <div className="__shortcut" onClick={copySmartURL}>
+                    <span className="__desc">Copy link</span>
                     <div className="__icon-container">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width={16} height={16}>
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
@@ -64,6 +72,12 @@ export const HelperSession = (props: TProps) => {
                     </div>
                 </div>
             }
+            <div className="__shortcut" onClick={copyPermalink}>
+                <span className="__desc">Copy permalink</span>
+                <div className="__icon-container">
+                    <LinkIcon width="14" height="14" />
+                </div>
+            </div>
             <div className="__shortcut" onClick={goToLogs}>
                 <span className="__desc">View logs</span>
                 <div className="__icon-container">

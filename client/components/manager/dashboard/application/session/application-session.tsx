@@ -43,8 +43,13 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
         await session.kill();
     }
 
+    const copySmartURL = () => {
+        copy(`${location.origin}${props.session.smartURL}`);
+        hide();
+    }
+
     const copyPermalink = () => {
-        copy(`${location.origin}/s/${props.session.checkout}`);
+        copy(`${location.origin}${props.session.permalink}`);
         hide();
     }
 
@@ -134,7 +139,8 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
             onCommitMessageSelect={openCommitModal}
             onEnterSessionSelect={attachToSession}
             onSessionDeletionSelect={() => show(deleteSessionModalName)}
-            onCopyPermalinkSelect={() => copyPermalink()}
+            onCopySmartURLSelect={copySmartURL}
+            onCopyPermalinkSelect={copyPermalink}
             onShowLogsSelect={showLogs} />
         <CommitModal
             name={getCommitMessageModalName()}
