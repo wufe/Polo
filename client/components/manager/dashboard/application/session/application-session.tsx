@@ -44,7 +44,7 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
     }
 
     const copyPermalink = () => {
-        copy(`${location.origin}/s/${props.session.displayName}`);
+        copy(`${location.origin}/s/${props.session.checkout}`);
         hide();
     }
 

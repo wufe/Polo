@@ -31,7 +31,7 @@ export const HelperSession = (props: TProps) => {
     const copyPermalink = () => {
         let fullpath = location.pathname + location.search;
         fullpath = fullpath === '/' ? '' : fullpath;
-        copy(`${location.origin}/s/${props.session.displayName}${fullpath}`);
+        copy(`${location.origin}/s/${props.session.checkout}${fullpath}`);
         setOpen(false);
     }
     const goToLogs = () => location.href = `/_polo_/session/${props.session.uuid}/logs`;
