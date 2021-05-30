@@ -13,7 +13,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/logrusorgru/aurora/v3"
 	"github.com/wufe/polo/pkg/http/proxy"
 	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
@@ -247,7 +246,6 @@ func (h *Handler) tryGetSessionByRequestURL(req *http.Request) (*models.Session,
 		}
 	} else if strings.HasPrefix(req.URL.Path, "/p/") {
 		if checkout, application, path, found := h.query.GetMatchingCheckoutByPermalink(req.URL.Path[3:]); found {
-			fmt.Println(aurora.Sprintf(aurora.Blue("%s, %s, %s"), checkout, application, path))
 			result, err := h.request.NewSession(checkout, application, true)
 			if err != nil {
 				return nil, ""

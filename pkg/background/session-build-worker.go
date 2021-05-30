@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/logrusorgru/aurora/v3"
 	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/http/net"
 	"github.com/wufe/polo/pkg/logging"
@@ -176,7 +175,6 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 	_, checkoutIsTag := input.Application.TagsMap[input.Checkout]
 	_, checkoutIsBranch := input.Application.BranchesMap[input.Checkout]
 	object, checkoutIsObject := input.Application.HashToObjectsMap[input.Checkout]
-	fmt.Println(aurora.Red(checkoutIsTag), aurora.Red(checkoutIsBranch), aurora.Red(checkoutIsObject))
 	if input.DetectBranchOrTag && checkoutIsObject {
 		// input.checkout is a commitID
 		// corresponding to a branch or a tag
