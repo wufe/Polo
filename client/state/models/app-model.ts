@@ -3,7 +3,7 @@ import { IAPIStatusData, retrieveFailedSessionAPI, retrieveFailedSessionLogsAPI,
 import { IAPISession, retrieveSessionAPI, retrieveSessionStatusAPI } from "@/api/session";
 import { values } from "mobx";
 import { types, flow, cast, Instance, getType, applySnapshot, applyPatch } from "mobx-state-tree";
-import { ApplicationModel, IApplication } from "./application-model";
+import { ApplicationModel, castAPIApplicationToApplicationModel, IApplication } from "./application-model";
 import { SessionModel, ISession, castAPISessionToSessionModel, ISessionLog } from "./session-model";
 import { initialModalState, ModalModel } from "./modal-model";
 import { INotification, NotificationModel, NotificationType } from "./notification-model";
@@ -26,6 +26,11 @@ export type TNotificationProps = {
     title?: string;
     expiration?: number;
     onClick?: (notification: INotification) => void;
+};
+
+export type TNotificationResult = {
+    notification: INotification;
+    remove: () => void;
 };
 
 export const AppModel = types.model({
@@ -72,7 +77,7 @@ export const AppModel = types.model({
 
             type TApplicationsMap = TDictionary<IApplication>;
             const applicationsMap = applications.reduce<TApplicationsMap>((acc, application) => {
-                acc[application.configuration.name] = application;
+                acc[application.configuration.name] = castAPIApplicationToApplicationModel(application);
                 return acc;
             }, {});
             self.applications.replace(applicationsMap);
@@ -110,7 +115,7 @@ export const AppModel = types.model({
         title = '',
         expiration = 10,
         onClick,
-    }: TNotificationProps) => {
+    }: TNotificationProps): TNotificationResult => {
 
         const uuid = v1();
 
@@ -130,6 +135,11 @@ export const AppModel = types.model({
             setTimeout(() => {
                 self.deleteNotification(uuid);
             }, expiration * 1000);
+        }
+
+        return {
+            notification,
+            remove: () => (self.deleteNotification(uuid),console.log('here'))
         }
     };
 

@@ -10,6 +10,14 @@ type Application struct {
 	BaseFolder    string                   `json:"baseFolder"`
 	BranchesMap   map[string]Branch        `json:"branchesMap"`
 	TagsMap       map[string]Tag           `json:"tagsMap"`
+	Errors        []ApplicationError       `json:"errors"`
+}
+
+type ApplicationError struct {
+	UUID        string    `json:"uuid"`
+	Type        string    `json:"type"`
+	Description string    `json:"description"`
+	CreatedAt   time.Time `json:"createdAt"`
 }
 
 type CheckoutObject struct {

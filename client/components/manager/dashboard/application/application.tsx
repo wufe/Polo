@@ -1,10 +1,10 @@
 import { APIRequestResult } from '@/api/common';
-import { IApp, SessionSubscriptionEventType } from '@/state/models';
+import { IApp, SessionSubscriptionEventType, TNotificationResult } from '@/state/models';
 import { IApplication, IApplicationBranchModel } from '@/state/models/application-model';
 import { ISession } from '@/state/models/session-model';
-import { values } from 'mobx';
+import { has, values } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { ApplicationCheckouts } from './checkouts/application-checkouts';
 import { ApplicationSessions } from './sessions/application-sessions';
@@ -16,10 +16,12 @@ import { ApplicationHeader } from './header/application-header';
 import { Button } from '@/components/shared/elements/button/button';
 import { CubeIcon } from '@/components/shared/elements/icons/cube/cube-icon';
 import { useSubscription } from '@/state/models/subscription-hook';
-import { NotificationType } from '@/state/models/notification-model';
+import { INotification, NotificationType } from '@/state/models/notification-model';
 import { useNotification } from '@/state/models/notification-hook';
 import { TFailuresDictionary } from '@/state/models/failures-model';
 import { buildFailedNotification } from '@/state/notifications/build-failed-notification';
+import { IApplicationError } from '@/state/models/application-error-model';
+import { TDictionary } from '@/utils/types';
 
 type TProps = {
     sessions   : ISession[] | null;
@@ -33,6 +35,39 @@ export const Application = observer((props: TProps) => {
     const { subscribe } = useSubscription();
     const { notify } = useNotification();
     const history = useHistory();
+    
+    // #region useApplicationErrorsNotification
+    type TApplicationErrorNotification = TNotificationResult & {
+        error: IApplicationError;
+    }
+    const showedErrorNotifications = useRef<TDictionary<TApplicationErrorNotification>>({});
+
+    useEffect(() => {
+        Object.entries(showedErrorNotifications.current)
+            .forEach(([k, v]) => {
+                const { error, remove } = v;
+                console.log(error.description, props.application.errors.toJSON())
+                if (!has(props.application.errors, error.uuid)) {
+                    console.log('removing')
+                    remove();
+                    delete showedErrorNotifications.current[error.uuid];
+                }
+            });
+        (values(props.application.errors) as IApplicationError[])
+            .forEach(error => {
+                if (!showedErrorNotifications.current[error.uuid]) {
+                    const errorNotification: TApplicationErrorNotification = {
+                        ...notify({
+                            text: error.description,
+                            type: NotificationType.ERROR,
+                        }),
+                        error
+                    };
+                    showedErrorNotifications.current[error.uuid] = errorNotification;
+                }
+            });
+    }, [props.application.errors]);
+    // #endregion
 
     const onCheckoutChange = (value: string) => setNewSessionCheckout(value);
 

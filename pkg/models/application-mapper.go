@@ -21,6 +21,7 @@ func mapApplication(model *Application) *output.Application {
 		BaseFolder:    model.BaseFolder,
 		BranchesMap:   mapBranches(model.BranchesMap),
 		TagsMap:       mapTags(model.TagsMap),
+		Errors:        mapApplicationErrors(model.errors),
 	}
 }
 

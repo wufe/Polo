@@ -1,7 +1,7 @@
 package models
 
 import (
-	uuid "github.com/iris-contrib/go.uuid"
+	"github.com/google/uuid"
 	"github.com/wufe/polo/pkg/namesgenerator"
 )
 
@@ -27,5 +27,5 @@ func NewSessionAlias(exclude []string) string {
 			break
 		}
 	}
-	return uuid.Must(uuid.NewV1()).String() + "-alias"
+	return uuid.NewString() + "-alias"
 }

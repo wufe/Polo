@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/google/uuid"
 	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models/output"
 	"github.com/wufe/polo/pkg/utils"
@@ -31,6 +32,7 @@ type Application struct {
 	Commits                 []string                  `json:"-"`
 	CommitMap               map[string]*object.Commit `json:"-"`
 	CompiledForwardPatterns []CompiledForwardPattern  `json:"-"`
+	errors                  []ApplicationError
 	bus                     *ApplicationEventBus
 	log                     logging.Logger
 }
@@ -102,7 +104,11 @@ func newApplication(
 	application.TagsMap = make(map[string]*Tag)
 	application.Commits = []string{}
 	application.CommitMap = make(map[string]*object.Commit)
+	if application.errors == nil {
+		application.errors = []ApplicationError{}
+	}
 	application.SetConfiguration(*configuration)
+	application.AddError(ApplicationErrorTypeGitCredentials, fmt.Sprintf("Wrong credentials, I guess %s", uuid.NewString()))
 	return application, nil
 }
 
@@ -183,4 +189,15 @@ func (a *Application) GetEventBus() *ApplicationEventBus {
 	a.RLock()
 	defer a.RUnlock()
 	return a.bus
+}
+
+func (a *Application) AddError(errorType ApplicationErrorType, errorDescription string) {
+	a.Lock()
+	defer a.Unlock()
+	a.errors = append(a.errors, ApplicationError{
+		UUID:        uuid.NewString(),
+		Type:        errorType,
+		Description: errorDescription,
+		CreatedAt:   time.Now(),
+	})
 }
