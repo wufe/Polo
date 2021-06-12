@@ -1,6 +1,7 @@
 package background
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -75,6 +76,12 @@ func (w *ApplicationInitWorker) InitApplication(application *models.Application)
 
 		err = w.gitClient.Clone(applicationFolder, "_base", remote)
 		if err != nil {
+			application.AddNotification(
+				models.ApplicationNotificationTypeGitClone,
+				fmt.Sprintf("%s\n\nEnsure your git cli can do a `clone` and restart the application", err.Error()),
+				models.ApplicationNotificationLevelCritical,
+				true,
+			)
 			return err
 		}
 

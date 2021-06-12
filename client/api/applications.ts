@@ -1,4 +1,4 @@
-import { IApplicationError } from '@/state/models/application-error-model';
+import { IApplicationNotification } from '@/state/models/application-notification-model';
 import { IApplication } from '@/state/models/application-model';
 import { ISession, ISessionLog } from '@/state/models/session-model';
 import axios from 'axios';
@@ -11,8 +11,8 @@ export interface IAPIFailedSessions {
     unacknowledged: ISession[];
 }
 
-export interface IAPIApplication extends Omit<IApplication, 'errors'> {
-    errors: IApplicationError[];
+export interface IAPIApplication extends Omit<IApplication, 'notifications'> {
+    notifications: IApplicationNotification[];
 }
 
 export interface IAPIStatusData {

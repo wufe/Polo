@@ -139,7 +139,7 @@ export const AppModel = types.model({
 
         return {
             notification,
-            remove: () => (self.deleteNotification(uuid),console.log('here'))
+            remove: () => self.deleteNotification(uuid),
         }
     };
 

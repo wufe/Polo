@@ -1,27 +1,26 @@
-import { APIRequestResult } from '@/api/common';
-import { IApp, SessionSubscriptionEventType, TNotificationResult } from '@/state/models';
-import { IApplication, IApplicationBranchModel } from '@/state/models/application-model';
-import { ISession } from '@/state/models/session-model';
-import { has, values } from 'mobx';
+import React, { useEffect, useState } from 'react';
+import './application.scss';
 import { observer } from 'mobx-react-lite';
-import React, { useEffect, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import { APIRequestResult } from '@/api/common';
+import { SessionSubscriptionEventType } from '@/state/models';
+import { IApplication } from '@/state/models/application-model';
+import { ISession } from '@/state/models/session-model';
 import { ApplicationCheckouts } from './checkouts/application-checkouts';
 import { ApplicationSessions } from './sessions/application-sessions';
-import './application.scss';
-import { DefaultModal } from '../../modal/default-modal';
-import { useModal } from '../../modal/modal-hooks';
-import { ApplicationOptionsModal } from './options/application-options-modal';
 import { ApplicationHeader } from './header/application-header';
 import { Button } from '@/components/shared/elements/button/button';
 import { CubeIcon } from '@/components/shared/elements/icons/cube/cube-icon';
 import { useSubscription } from '@/state/models/subscription-hook';
-import { INotification, NotificationType } from '@/state/models/notification-model';
+import { NotificationType } from '@/state/models/notification-model';
 import { useNotification } from '@/state/models/notification-hook';
 import { TFailuresDictionary } from '@/state/models/failures-model';
 import { buildFailedNotification } from '@/state/notifications/build-failed-notification';
-import { IApplicationError } from '@/state/models/application-error-model';
-import { TDictionary } from '@/utils/types';
+import { useApplicationNotifications } from './notifications/application-notification-hook';
+import { observe, values } from 'mobx';
+import { IApplicationNotification } from '@/state/models/application-notification-model';
+import { ApplicationNotifications } from './notifications/application-notifications';
+import { onPatch } from 'mobx-state-tree';
 
 type TProps = {
     sessions   : ISession[] | null;
@@ -35,39 +34,6 @@ export const Application = observer((props: TProps) => {
     const { subscribe } = useSubscription();
     const { notify } = useNotification();
     const history = useHistory();
-    
-    // #region useApplicationErrorsNotification
-    type TApplicationErrorNotification = TNotificationResult & {
-        error: IApplicationError;
-    }
-    const showedErrorNotifications = useRef<TDictionary<TApplicationErrorNotification>>({});
-
-    useEffect(() => {
-        Object.entries(showedErrorNotifications.current)
-            .forEach(([k, v]) => {
-                const { error, remove } = v;
-                console.log(error.description, props.application.errors.toJSON())
-                if (!has(props.application.errors, error.uuid)) {
-                    console.log('removing')
-                    remove();
-                    delete showedErrorNotifications.current[error.uuid];
-                }
-            });
-        (values(props.application.errors) as IApplicationError[])
-            .forEach(error => {
-                if (!showedErrorNotifications.current[error.uuid]) {
-                    const errorNotification: TApplicationErrorNotification = {
-                        ...notify({
-                            text: error.description,
-                            type: NotificationType.ERROR,
-                        }),
-                        error
-                    };
-                    showedErrorNotifications.current[error.uuid] = errorNotification;
-                }
-            });
-    }, [props.application.errors]);
-    // #endregion
 
     const onCheckoutChange = (value: string) => setNewSessionCheckout(value);
 
@@ -77,7 +43,6 @@ export const Application = observer((props: TProps) => {
         if (checkout) {
             const newSession = await props.application.newSession(checkout);
             if (newSession.result === APIRequestResult.SUCCEEDED) {
-                
                 subscribe(newSession.payload.uuid, SessionSubscriptionEventType.FAIL, session => {
                     notify(buildFailedNotification(session, notification => {
                         notification.remove();
@@ -101,6 +66,7 @@ export const Application = observer((props: TProps) => {
         font-quicksand
         application`}>
 
+        <ApplicationNotifications application={props.application} />
         <ApplicationHeader
             name={props.application.configuration.name}
             filename={props.application.filename}

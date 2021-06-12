@@ -34,8 +34,8 @@ func NewRepositoryFetcher() *FixtureRepositoryFetcher {
 	}
 }
 
-func (f *FixtureRepositoryFetcher) Fetch(baseFolder string) (*versioning.FetchResult, []error) {
-	return f.result, []error{}
+func (f *FixtureRepositoryFetcher) Fetch(baseFolder string) (*versioning.FetchResult, []*versioning.FetcherError) {
+	return f.result, []*versioning.FetcherError{}
 }
 
 func (f *FixtureRepositoryFetcher) NewCommit(message string) *object.Commit {

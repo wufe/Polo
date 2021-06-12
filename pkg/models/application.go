@@ -32,7 +32,7 @@ type Application struct {
 	Commits                 []string                  `json:"-"`
 	CommitMap               map[string]*object.Commit `json:"-"`
 	CompiledForwardPatterns []CompiledForwardPattern  `json:"-"`
-	errors                  []ApplicationError
+	notifications           []ApplicationNotification
 	bus                     *ApplicationEventBus
 	log                     logging.Logger
 }
@@ -104,11 +104,10 @@ func newApplication(
 	application.TagsMap = make(map[string]*Tag)
 	application.Commits = []string{}
 	application.CommitMap = make(map[string]*object.Commit)
-	if application.errors == nil {
-		application.errors = []ApplicationError{}
+	if application.notifications == nil {
+		application.notifications = []ApplicationNotification{}
 	}
 	application.SetConfiguration(*configuration)
-	application.AddError(ApplicationErrorTypeGitCredentials, fmt.Sprintf("Wrong credentials, I guess %s", uuid.NewString()))
 	return application, nil
 }
 
@@ -191,13 +190,15 @@ func (a *Application) GetEventBus() *ApplicationEventBus {
 	return a.bus
 }
 
-func (a *Application) AddError(errorType ApplicationErrorType, errorDescription string) {
+func (a *Application) AddNotification(notificationType ApplicationNotificationType, description string, level ApplicationNotificationLevel, permanent bool) {
 	a.Lock()
 	defer a.Unlock()
-	a.errors = append(a.errors, ApplicationError{
+	a.notifications = append(a.notifications, ApplicationNotification{
 		UUID:        uuid.NewString(),
-		Type:        errorType,
-		Description: errorDescription,
+		Type:        notificationType,
+		Permanent:   permanent,
+		Level:       level,
+		Description: description,
 		CreatedAt:   time.Now(),
 	})
 }

@@ -59,7 +59,8 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 	fetchResult, errors := w.repositoryFetcher.Fetch(baseFolder)
 	if len(errors) > 0 {
 		for _, err := range errors {
-			w.defaultApplicationErrorLog(appName, err)
+			w.log.Errorf("Error while loading application: %s", err.Error.Error())
+			w.defaultApplicationErrorLog(appName, err.Error)
 		}
 	}
 

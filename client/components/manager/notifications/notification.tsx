@@ -46,6 +46,7 @@ export const Notification = ({
         <div style={{ display: 'flex', flexDirection: 'column' }}>
             {text.split('\n').map((line, index) => <span key={index}>
                 {line}
+                <br />
             </span>)}
         </div>
         <div className="__loading-bar" style={{
