@@ -19,10 +19,6 @@ export interface IApiSessionStatus {
     replacedBy: string;
 }
 
-export function retrieveAllSessionsAPI() {
-    return buildRequest<IAPISession[]>(() => Axios.get(`/_polo_/api/session/`));
-}
-
 export function killSessionAPI(uuid: string) {
     return buildRequest<void>(() => Axios.delete(`/_polo_/api/session/${uuid}`));
 }

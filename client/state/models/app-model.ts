@@ -1,6 +1,6 @@
 import { APIPayload, APIRequestResult } from "@/api/common";
-import { retrieveApplicationsAPI, retrieveFailedSessionAPI, retrieveFailedSessionLogsAPI, retrieveFailedSessionsAPI } from "@/api/applications";
-import { IAPISession, retrieveAllSessionsAPI, retrieveSessionAPI } from "@/api/session";
+import { IAPIStatusData, retrieveFailedSessionAPI, retrieveFailedSessionLogsAPI, retrieveStatusDataAPI } from "@/api/applications";
+import { IAPISession, retrieveSessionAPI, retrieveSessionStatusAPI } from "@/api/session";
 import { values } from "mobx";
 import { types, flow, cast, Instance, getType, applySnapshot, applyPatch } from "mobx-state-tree";
 import { ApplicationModel, IApplication } from "./application-model";
@@ -8,7 +8,8 @@ import { SessionModel, ISession, castAPISessionToSessionModel, ISessionLog } fro
 import { initialModalState, ModalModel } from "./modal-model";
 import { INotification, NotificationModel, NotificationType } from "./notification-model";
 import { v1 } from 'uuid';
-import { FailuresModel, initialFailuresState } from "./failures-model";
+import { FailuresModel, FailureStatus, initialFailuresState } from "./failures-model";
+import { TDictionary } from "@/utils/types";
 
 export enum SessionSubscriptionEventType {
     FAIL = 'fail',
@@ -56,34 +57,6 @@ export const AppModel = types.model({
 })
 // #endregion
 .actions(self => {
-    const retrieveApplications = flow(function* retrieveApplications() {
-        const applications: APIPayload<IApplication[]> = yield retrieveApplicationsAPI();
-        if (applications.result === APIRequestResult.SUCCEEDED) {
-
-            const applicationsMap = applications.payload.reduce<{[applicationName: string]: IApplication}>((acc, application) => {
-                acc[application.configuration.name] = application;
-                return acc;
-            }, {});
-
-            self.applications.replace(applicationsMap);
-        }
-        return applications;
-    });
-
-    const retrieveAllSessions = flow(function* retrieveAllSessions() {
-        const sessions: APIPayload<IAPISession[]> = yield retrieveAllSessionsAPI();
-        if (sessions.result === APIRequestResult.SUCCEEDED) {
-            const sessionsMap = sessions.payload.reduce<{ [applicationName: string]: ISession }>((acc, session) => {
-                session.beingReplacedBy = sessions.payload.find(s => s.replacesSessions && s.replacesSessions.indexOf(session.uuid) > -1);
-                acc[session.uuid] = castAPISessionToSessionModel(session);
-                return acc;
-            }, {});
-
-            self.sessions.replace(sessionsMap);
-        }
-        return sessions;
-    });
-
     const retrieveSession = flow(function* retrieveSession(uuid: string) {
         const session: APIPayload<IAPISession> = yield retrieveSessionAPI(uuid);
         if (session.result == APIRequestResult.SUCCEEDED) {
@@ -92,7 +65,37 @@ export const AppModel = types.model({
         return session;
     });
 
-    return { retrieveSession, retrieveAllSessions, retrieveApplications };
+    const retrieveStatusData = flow(function* retrieveStatusData() {
+        const statusData: APIPayload<IAPIStatusData> = yield retrieveStatusDataAPI();
+        if (statusData.result === APIRequestResult.SUCCEEDED) {
+            const { applications, sessions, failures } = statusData.payload;
+
+            type TApplicationsMap = TDictionary<IApplication>;
+            const applicationsMap = applications.reduce<TApplicationsMap>((acc, application) => {
+                acc[application.configuration.name] = application;
+                return acc;
+            }, {});
+            self.applications.replace(applicationsMap);
+
+            type TSessionsMap = TDictionary<ISession>;
+            const sessionsMap = sessions.reduce<TSessionsMap>((acc, session) => {
+                session.beingReplacedBy = sessions.find(s => s.replacesSessions && s.replacesSessions.indexOf(session.uuid) > -1);
+                acc[session.uuid] = castAPISessionToSessionModel(session);
+                return acc;
+            }, {});
+            self.sessions.replace(sessionsMap);
+
+            for (const session of failures.acknowledged) {
+                self.failures.storeFailure(session, FailureStatus.ACK);
+            }
+            for (const session of failures.unacknowledged) {
+                self.failures.storeFailure(session, FailureStatus.UNACK);
+            }
+        }
+        return statusData;
+    });
+
+    return { retrieveSession, retrieveStatusData };
 })
 .actions(self => {
     const deleteNotification = (uuid: string) => {

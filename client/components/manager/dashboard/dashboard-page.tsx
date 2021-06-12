@@ -15,9 +15,7 @@ export const Dashboard = observer((props: TProps) => {
     const selectedApplicationLocalStorageKey = 'selected-application-name';
 
     const requestData = async () => {
-        await props.app.retrieveApplications();
-        await props.app.retrieveAllSessions();
-        await props.app.failures.retrieveFailedSessions();
+        await props.app.retrieveStatusData();
     }
 
     useEffect(() => {

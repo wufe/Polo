@@ -1,4 +1,4 @@
-import { IAPIFailedSessions, markFailedSessionAsAcknowledgedAPI, retrieveFailedSessionAPI, retrieveFailedSessionLogsAPI, retrieveFailedSessionsAPI } from "@/api/applications";
+import { IAPIFailedSessions, markFailedSessionAsAcknowledgedAPI, retrieveFailedSessionAPI, retrieveFailedSessionLogsAPI } from "@/api/applications";
 import { APIPayload, APIRequestResult } from "@/api/common";
 import { values } from "mobx";
 import { flow, getParent, hasParent, types } from "mobx-state-tree";
@@ -41,19 +41,6 @@ export const FailuresModel = types.model({
         }
     }
 
-    const retrieveFailedSessions = flow(function* retrieveFailedSessions() {
-        const request: APIPayload<IAPIFailedSessions> = yield retrieveFailedSessionsAPI();
-        if (request.result === APIRequestResult.SUCCEEDED) {
-            for (const session of request.payload.acknowledged) {
-                storeFailure(session, FailureStatus.ACK);
-            }
-            for (const session of request.payload.unacknowledged) {
-                storeFailure(session, FailureStatus.UNACK);
-            }
-        }
-        return request;
-    });
-
     const markFailedSessionAsAcknowledged = flow(function* markFailedSessionAsAcknowledged(uuid: string) {
         const request = yield markFailedSessionAsAcknowledgedAPI(uuid);
         return request;
@@ -70,7 +57,7 @@ export const FailuresModel = types.model({
         return request;
     });
 
-    return { retrieveFailedSession, retrieveFailedSessions, retrieveFailedSessionLogs, markFailedSessionAsAcknowledged };
+    return { retrieveFailedSession, retrieveFailedSessionLogs, markFailedSessionAsAcknowledged, storeFailure };
 })
 .views(self => {
     const sessionsToMap = (sessions: ISession[], status: FailureStatus, accumulator: TFailuresByApplicationDictionary = {}): TFailuresByApplicationDictionary => {
