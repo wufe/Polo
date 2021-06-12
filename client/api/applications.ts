@@ -3,14 +3,21 @@ import { ISession, ISessionLog } from '@/state/models/session-model';
 import axios from 'axios';
 import Axios from 'axios';
 import { buildRequest } from './common';
+import { IAPISession } from './session';
 
 export interface IAPIFailedSessions {
     acknowledged: ISession[];
     unacknowledged: ISession[];
 }
 
-export function retrieveApplicationsAPI() {
-    return buildRequest<IApplication[]>(() => Axios.get(`/_polo_/api/application`));
+export interface IAPIStatusData {
+    applications: IApplication[];
+    sessions: IAPISession[];
+    failures: IAPIFailedSessions;
+}
+
+export function retrieveStatusDataAPI() {
+    return buildRequest<IAPIStatusData>(() => Axios.get(`/_polo_/api/status`));
 }
 
 export function createNewSessionAPI(applicationName: string, checkout: string) {
@@ -18,10 +25,6 @@ export function createNewSessionAPI(applicationName: string, checkout: string) {
         checkout,
         applicationName
     }));
-}
-
-export function retrieveFailedSessionsAPI() {
-    return buildRequest<IAPIFailedSessions>(() => Axios.get(`/_polo_/api/failed/`));
 }
 
 export function retrieveFailedSessionAPI(uuid: string) {

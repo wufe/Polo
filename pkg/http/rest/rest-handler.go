@@ -42,12 +42,10 @@ func NewHandler(
 
 	router.GET("/_polo_/", h.getManager(static, proxy))
 	router.GET("/_polo_/session/*catchall", h.getManager(static, proxy))
-	router.GET("/_polo_/api/application/", h.getApplications(query))
-	router.GET("/_polo_/api/session/", h.getSessions(query))
+	router.GET("/_polo_/api/status", h.getStatusData(query))
 	router.POST("/_polo_/api/session/", h.addSession(request))
-	// TODO: Updated these routes to /sessions/failed/ after this PR gets merged
+	// TODO: Updated these routes to /sessions/failed/... after this PR gets merged
 	// https://github.com/julienschmidt/httprouter/pull/329
-	router.GET("/_polo_/api/failed/", h.getFailedSessions(query))
 	router.GET("/_polo_/api/failed/:uuid", h.getFailedSession(query))
 	router.GET("/_polo_/api/failed/:uuid/logs", h.getFailedSessionLogs(query))
 	router.POST("/_polo_/api/failed/:uuid/ack", h.markFailedSessionAsAcknowledged(query))
@@ -82,29 +80,24 @@ func (h *Handler) getManager(static *services.StaticService, proxy *proxy.Handle
 	}
 }
 
-func (h *Handler) getApplications(query *services.QueryService) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		content, status := h.buildResponse(ResponseObjectWithResult{
-			ResponseObject{"Ok"},
-			models.MapApplications(query.GetAllApplications()),
-		}, 200)
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(status)
-		w.Write(content)
-	}
-}
+func (h *Handler) getStatusData(query *services.QueryService) httprouter.Handle {
+	return func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		write := h.write(rw)
 
-func (h *Handler) getSessions(query *services.QueryService) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		applications := models.MapApplications(query.GetAllApplications())
+		sessions := models.MapSessions(query.GetAllAliveSessions())
 
-		content, status := h.buildResponse(ResponseObjectWithResult{
-			ResponseObject{"Ok"},
-			models.MapSessions(query.GetAllAliveSessions()),
-		}, 200)
+		unacknowledged := models.MapSessions(query.GetFailedSessions())
+		acknowledged := models.MapSessions(query.GetSeenFailedSessions())
 
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(status)
-		w.Write(content)
+		write(h.ok(StatusDataResponseObject{
+			Applications: applications,
+			Sessions:     sessions,
+			Failures: StatusDataFailuresResponseObject{
+				Unacknowledged: unacknowledged,
+				Acknowledged:   acknowledged,
+			},
+		}))
 	}
 }
 
@@ -285,26 +278,6 @@ func (h *Handler) deleteSession(req *services.RequestService) httprouter.Handle 
 	}
 }
 
-func (h *Handler) getFailedSessions(query *services.QueryService) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		write := h.write(w)
-		unacknowledged := query.GetFailedSessions()
-		unacknowledgedOutput := make([]output.Session, 0, len(unacknowledged))
-		for _, session := range unacknowledged {
-			unacknowledgedOutput = append(unacknowledgedOutput, session.ToOutput())
-		}
-		acknowledged := query.GetSeenFailedSessions()
-		acknowledgedOuput := make([]output.Session, 0, len(acknowledged))
-		for _, session := range acknowledged {
-			acknowledgedOuput = append(acknowledgedOuput, session.ToOutput())
-		}
-		write(h.ok(&struct {
-			Unacknowledged []output.Session `json:"unacknowledged"`
-			Acknowledged   []output.Session `json:"acknowledged"`
-		}{unacknowledgedOutput, acknowledgedOuput}))
-	}
-}
-
 func (h *Handler) getFailedSession(query *services.QueryService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		uuid := p.ByName("uuid")
@@ -442,4 +415,15 @@ func (h *Handler) write(w http.ResponseWriter) func(c []byte, s int) {
 		w.WriteHeader(s)
 		w.Write(c)
 	}
+}
+
+type StatusDataResponseObject struct {
+	Applications []output.Application             `json:"applications"`
+	Sessions     []output.Session                 `json:"sessions"`
+	Failures     StatusDataFailuresResponseObject `json:"failures"`
+}
+
+type StatusDataFailuresResponseObject struct {
+	Unacknowledged []output.Session `json:"unacknowledged"`
+	Acknowledged   []output.Session `json:"acknowledged"`
 }

@@ -11,8 +11,6 @@ import { Notifications } from './notifications/notifications';
 const Dashboard = React.lazy(() => import('@/components/manager/dashboard/dashboard-page'));
 const Session = React.lazy(() => import('@/components/manager/session/session-page'));
 
-
-
 export const ManagerApp = observer(() => {
     return <>
             <div className={`
