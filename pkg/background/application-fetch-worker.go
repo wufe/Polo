@@ -59,8 +59,19 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 	fetchResult, errors := w.repositoryFetcher.Fetch(baseFolder)
 	if len(errors) > 0 {
 		for _, err := range errors {
-			w.defaultApplicationErrorLog(appName, err)
+			w.log.Errorf("Error while loading application: %s", err.Error.Error())
+			w.defaultApplicationErrorLog(appName, err.Error)
+			if err.Critical {
+				application.AddNotification(
+					models.ApplicationNotificationTypeGitFetch,
+					err.Error.Error(),
+					models.ApplicationNotificationLevelCritical,
+					true,
+				)
+			}
 		}
+	} else {
+		application.RemoveNotificationByType(models.ApplicationNotificationTypeGitFetch)
 	}
 
 	// Something gone terribly wrong

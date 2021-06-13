@@ -1,7 +1,9 @@
 import { APIPayload, APIRequestResult } from "@/api/common";
-import { createNewSessionAPI } from "@/api/applications";
-import { flow, Instance, SnapshotIn, SnapshotOut, types } from "mobx-state-tree";
+import { createNewSessionAPI, IAPIApplication } from "@/api/applications";
+import { flow, Instance, onPatch, SnapshotIn, SnapshotOut, types } from "mobx-state-tree";
 import { ISession, SessionModel } from "./session-model";
+import { ApplicationNotificationModel, IApplicationNotification } from "./application-notification-model";
+import { TDictionary } from "@/utils/types";
 
 const checkoutObject = {
     name       : types.string,
@@ -39,6 +41,7 @@ export const ApplicationModel = types.model({
     branchesMap   : types.map(ApplicationBranchModel),
     tagsMap       : types.map(ApplicationTagModel),
     failedSessions: types.map(SessionModel),
+    notifications : types.map(ApplicationNotificationModel),
 })
 .actions(self => {
 
@@ -53,3 +56,16 @@ export const ApplicationModel = types.model({
 export interface IApplication extends Instance<typeof ApplicationModel> { }
 export interface IApplicationSnapshotOut extends SnapshotOut<typeof ApplicationModel> { }
 export interface IApplicationSnapshotIn extends SnapshotIn<typeof ApplicationModel> { }
+
+export const castAPIApplicationToApplicationModel = (apiApplication: IAPIApplication): IApplication => {
+    const { notifications, ...rest } = apiApplication;
+    const application = rest as IApplication;
+    if (notifications && notifications.length) {
+        type TApplicationNotificationsMap = TDictionary<IApplicationNotification>;
+        application.notifications = notifications.reduce<TApplicationNotificationsMap>((acc, notification) => {
+            acc[notification.uuid] = notification;
+            return acc;
+        }, {}) as any;
+    }
+    return application;
+}

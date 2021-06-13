@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/asaskevich/EventBus"
-	uuid "github.com/iris-contrib/go.uuid"
+	"github.com/google/uuid"
 	"github.com/wufe/polo/pkg/utils"
 )
 
@@ -50,7 +50,7 @@ func NewSessionBuildEventBus(mutexBuilder utils.MutexBuilder) *SessionLifetimeEv
 		RWLocker: mutexBuilder(),
 		bus:      bus,
 		ch:       make(chan SessionBuildEvent, eventsBuffer),
-		id:       uuid.Must(uuid.NewV1()).String(),
+		id:       uuid.NewString(),
 	}
 	eventBus.start()
 	return eventBus

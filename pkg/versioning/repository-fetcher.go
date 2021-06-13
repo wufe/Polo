@@ -11,8 +11,13 @@ import (
 	"github.com/wufe/polo/pkg/models"
 )
 
+type FetcherError struct {
+	Error    error
+	Critical bool
+}
+
 type RepositoryFetcher interface {
-	Fetch(baseFolder string) (*FetchResult, []error)
+	Fetch(baseFolder string) (*FetchResult, []*FetcherError)
 }
 type RepositoryFetcherImpl struct {
 	gitClient GitClient
@@ -34,14 +39,14 @@ type FetchResult struct {
 	CommitMap        map[string]*object.Commit
 }
 
-func (fetcher *RepositoryFetcherImpl) Fetch(baseFolder string) (*FetchResult, []error) {
+func (fetcher *RepositoryFetcherImpl) Fetch(baseFolder string) (*FetchResult, []*FetcherError) {
 	objectsToHashMap := make(map[string]string)
 	hashToObjectsMap := make(map[string]*models.RemoteObject)
 	appBranches := make(map[string]*models.Branch)
 	appTags := make(map[string]*models.Tag)
 	appCommits := []string{}
 	appCommitMap := make(map[string]*object.Commit)
-	errors := []error{}
+	errors := []*FetcherError{}
 
 	checkObjectExists := func(hashToObjectsMap map[string]*models.RemoteObject) func(hash string) {
 		return func(hash string) {
@@ -59,20 +64,23 @@ func (fetcher *RepositoryFetcherImpl) Fetch(baseFolder string) (*FetchResult, []
 	// Open repository
 	repo, err := git.PlainOpen(baseFolder)
 	if err != nil {
-		errors = append(errors, err)
+		errors = append(errors, &FetcherError{err, false})
 		return nil, errors
 	}
 
 	// Fetch
 	err = fetcher.gitClient.FetchAll(baseFolder)
-	if err != git.NoErrAlreadyUpToDate {
-		errors = append(errors, err)
+	if err != nil && err != git.NoErrAlreadyUpToDate {
+		errors = append(errors, &FetcherError{
+			Error:    fmt.Errorf("%s\n\nEnsure your git cli can do a `fetch` inside %s", err.Error(), baseFolder),
+			Critical: true,
+		})
 	}
 
 	// Branches
 	branches, err := repo.Branches()
 	if err != nil {
-		errors = append(errors, err)
+		errors = append(errors, &FetcherError{err, false})
 	}
 	refPrefix := "refs/heads/"
 	branches.ForEach(func(ref *plumbing.Reference) error {
@@ -111,13 +119,13 @@ func (fetcher *RepositoryFetcherImpl) Fetch(baseFolder string) (*FetchResult, []
 		return nil
 	})
 	if err != nil {
-		errors = append(errors, err)
+		errors = append(errors, &FetcherError{err, false})
 	}
 
 	// Tags
 	tags, err := repo.Tags()
 	if err != nil {
-		errors = append(errors, err)
+		errors = append(errors, &FetcherError{err, false})
 		return nil, errors
 	}
 
@@ -160,7 +168,7 @@ func (fetcher *RepositoryFetcherImpl) Fetch(baseFolder string) (*FetchResult, []
 	// Annotated tags
 	tagObjects, err := repo.TagObjects()
 	if err != nil {
-		errors = append(errors, err)
+		errors = append(errors, &FetcherError{err, false})
 		return nil, errors
 	}
 
@@ -204,7 +212,7 @@ func (fetcher *RepositoryFetcherImpl) Fetch(baseFolder string) (*FetchResult, []
 	until := time.Now().UTC()
 	logs, err := repo.Log(&git.LogOptions{All: true, Since: &since, Until: &until, Order: git.LogOrderCommitterTime})
 	if err != nil {
-		errors = append(errors, err)
+		errors = append(errors, &FetcherError{err, false})
 		return nil, errors
 	}
 

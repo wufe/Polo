@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/google/uuid"
 	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models/output"
 	"github.com/wufe/polo/pkg/utils"
@@ -31,6 +32,7 @@ type Application struct {
 	Commits                 []string                  `json:"-"`
 	CommitMap               map[string]*object.Commit `json:"-"`
 	CompiledForwardPatterns []CompiledForwardPattern  `json:"-"`
+	notifications           []ApplicationNotification
 	bus                     *ApplicationEventBus
 	log                     logging.Logger
 }
@@ -102,6 +104,9 @@ func newApplication(
 	application.TagsMap = make(map[string]*Tag)
 	application.Commits = []string{}
 	application.CommitMap = make(map[string]*object.Commit)
+	if application.notifications == nil {
+		application.notifications = []ApplicationNotification{}
+	}
 	application.SetConfiguration(*configuration)
 	return application, nil
 }
@@ -183,4 +188,34 @@ func (a *Application) GetEventBus() *ApplicationEventBus {
 	a.RLock()
 	defer a.RUnlock()
 	return a.bus
+}
+
+// AddNotification adds a notification to the array of notifications
+// to be shown on the client side
+// The notifications are grouped by type, so only the first one gets notified
+// to the final user.
+func (a *Application) AddNotification(notificationType ApplicationNotificationType, description string, level ApplicationNotificationLevel, permanent bool) {
+	a.Lock()
+	defer a.Unlock()
+	a.notifications = append(a.notifications, ApplicationNotification{
+		UUID:        uuid.NewString(),
+		Type:        notificationType,
+		Permanent:   permanent,
+		Level:       level,
+		Description: description,
+		CreatedAt:   time.Now(),
+	})
+}
+
+// RemoveNotificationByType removes all notifications by a type
+func (a *Application) RemoveNotificationByType(notificationType ApplicationNotificationType) {
+	a.Lock()
+	defer a.Unlock()
+	notifications := []ApplicationNotification{}
+	for _, notification := range a.notifications {
+		if notification.Type != notificationType {
+			notifications = append(notifications, notification)
+		}
+	}
+	a.notifications = notifications
 }
