@@ -8,6 +8,7 @@ import (
 
 const (
 	ApplicationNotificationTypeGitClone ApplicationNotificationType = "git_clone_error"
+	ApplicationNotificationTypeGitFetch ApplicationNotificationType = "git_fetch_error"
 
 	ApplicationNotificationLevelCritical ApplicationNotificationLevel = "critical"
 )

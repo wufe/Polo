@@ -190,6 +190,10 @@ func (a *Application) GetEventBus() *ApplicationEventBus {
 	return a.bus
 }
 
+// AddNotification adds a notification to the array of notifications
+// to be shown on the client side
+// The notifications are grouped by type, so only the first one gets notified
+// to the final user.
 func (a *Application) AddNotification(notificationType ApplicationNotificationType, description string, level ApplicationNotificationLevel, permanent bool) {
 	a.Lock()
 	defer a.Unlock()
@@ -201,4 +205,17 @@ func (a *Application) AddNotification(notificationType ApplicationNotificationTy
 		Description: description,
 		CreatedAt:   time.Now(),
 	})
+}
+
+// RemoveNotificationByType removes all notifications by a type
+func (a *Application) RemoveNotificationByType(notificationType ApplicationNotificationType) {
+	a.Lock()
+	defer a.Unlock()
+	notifications := []ApplicationNotification{}
+	for _, notification := range a.notifications {
+		if notification.Type != notificationType {
+			notifications = append(notifications, notification)
+		}
+	}
+	a.notifications = notifications
 }

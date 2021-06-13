@@ -71,7 +71,10 @@ func (fetcher *RepositoryFetcherImpl) Fetch(baseFolder string) (*FetchResult, []
 	// Fetch
 	err = fetcher.gitClient.FetchAll(baseFolder)
 	if err != nil && err != git.NoErrAlreadyUpToDate {
-		errors = append(errors, &FetcherError{err, true})
+		errors = append(errors, &FetcherError{
+			Error:    fmt.Errorf("%s\n\nEnsure your git cli can do a `fetch` inside %s", err.Error(), baseFolder),
+			Critical: true,
+		})
 	}
 
 	// Branches

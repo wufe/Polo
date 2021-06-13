@@ -1,7 +1,8 @@
 import { Instance, types } from "mobx-state-tree";
 
 export enum ApplicationNotificationType {
-    GIT_CLONE_ERROR = 'git_clone_error'
+    GIT_CLONE_ERROR = 'git_clone_error',
+    GIT_FETCH_ERROR = 'git_fetch_error',
 }
 
 export enum ApplicationNotificationLevel {
