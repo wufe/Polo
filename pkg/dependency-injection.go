@@ -335,8 +335,8 @@ func (d *DI) AddStaticService() {
 }
 
 func (d *DI) AddQueryService() {
-	if err := d.container.Provide(func(environment utils.Environment, sesStorage *storage.Session, appStorage *storage.Application) *services.QueryService {
-		return services.NewQueryService(environment, sesStorage, appStorage)
+	if err := d.container.Provide(func(environment utils.Environment, sesStorage *storage.Session, appStorage *storage.Application, logger logging.Logger) *services.QueryService {
+		return services.NewQueryService(environment, sesStorage, appStorage, logger)
 	}); err != nil {
 		log.Panic(err)
 	}
