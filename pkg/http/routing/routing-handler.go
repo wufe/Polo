@@ -118,7 +118,7 @@ func (h *Handler) RouteReverseProxyRequests() http.Handler {
 					// the path will be empty string.
 					if usingSmartURL && !redirect {
 						// If is a forward link, prepend the "/f/" prefix before the path
-						temporaryRedirect(w, fmt.Sprintf("/_polo_/session/%s/f/%s/%s", session.UUID, session.Checkout, path))
+						temporaryRedirect(w, fmt.Sprintf("/_polo_/session/%s/f/%s%s", session.UUID, session.Checkout, path))
 					} else {
 						temporaryRedirect(w, fmt.Sprintf("/_polo_/session/%s/%s", session.UUID, path))
 					}
