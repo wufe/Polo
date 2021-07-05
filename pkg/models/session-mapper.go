@@ -31,6 +31,7 @@ func MapSession(model *Session) *output.Session {
 		Metrics:           mapMetrics(model.Metrics),
 		Configuration:     mapConfiguration(conf),
 		SessionStatus:     status,
+		ForwardLink:       mapForwardLink(model, conf),
 		Permalink:         mapPermalink(model, conf),
 		SmartURL:          mapSmartURL(model, conf),
 	}
@@ -116,6 +117,22 @@ func mapMetrics(models []Metric) []output.Metric {
 		})
 	}
 	return ret
+}
+
+func mapForwardLink(session *Session, conf ApplicationConfiguration) string {
+	appIdentificator := ""
+	if !conf.IsDefault {
+		appIdentificator = conf.Hash
+	}
+	sessionIdentificator := ""
+	// TODO: The logger cannot be "nil"
+	if !conf.Branches.BranchIsMain(session.Checkout, nil) {
+		if appIdentificator != "" {
+			sessionIdentificator = "/"
+		}
+		sessionIdentificator += session.Checkout
+	}
+	return "/f/" + appIdentificator + sessionIdentificator
 }
 
 func mapPermalink(session *Session, conf ApplicationConfiguration) string {

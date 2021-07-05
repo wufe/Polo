@@ -23,7 +23,7 @@ applications:
     branches:
       - test: ^dev$
         watch: false
-        main: false
+        main: true
       - test: feature/my-watched-feature
         watch: false
     fetch:
@@ -79,17 +79,17 @@ applications:
       max_retries: 2
       retry_interval: 5
       retry_timeout: 10
-  - name: test
-    remote: https://bembi@bitbucket.org/bembi/test.git
-    fetch:
-      interval: 10
-    is_default: false
-    startup:
-      retries: 3
-    commands:
-      start:
-        - command: sleep 1
-      stop:
-        - command: sleep 1
-      clean:
-        - command: sleep 1
+  # - name: test
+  #   remote: https://bembi@bitbucket.org/bembi/test.git
+  #   fetch:
+  #     interval: 10
+  #   is_default: false
+  #   startup:
+  #     retries: 3
+  #   commands:
+  #     start:
+  #       - command: sleep 1
+  #     stop:
+  #       - command: sleep 1
+  #     clean:
+  #       - command: sleep 1

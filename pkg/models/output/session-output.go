@@ -23,6 +23,7 @@ type Session struct {
 	Metrics           []Metric             `json:"metrics"`
 	ReplacesSessions  []string             `json:"replacesSessions,omitempty"`
 	Configuration     SessionConfiguration `json:"configuration"`
+	ForwardLink       string               `json:"forwardLink"`
 	Permalink         string               `json:"permalink"`
 	SmartURL          string               `json:"smartURL"`
 }

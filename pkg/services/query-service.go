@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/models/output"
 	"github.com/wufe/polo/pkg/storage"
@@ -15,13 +16,15 @@ type QueryService struct {
 	isDev              bool
 	sessionStorage     *storage.Session
 	applicationStorage *storage.Application
+	log                logging.Logger
 }
 
-func NewQueryService(environment utils.Environment, storage *storage.Session, applicationStorage *storage.Application) *QueryService {
+func NewQueryService(environment utils.Environment, storage *storage.Session, applicationStorage *storage.Application, log logging.Logger) *QueryService {
 	s := &QueryService{
 		isDev:              environment.IsDev(),
 		sessionStorage:     storage,
 		applicationStorage: applicationStorage,
+		log:                log,
 	}
 	return s
 }
@@ -159,6 +162,76 @@ func (s *QueryService) GetMatchingCheckoutByPermalink(rawInput string) (checkout
 		path = chunks[1]
 	}
 	return checkout, application, path, found
+}
+
+func (s *QueryService) GetMatchingCheckoutByForwardLink(rawInput string) (checkout string, application string, path string, found bool) {
+	// Format: <app-hash>?/(<commit-id>|<branch-name>)?/<path>?
+	apps := s.applicationStorage.GetAll()
+	var specificApp *models.Application
+	var specificAppConfiguration models.ApplicationConfiguration
+	var defaultApp *models.Application
+	var defaultAppConfiguration models.ApplicationConfiguration
+	for _, app := range apps {
+		conf := app.GetConfiguration()
+		// Store app if is default,
+		// in case no specific app is found
+		if conf.IsDefault {
+			defaultApp = app
+			defaultAppConfiguration = conf
+		}
+		// Try to match app against its app hash
+		appHashPrefix := conf.Hash + "/"
+		if strings.HasPrefix(rawInput, appHashPrefix) {
+			// Remove app hash prefix from the raw input
+			rawInput = strings.TrimPrefix(rawInput, appHashPrefix)
+			specificApp = app
+			specificAppConfiguration = conf
+		}
+	}
+	// Populate foundApp with the corresponding app or the default app (as fallback)
+	var foundApp *models.Application = specificApp
+	var foundAppName string = specificAppConfiguration.Name
+	var foundAppConfiguration models.ApplicationConfiguration = specificAppConfiguration
+	if foundApp == nil {
+		foundApp = defaultApp
+		foundAppName = defaultAppConfiguration.Name
+		foundAppConfiguration = defaultAppConfiguration
+	}
+	// If no app has been set as default, return negatives result
+	if foundApp == nil {
+		return "", "", "", false
+	}
+	// Format: (<commit-id>|<branch-name>)?/<path>?
+	// <branch-name> may contain other "/"s
+	// <path> may contain other "/"s
+	var objectsToHashMap map[string]string
+	foundApp.WithRLock(func(a *models.Application) {
+		objectsToHashMap = a.ObjectsToHashMap
+	})
+
+	for commitOrName := range objectsToHashMap {
+		commitOrNamePrefix := commitOrName
+		if strings.HasPrefix(rawInput, commitOrNamePrefix) {
+			// We found a match
+			// Strip the prefix and continue
+			rawInput := strings.TrimPrefix(rawInput, commitOrNamePrefix)
+			return commitOrName, foundAppName, rawInput, true
+		}
+	}
+
+	// Format: /<path>?
+	// No commits, branchs, tags or objects in general found.
+	// Try to fallback on the branch flagged as "main"
+	var branchesMap map[string]*models.Branch
+	foundApp.WithRLock(func(a *models.Application) {
+		branchesMap = a.BranchesMap
+	})
+	for branchName := range branchesMap {
+		if foundAppConfiguration.Branches.BranchIsMain(branchName, s.log) {
+			return branchName, foundAppName, rawInput, true
+		}
+	}
+	return "", "", "", false
 }
 
 func (s *QueryService) GetFailedSessions() []*models.Session {
