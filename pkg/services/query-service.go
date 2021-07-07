@@ -90,7 +90,7 @@ func (s *QueryService) GetSessionLogsAndStatus(uuid string, lastLogUUID string) 
 
 // GetMatchingCheckoutBySmartUrl
 // The rawInput parameter is without prefix "/s/"
-func (s *QueryService) GetMatchingCheckoutBySmartUrl(rawInput string) (checkout string, application string, path string, found bool) {
+func (s *QueryService) GetMatchingCheckoutBySmartUrl(rawInput string) (checkout string, application string, path string, found bool, foundSession *models.Session) {
 	var defaultApp *models.Application
 	apps := s.applicationStorage.GetAll()
 	for _, app := range apps {
@@ -101,8 +101,26 @@ func (s *QueryService) GetMatchingCheckoutBySmartUrl(rawInput string) (checkout 
 		}
 	}
 	if defaultApp == nil {
-		return "", "", "", false
+		return "", "", "", false, nil
 	}
+
+	// First of all, we check for a RUNNING (started) session with the same checkout
+	sessions := s.sessionStorage.GetAliveApplicationSession(defaultApp)
+	for _, session := range sessions {
+		if session.Status == models.SessionStatusStarted {
+			if session.Checkout == rawInput {
+				// In case the url is formed like /s/<branch>
+				return rawInput, defaultApp.GetConfiguration().Name, "", true, session
+			} else if strings.HasPrefix(rawInput, session.Checkout+"/") {
+				// In case the url is formed like /s/<branch>/<path>
+				path := strings.Replace(rawInput, fmt.Sprintf(`%s/`, session.Checkout), "", 1)
+				return session.Checkout, defaultApp.GetConfiguration().Name, path, true, session
+			}
+		}
+	}
+
+	// Then we check by all existing objects (tag, branch, commit)
+	// through the objectsToHashMap
 	var objectsToHashMap map[string]string
 	defaultApp.WithRLock(func(a *models.Application) {
 		objectsToHashMap = a.ObjectsToHashMap
@@ -110,14 +128,14 @@ func (s *QueryService) GetMatchingCheckoutBySmartUrl(rawInput string) (checkout 
 	for k := range objectsToHashMap {
 		if k == rawInput {
 			// In case the url is formed like /s/<branch>
-			return rawInput, defaultApp.GetConfiguration().Name, "", true
+			return rawInput, defaultApp.GetConfiguration().Name, "", true, nil
 		} else if strings.HasPrefix(rawInput, k+"/") {
 			// In case the url is formed like /s/<branch>/<path>
 			path := strings.Replace(rawInput, fmt.Sprintf(`%s/`, k), "", 1)
-			return k, defaultApp.GetConfiguration().Name, path, true
+			return k, defaultApp.GetConfiguration().Name, path, true, nil
 		}
 	}
-	return "", "", "", false
+	return "", "", "", false, nil
 }
 
 func (s *QueryService) GetMatchingCheckoutByPermalink(rawInput string) (checkout string, application string, path string, found bool) {

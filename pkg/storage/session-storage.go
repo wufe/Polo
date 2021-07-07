@@ -203,7 +203,7 @@ func (s *Session) GetAllAliveApplicationSessions(appID string) []*models.Session
 }
 
 // GetAliveApplicationSessionByCheckout retrieves a single session identified by its
-// status (which must be "alvie") and by its checkout
+// status (which must be "alive") and by its checkout
 func (s *Session) GetAliveApplicationSessionByCheckout(checkout string, application *models.Application) *models.Session {
 	s.log.Trace("Getting alive session by checkout")
 	var foundSession *models.Session
@@ -211,11 +211,42 @@ func (s *Session) GetAliveApplicationSessionByCheckout(checkout string, applicat
 	sessions := s.sessions
 	s.RUnlock()
 	for _, session := range sessions {
-		if session.Application == application && session.CommitID == checkout && session.Status.IsAlive() {
+		if session.Application == application && session.Checkout == checkout && session.Status.IsAlive() {
 			foundSession = session
 		}
 	}
 	return foundSession
+}
+
+// GetAliveApplicationSessionByCommitID retrieves a single session identified by its
+// status (which must be "alive") and by its commitID
+func (s *Session) GetAliveApplicationSessionByCommitID(commitID string, application *models.Application) *models.Session {
+	s.log.Trace("Getting alive session by commitID")
+	var foundSession *models.Session
+	s.RLock()
+	sessions := s.sessions
+	s.RUnlock()
+	for _, session := range sessions {
+		if session.Application == application && session.CommitID == commitID && session.Status.IsAlive() {
+			foundSession = session
+		}
+	}
+	return foundSession
+}
+
+// GetAliveApplicationSession retrieves all "alive" sessions of an application
+func (s *Session) GetAliveApplicationSession(application *models.Application) []*models.Session {
+	s.log.Trace("Getting alive session in application")
+	foundSessions := []*models.Session{}
+	s.RLock()
+	sessions := s.sessions
+	s.RUnlock()
+	for _, session := range sessions {
+		if session.Application == application && session.Status.IsAlive() {
+			foundSessions = append(foundSessions, session)
+		}
+	}
+	return foundSessions
 }
 
 const (

@@ -192,7 +192,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 	if !basedOnPreviousSession {
 		// Check if someone else just requested the same type of session
 		// looking through all open session and comparing applications and checkouts
-		sessionAlreadyBeingBuilt := w.sessionStorage.GetAliveApplicationSessionByCheckout(
+		sessionAlreadyBeingBuilt := w.sessionStorage.GetAliveApplicationSessionByCommitID(
 			commitID,
 			input.Application,
 		)

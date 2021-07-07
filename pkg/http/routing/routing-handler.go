@@ -101,8 +101,8 @@ func (h *Handler) RouteReverseProxyRequests() http.Handler {
 				switch session.Status {
 				case models.SessionStatusStarted:
 					session.MarkAsBeingRequested()
-					TrackSession(w, session)
 					if usingSmartURL && redirect {
+						TrackSession(w, session)
 						// Redirects to the root, appending the path
 						// got from the "smart url" pattern
 						temporaryRedirect(w, fmt.Sprintf("/%s", path))
@@ -239,7 +239,10 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 
 func (h *Handler) tryGetSessionByRequestURL(req *http.Request) (foundSession *models.Session, path string, redirect bool) {
 	if strings.HasPrefix(req.URL.Path, "/s/") {
-		if checkout, application, path, found := h.query.GetMatchingCheckoutBySmartUrl(req.URL.Path[3:]); found {
+		if checkout, application, path, found, foundSession := h.query.GetMatchingCheckoutBySmartUrl(req.URL.Path[3:]); found {
+			if foundSession != nil {
+				return foundSession, path, true
+			}
 			result, err := h.request.NewSession(checkout, application, false)
 			if err != nil {
 				return nil, "", false
