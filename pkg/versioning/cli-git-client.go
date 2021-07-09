@@ -3,7 +3,9 @@ package versioning
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
+	"path"
 	"strings"
 
 	"github.com/wufe/polo/pkg/execution"
@@ -26,6 +28,14 @@ func (client *CLIGitClient) Clone(baseFolder string, outputFolder string, remote
 }
 
 func (client *CLIGitClient) FetchAll(repoFolder string) error {
+	refsPath := path.Join(repoFolder, ".git", "refs", "remotes", "origin")
+	if _, err := os.Stat(refsPath); !os.IsNotExist(err) {
+		err := os.RemoveAll(refsPath)
+		if err != nil {
+			return err
+		}
+	}
+
 	cmd := exec.Command("git", "fetch", "--force", "-u", "origin", "+refs/*:refs/*", "--prune")
 	cmd.Dir = repoFolder
 	return client.execCommands(cmd)
