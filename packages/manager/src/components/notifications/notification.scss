@@ -1,0 +1,66 @@
+@import "@polo/common/styles/index";
+
+@keyframes shrink {
+    0% {
+        width: 100%;
+    }
+    100% {
+        width: 0;
+    }
+}
+
+.notification {
+    @apply max-w-full min-w-full sm:min-w-96 px-4 pt-3 pb-4 my-2 rounded-md backdrop-filter backdrop-blur-md border relative cursor-pointer shadow-md;
+    @apply bg-white-alpha10 dark:bg-black-alpha10;
+    @apply hover:bg-nord0-alpha10 dark:hover:bg-nord4-alpha10;
+
+    box-shadow: inset -1px 0 0 white,
+        inset 0 -1px 0 white,
+        inset 1px 0 0 white,
+        inset 0 1px 0 white;
+    @media (prefers-color-scheme: dark) {
+        box-shadow: inset -1px 0 0 black,
+            inset 0 -1px 0 black,
+            inset 1px 0 0 black,
+            inset 0 1px 0 black;
+    }
+
+    .__title {
+        @apply font-bold mb-1;
+    }
+
+    .__loading-bar {
+        animation-name: shrink;
+        animation-timing-function: linear;
+        @apply absolute bottom-0 left-0 h-1;
+    }
+
+    .__icon-wrapper {
+        @apply absolute top-1 right-1 p-1 rounded-md;
+        @apply hover:bg-nord0-alpha10 dark:hover:bg-nord4-alpha10;
+    }
+
+    &.--danger {
+        @apply border-nord11;
+
+        .__loading-bar {
+            @apply bg-nord11;
+        }
+    }
+
+    &.--success {
+        @apply border-nord14;
+
+        .__loading-bar {
+            @apply bg-nord14;
+        }
+    }
+
+    &.--info {
+        @apply border-nord8;
+
+        .__loading-bar {
+            @apply bg-nord8;
+        }
+    }
+}

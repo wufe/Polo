@@ -1,0 +1,5 @@
+@import "@polo/common/styles/index";
+
+.application-checkout {
+    @include items-list();
+}
