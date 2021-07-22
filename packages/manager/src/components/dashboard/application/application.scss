@@ -1,0 +1,11 @@
+@import "@polo/common/styles/index.scss";
+
+.application {
+    .__input-container {
+        > input {
+            @apply flex-grow mr-3 dark:placeholder-gray-500 bg-transparent
+                border border-gray-300 dark:border-gray-500 text-sm py-1.5 px-3 rounded-md
+                outline-none;
+        }   
+    }
+}

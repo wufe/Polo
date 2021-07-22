@@ -1,0 +1,10 @@
+{
+  "name": "@polo/common",
+  "version": "1.4.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/axios": "^0.14.0",
+    "axios": "^0.21.1"
+  }
+}
