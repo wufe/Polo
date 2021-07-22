@@ -59,11 +59,11 @@
     }
 
     &::-webkit-scrollbar-thumb:vertical {
-        @apply min-h-7;
+        @apply min-h-10;
     }
 
     &::-webkit-scrollbar-thumb:horizontal {
-        @apply min-w-7;
+        @apply min-w-10;
     }
 
     &::-webkit-scrollbar-thumb:hover {
