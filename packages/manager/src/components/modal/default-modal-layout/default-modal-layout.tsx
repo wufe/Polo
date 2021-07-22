@@ -54,7 +54,7 @@ export const DefaultModalItem = ({
     onClick,
     children
 }: React.PropsWithChildren<TItemProps>) =>
-    <div className={classnames('__item', className, {
+    <a className={classnames('__item', className, {
         '--danger-icon': dangerIcon,
         '--disabled': disabled,
         '--action': action,
@@ -65,7 +65,7 @@ export const DefaultModalItem = ({
         '--indented': indented,
     })} onClick={onClick}>
         {children}
-    </div>;
+    </a>;
 
 type TRowProps = TCommonProps & {
     secondary?: boolean;

@@ -53,11 +53,11 @@ export const Button = ({
         className
     )
 
-    return <div
+    return <a
         className={classes}
         onClick={onClick}>
         {label && <span>{label}</span>}
         {children}
         {icon}
-    </div>
+    </a>
 }

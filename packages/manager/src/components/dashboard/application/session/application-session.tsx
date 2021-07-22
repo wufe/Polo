@@ -77,7 +77,7 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
 
     return <div
         className="application-session">
-        <div className="__content" onClick={attachToSession}>
+        <a className="__content" onClick={attachToSession}>
             <div className="w-6 flex mr-2">
                 {showStartedIcon && 
                     <svg
@@ -119,7 +119,7 @@ export const ApplicationSession = observer((props: { session: ISession }) => {
                     </span>}
                 </div>
             </div>
-        </div>
+        </a>
         <span className="text-center whitespace-nowrap flex flex-nowrap items-start">
             <Button
                 success

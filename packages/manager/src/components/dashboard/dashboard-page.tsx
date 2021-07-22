@@ -50,11 +50,11 @@ export const Dashboard = observer((props: TProps) => {
                 <div className="py-0 pr-5 hidden lg:block flex-shrink-0 w-3/12">
                 <div className="mb-3 text-lg lg:text-xl font-medium text-nord1 dark:text-nord5">Applications</div>
                     {(values(props.app.applications) as any as IApplication[]).map((application, index) =>
-                        <div
+                        <a
                             key={index}
-                            className={`cursor-pointer px-5 py-3 rounded-md text-sm lg:text-base mb-3
+                            className={`block cursor-pointer px-5 py-3 rounded-md text-sm lg:text-base mb-3
                             ${selectedAppIndex === index ? 'bg-nord4 dark:bg-nord0' : ''}`}
-                            onClick={openApplication(application.configuration.name, index)}>{application.configuration.name}</div>)}
+                            onClick={openApplication(application.configuration.name, index)}>{application.configuration.name}</a>)}
                 </div>
                 {!!selected && <div className="flex-grow min-w-0">
                     <Application

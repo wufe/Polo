@@ -1,5 +1,5 @@
 .button-component {
-    @apply leading-none text-xs uppercase cursor-pointer mx-1 rounded-md py-2 px-3 flex-nowrap items-center relative flex-shrink-0;
+    @apply block leading-none text-xs uppercase cursor-pointer mx-1 rounded-md py-2 px-3 flex-nowrap items-center relative flex-shrink-0;
     @apply lg:text-sm;
     height: 3em;
     transition-property: background, opacity;

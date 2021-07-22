@@ -29,7 +29,7 @@ export const ApplicationCheckout = (props: TProps) => {
 
     return <div
         className="application-checkout">
-        <div className="__content" onClick={() => show(checkoutBuildConfirmationModalName)}>
+        <a className="__content" onClick={() => show(checkoutBuildConfirmationModalName)}>
             <div className="w-6 flex justify-center items-center mr-1">
                 {props.type === 'branch' && <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -77,7 +77,7 @@ export const ApplicationCheckout = (props: TProps) => {
                     </span>
                 </div>
             </div>
-        </div>
+        </a>
         <span className="text-center whitespace-nowrap flex flex-nowrap items-start">
             <Button
                 ghost
