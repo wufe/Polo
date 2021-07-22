@@ -16,7 +16,7 @@
     ]
   },
   "scripts": {
-    "start": "cross-env POLO_CWD=\"$(pwd)\" GO_ENV=development go run packages/server/cmd/server/main.go",
+    "start": "cross-env POLO_CWD=$INIT_CWD GO_ENV=development go run packages/server/cmd/server/main.go",
     "build:docker": "docker build -t polo:local -f ./docker/Dockerfile .",
     "build:client": "cross-env NODE_ENV=development webpack --config webpack.config.js",
     "build:client:prod": "cross-env NODE_ENV=production webpack --config webpack.config.js",
@@ -33,17 +33,18 @@
     "build:release:windows": "yarn workspace @polo/server build:release:windows",
     "build:release:macos": "yarn workspace @polo/server build:release:macos",
     "build:release:linux": "yarn workspace @polo/server build:release:linux",
-    "test": "yarn workspace @polo/server test",
-    "test:file": "yarn workspace @polo/server test:file",
-    "test:watch": "yarn workspace @polo/server test:watch",
-    "test:trace": "yarn workspace @polo/server test:trace",
-    "test:trace:watch": "yarn workspace @polo/server test:trace:watch",
-    "test:prod": " yarn workspace @polo/server test:prod",
-    "test:prod:watch": "yarn workspace @polo/server test:prod:watch"
+    "test": "cross-env POLO_CWD=$INIT_CWD yarn workspace @polo/server test",
+    "test:file": "cross-env POLO_CWD=$INIT_CWD yarn workspace @polo/server test:file",
+    "test:watch": "cross-env POLO_CWD=$INIT_CWD yarn workspace @polo/server test:watch",
+    "test:trace": "cross-env POLO_CWD=$INIT_CWD yarn workspace @polo/server test:trace",
+    "test:trace:watch": "cross-env POLO_CWD=$INIT_CWD yarn workspace @polo/server test:trace:watch",
+    "test:prod": "cross-env POLO_CWD=$INIT_CWD yarn workspace @polo/server test:prod",
+    "test:prod:watch": "cross-env POLO_CWD=$INIT_CWD yarn workspace @polo/server test:prod:watch"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
     "lerna": "^4.0.0",
+    "npm-run-all": "^4.1.5",
     "webpack": "^5.17.0",
     "webpack-cli": "^4.4.0",
     "webpack-dev-server": "^3.11.2"
