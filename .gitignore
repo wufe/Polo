@@ -569,3 +569,4 @@ MigrationBackup/
 !/docker/dockerized-testserver.yml
 /packages/*/public
 db
+__debug_bin
