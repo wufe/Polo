@@ -1,6 +1,7 @@
 import React from 'react';
 import { ISessionLog, SessionLogType } from '@polo/common/state/models';
 import dayjs from 'dayjs';
+import './session-logs.scss';
 import { observer } from 'mobx-react-lite';
 import { useScroll } from './scroll-hook';
 import { FixedSizeList as List } from 'react-window';
@@ -50,7 +51,7 @@ export const SessionLogs = observer((props: {
 
     return <div ref={containerRef}
         className={classnames(
-            'lg:m-2 lg:mt-5 flex-grow mt-10 mb-10 lg:mb-36 min-w-0 min-h-0 overflow-hidden relative session-logs',
+            'lg:m-2 lg:mt-5 flex-grow mt-10 mb-10 lg:mb-36 min-w-0 min-h-0 overflow-auto relative session-logs',
             props.failed && 'border-r-4 border-l-4 border-nord11'
         )}
         onMouseEnter={onMouseEnter}
@@ -61,20 +62,19 @@ export const SessionLogs = observer((props: {
             bgVisible
             absolute
             hidden={!downArrowVisible}
-            className="right-6 bottom-2 z-50"
+            className="right-6 bottom-4 z-50"
             onClick={onDownArrowClick}
             icon={<DownArrowIcon className="h-8 w-8" />} />
         <List
             ref={listRef}
             outerRef={contentRef}
-            className="text-nord-3 dark:text-nord4 tracking-wide"
+            className="text-nord-3 dark:text-nord4 tracking-wide __container --auto-hide"
             height={contentHeight}
             itemCount={props.logs.length}
             itemSize={itemsHeight}
             itemData={props.logs}
             width="100%"
             overscanCount={15}
-            style={{ overflowX: 'hidden' }}
             onScroll={onScroll}>
             {SessionLogsRow}
         </List>
@@ -85,7 +85,7 @@ export const SessionLogs = observer((props: {
 function parseMessage(message: string) {
     try {
         const parsed = parse(message);
-        return <span className="overflow-hidden whitespace-nowrap overflow-ellipsis">{parsed.spans
+        return <span className="whitespace-nowrap">{parsed.spans
             .map(({ css, text }: { css: string; text: string; }, i: number) => {
                 const styles = css.split(';').reduce<{ [k: string]: string }>((acc, style) => {
                     if (!style.trim())

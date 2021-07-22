@@ -1,0 +1,7 @@
+@import "@polo/common/styles/index";
+
+.session-logs {
+	.__container {
+		@include minimal-scrollbar();
+	}
+}

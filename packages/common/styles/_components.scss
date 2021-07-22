@@ -35,3 +35,39 @@
         }
     }
 }
+
+@mixin minimal-scrollbar() {
+    @apply bg-transparent bg-clip-text;
+    transition: background-color .4s ease-in-out;
+    
+    &:hover {
+        background-color: var(--theme-translucent-color);
+    }
+
+    &::-webkit-scrollbar {
+        @apply w-4 h-4;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        border-width: 6px;
+        background-color: inherit;
+        @apply border-solid border-transparent rounded-xl bg-clip-padding;
+    }
+
+    &::-webkit-scrollbar-corner {
+        @apply bg-transparent;
+    }
+
+    &::-webkit-scrollbar-thumb:vertical {
+        @apply min-h-7;
+    }
+
+    &::-webkit-scrollbar-thumb:horizontal {
+        @apply min-w-7;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+        background-color: var(--theme-translucent-hover-color);
+        @apply bg-clip-padding border-4 border-solid border-transparent;
+    }
+}

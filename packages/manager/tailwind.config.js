@@ -14,6 +14,9 @@ module.exports = {
       minWidth: theme => ({
         ...theme('width'),
       }),
+      minHeight: theme => ({
+        ...theme('height'),
+      }),
       "colors": theme => ({
         'black-alpha10': Color('#000').alpha(.1).string(),
         'white-alpha10': Color('#FFF').alpha(.1).string(),

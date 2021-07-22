@@ -54,7 +54,7 @@ export const ApplicationCheckouts = observer((props: TProps) => {
             </div>
         </div>
 
-        <div className="divide-y dark:divide-gray-700">
+        <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {checkoutsToShow.map((checkout, key) =>
                 <ApplicationCheckout
                     key={key}

@@ -25,8 +25,14 @@ body {
     display: flex;
     align-items: stretch;
     background-image: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%);
+
+    --theme-translucent-color: rgba(0, 0, 0, .1);
+    --theme-translucent-hover-color: rgba(0, 0, 0, .2);
+
     @media (prefers-color-scheme: dark) {
         background: #16181d;
+        --theme-translucent-color: rgba(255, 255, 255, .2);
+        --theme-translucent-hover-color: rgba(255, 255, 255, .3);
     }
 }
 
