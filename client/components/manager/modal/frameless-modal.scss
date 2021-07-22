@@ -1,7 +1,0 @@
-@import "~/client/styles/index";
-
-.frameless-modal {
-    @apply bg-nord6 shadow-lg h-full;
-    @apply flex flex-col min-h-0 relative;
-    @apply lg:min-w-80 lg:rounded-md lg:h-auto;
-}

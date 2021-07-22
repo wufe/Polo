@@ -1,4 +1,6 @@
+.sessions
 node_modules
+packages/*/node_modules
 public
 release
 db

@@ -1,13 +1,13 @@
 FROM node:14 AS frontend-builder
 WORKDIR /app
 COPY . /app
-RUN npm install && \
-    npm run clean && \
-    npm run build:client:prod
+RUN yarn && \
+    yarn clean && \
+    yarn build:client:prod
 
 FROM golang:1.16 AS backend-builder
 WORKDIR /app
-COPY . /app
+COPY ./packages/server /app
 COPY --from=frontend-builder /app/public /app/public
 RUN go get github.com/rakyll/statik && \
     go mod download && \
