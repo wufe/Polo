@@ -12,10 +12,22 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func LoadConfigurations(environment utils.Environment, applicationBuilder *models.ApplicationBuilder, logger logging.Logger) (*models.RootConfiguration, []*models.Application) {
-	dir := environment.GetExecutableFolder()
+// Injected at compile time
+var configurationFolder string
 
-	files := getYamlFiles(dir, logger)
+func LoadConfigurations(environment utils.Environment, applicationBuilder *models.ApplicationBuilder, logger logging.Logger) (*models.RootConfiguration, []*models.Application) {
+
+	fmt.Println("Configuration Folder: ", configurationFolder)
+
+	files := []string{}
+
+	// Try get yaml files from configuration folder first
+	if configurationFolder != "" {
+		files = append(files, getYamlFiles(configurationFolder, logger)...)
+	}
+
+	// Then try with yaml files in the executable folder
+	files = append(files, getYamlFiles(environment.GetExecutableFolder(), logger)...)
 
 	return unmarshalConfigurations(files, applicationBuilder, logger, environment)
 
@@ -26,7 +38,8 @@ func getYamlFiles(root string, logger logging.Logger) []string {
 
 	fileInfos, err := ioutil.ReadDir(root)
 	if err != nil {
-		logger.Fatalln("Error reading from directory", err)
+		logger.Warnln("Error reading from directory", err)
+		return []string{}
 	}
 	for _, info := range fileInfos {
 		if !info.IsDir() && strings.HasSuffix(info.Name(), ".yml") {
