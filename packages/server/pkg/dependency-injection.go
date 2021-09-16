@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	dependency_injection_adapter "github.com/wufe/polo/pkg/adapters/dependency-injection"
 	"github.com/wufe/polo/pkg/background"
 	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/execution"
@@ -413,6 +414,12 @@ func (d *DI) AddStartup() {
 	}); err != nil {
 		log.Panic(err)
 	}
+}
+
+// Third party
+
+func (d *DI) AddThirdPartyInterfaces() {
+	dependency_injection_adapter.Register(d.container)
 }
 
 func (d *DI) GetStartup() *Startup {

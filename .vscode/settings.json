@@ -1,0 +1,21 @@
+{
+    "css.lint.unknownAtRules": "ignore",
+    "css.validate": false,
+    "scss.validate": false,
+    "gopls": {
+        "build.buildFlags": [
+            "-tags=standard"
+        ]
+    },
+    "workbench.preferredDarkColorTheme": "Ayu Mirage Bordered",
+    "workbench.preferredLightColorTheme": "Kary Pro Colors － Light",
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "node_modules": true,
+        ".sessions": true
+    }
+}

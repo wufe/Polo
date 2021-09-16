@@ -90,6 +90,10 @@ func main() {
 
 	container.AddStartup()
 
+	// Third party
+
+	container.AddThirdPartyInterfaces()
+
 	container.GetStartup().Start(&pkg.StartupOptions{
 		WatchApplications: true,
 		LoadSessionHelper: true,
