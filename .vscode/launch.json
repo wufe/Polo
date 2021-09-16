@@ -17,6 +17,19 @@
 			"program": "${workspaceFolder}/packages/server/cmd/server/main.go"
 		},
 		{
+			"name": "Debug server (PRO)",
+			"type": "go",
+			"request": "launch",
+			"mode": "auto",
+			"cwd": "${workspaceFolder}/packages/server",
+			"env": {
+				"POLO_CWD": "${cwd}",
+				"GO_ENV": "development"
+			},
+			"buildFlags": "-tags=pro",
+			"program": "${workspaceFolder}/packages/server/cmd/server/main.go"
+		},
+		{
 			"name": "Debug server (race)",
 			"type": "go",
 			"request": "launch",
@@ -53,6 +66,13 @@
 			"configurations": [
 				"Debug client",
 				"Debug server"
+			]
+		},
+		{
+			"name": "Debug application (PRO)",
+			"configurations": [
+				"Debug client",
+				"Debug server (PRO)"
 			]
 		},
 		{

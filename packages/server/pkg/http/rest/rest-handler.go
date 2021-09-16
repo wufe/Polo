@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/julienschmidt/httprouter"
+	response_builder "github.com/wufe/polo/internal/rest/response-builder"
 	"github.com/wufe/polo/pkg/http/proxy"
 	"github.com/wufe/polo/pkg/http/routing"
 	"github.com/wufe/polo/pkg/logging"
@@ -15,12 +15,14 @@ import (
 	"github.com/wufe/polo/pkg/models/output"
 	"github.com/wufe/polo/pkg/services"
 	"github.com/wufe/polo/pkg/utils"
+
+	rest_adapter "github.com/wufe/polo/pkg/adapters/rest-adapter"
 )
 
 type Handler struct {
 	isDev  bool
 	Router *httprouter.Router
-	log    logging.Logger
+	r      *response_builder.ResponseBuilder
 }
 
 func NewHandler(
@@ -37,7 +39,7 @@ func NewHandler(
 	h := &Handler{
 		isDev:  environment.IsDev(),
 		Router: router,
-		log:    logger,
+		r:      response_builder.NewResponseBuilder(logger),
 	}
 
 	router.GET("/_polo_/", h.getManager(static, proxy))
@@ -52,7 +54,6 @@ func NewHandler(
 	router.GET("/_polo_/api/session/:uuid", h.getSession(query))
 	router.DELETE("/_polo_/api/session/:uuid", h.deleteSession(request))
 	router.GET("/_polo_/api/session/:uuid/status", h.getSessionStatus(query))
-	router.GET("/_polo_/api/session/:uuid/metrics", h.getSessionMetrics(query))
 	router.POST("/_polo_/api/session/:uuid/track", h.trackSession(query))
 	router.DELETE("/_polo_/api/session/:uuid/track", h.untrackSession())
 	router.GET("/_polo_/api/session/:uuid/logs/:last_log", h.getSessionLogsAndStatus(query))
@@ -60,6 +61,8 @@ func NewHandler(
 	if !environment.IsDev() {
 		router.GET("/_polo_/public/*filepath", h.serveStatic(static))
 	}
+
+	rest_adapter.Register(router, query, logger)
 
 	router.NotFound = routing.RouteReverseProxyRequests()
 
@@ -82,7 +85,7 @@ func (h *Handler) getManager(static *services.StaticService, proxy *proxy.Handle
 
 func (h *Handler) getStatusData(query *services.QueryService) httprouter.Handle {
 	return func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		write := h.write(rw)
+		write := h.r.Write(rw)
 
 		applications := models.MapApplications(query.GetAllApplications())
 		sessions := models.MapSessions(query.GetAllAliveSessions())
@@ -90,7 +93,7 @@ func (h *Handler) getStatusData(query *services.QueryService) httprouter.Handle 
 		unacknowledged := models.MapSessions(query.GetFailedSessions())
 		acknowledged := models.MapSessions(query.GetSeenFailedSessions())
 
-		write(h.ok(StatusDataResponseObject{
+		write(h.r.Ok(StatusDataResponseObject{
 			Applications: applications,
 			Sessions:     sessions,
 			Failures: StatusDataFailuresResponseObject{
@@ -106,7 +109,7 @@ func (h *Handler) getSession(query *services.QueryService) httprouter.Handle {
 		uuid := p.ByName("uuid")
 		session := query.GetAliveSession(uuid)
 
-		content, status := h.okOrNotFound(session.ToOutput(), 200)
+		content, status := h.r.OkOrNotFound(session.ToOutput(), 200)
 
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(status)
@@ -123,40 +126,9 @@ func (h *Handler) getSessionStatus(query *services.QueryService) httprouter.Hand
 		var s int
 
 		if err != nil {
-			c, s = h.notFound()
+			c, s = h.r.NotFound()
 		} else {
-			c, s = h.ok(age)
-		}
-
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(s)
-		w.Write(c)
-	}
-}
-
-func (h *Handler) getSessionMetrics(query *services.QueryService) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		uuid := p.ByName("uuid")
-		metrics, err := query.GetSessionMetrics(uuid)
-
-		var c []byte
-		var s int
-
-		if err != nil {
-			c, s = h.notFound()
-		} else {
-			type m struct {
-				Object   string `json:"object"`
-				Duration int    `json:"duration"`
-			}
-			ret := []m{}
-			for _, metric := range metrics {
-				ret = append(ret, m{
-					Object:   metric.Object,
-					Duration: int(metric.Duration / time.Millisecond),
-				})
-			}
-			c, s = h.ok(ret)
+			c, s = h.r.Ok(age)
 		}
 
 		w.Header().Add("Content-Type", "application/json")
@@ -175,9 +147,9 @@ func (h *Handler) getSessionLogsAndStatus(query *services.QueryService) httprout
 		var s int
 
 		if err != nil {
-			c, s = h.notFound()
+			c, s = h.r.NotFound()
 		} else {
-			c, s = h.ok(struct {
+			c, s = h.r.Ok(struct {
 				Logs   []models.Log         `json:"logs"`
 				Status models.SessionStatus `json:"status"`
 			}{
@@ -201,10 +173,10 @@ func (h *Handler) trackSession(query *services.QueryService) httprouter.Handle {
 		var s int
 
 		if session == nil {
-			c, s = h.notFound()
+			c, s = h.r.NotFound()
 		} else {
 			routing.TrackSession(w, session)
-			c, s = h.ok(nil)
+			c, s = h.r.Ok(nil)
 		}
 
 		w.Header().Add("Content-Type", "application/json")
@@ -218,7 +190,7 @@ func (h *Handler) untrackSession() httprouter.Handle {
 
 		routing.UntrackSession(w)
 
-		c, s := h.ok(nil)
+		c, s := h.r.Ok(nil)
 
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(s)
@@ -229,7 +201,7 @@ func (h *Handler) untrackSession() httprouter.Handle {
 func (h *Handler) addSession(req *services.RequestService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
-		write := h.write(w)
+		write := h.r.Write(w)
 
 		// Decoding body
 		input := &struct {
@@ -238,21 +210,21 @@ func (h *Handler) addSession(req *services.RequestService) httprouter.Handle {
 		}{}
 		err := json.NewDecoder(r.Body).Decode(input)
 		if err != nil {
-			write(h.badRequest())
+			write(h.r.BadRequest())
 			return
 		}
 
 		response, err := req.NewSession(input.Checkout, input.ApplicationName, false)
 		if err != nil {
 			if err == services.ErrApplicationNotFound {
-				write(h.notFound())
+				write(h.r.NotFound())
 				return
 			}
 
-			write(h.serverError(err.Error()))
+			write(h.r.ServerError(err.Error()))
 			return
 		}
-		write(h.ok(response.Session.ToOutput()))
+		write(h.r.Ok(response.Session.ToOutput()))
 	}
 }
 
@@ -260,33 +232,33 @@ func (h *Handler) deleteSession(req *services.RequestService) httprouter.Handle 
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		uuid := p.ByName("uuid")
 
-		write := h.write(w)
+		write := h.r.Write(w)
 
 		err := req.SessionDeletion(uuid)
 		if err != nil {
 			switch err {
 			case services.ErrSessionNotFound:
-				write(h.notFound())
+				write(h.r.NotFound())
 				return
 			case services.ErrSessionIsNotAlive:
-				write(h.serverError(err.Error()))
+				write(h.r.ServerError(err.Error()))
 				return
 			}
 		}
 
-		write(h.ok(nil))
+		write(h.r.Ok(nil))
 	}
 }
 
 func (h *Handler) getFailedSession(query *services.QueryService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		uuid := p.ByName("uuid")
-		write := h.write(w)
+		write := h.r.Write(w)
 		session, err := query.GetFailedSession(uuid)
 		if err != nil {
-			write(h.notFound())
+			write(h.r.NotFound())
 		} else {
-			write(h.ok(session.ToOutput()))
+			write(h.r.Ok(session.ToOutput()))
 		}
 	}
 }
@@ -294,13 +266,13 @@ func (h *Handler) getFailedSession(query *services.QueryService) httprouter.Hand
 func (h *Handler) getFailedSessionLogs(query *services.QueryService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		uuid := p.ByName("uuid")
-		write := h.write(w)
+		write := h.r.Write(w)
 		logs, err := query.GetFailedSessionLogs(uuid)
 
 		if err != nil {
-			write(h.notFound())
+			write(h.r.NotFound())
 		} else {
-			write(h.ok(logs))
+			write(h.r.Ok(logs))
 		}
 	}
 }
@@ -308,11 +280,11 @@ func (h *Handler) getFailedSessionLogs(query *services.QueryService) httprouter.
 func (h *Handler) markFailedSessionAsAcknowledged(query *services.QueryService) httprouter.Handle {
 	return func(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		uuid := p.ByName("uuid")
-		write := h.write(rw)
+		write := h.r.Write(rw)
 
 		query.MarkFailedSessionAsSeen(uuid)
 
-		write(h.ok(nil))
+		write(h.r.Ok(nil))
 	}
 }
 
@@ -343,77 +315,6 @@ func (h *Handler) serveStatic(st *services.StaticService) httprouter.Handle {
 			defer gz.Close()
 			fileServer.ServeHTTP(&GzipResponseWriter{Writer: gz, ResponseWriter: w}, r)
 		}
-	}
-}
-
-type ResponseObject struct {
-	Message string `json:"message"`
-}
-
-type ResponseObjectWithResult struct {
-	ResponseObject
-	Result interface{} `json:"result,omitempty"`
-}
-
-type ResponseObjectWithFailingReason struct {
-	ResponseObject
-	Reason interface{} `json:"reason,omitempty"`
-}
-
-func (h *Handler) notFound() ([]byte, int) {
-	return h.buildResponse(ResponseObjectWithFailingReason{
-		ResponseObject{"Not found"},
-		"Not found",
-	}, 404)
-}
-
-func (h *Handler) ok(obj interface{}) ([]byte, int) {
-	return h.buildResponse(ResponseObjectWithResult{
-		ResponseObject{"Ok"},
-		obj,
-	}, 200)
-}
-
-func (h *Handler) serverError(reason interface{}) ([]byte, int) {
-	return h.buildResponse(ResponseObjectWithFailingReason{
-		ResponseObject{"Internal server error"},
-		reason,
-	}, 500)
-}
-
-func (h *Handler) badRequest() ([]byte, int) {
-	return h.buildResponse(ResponseObject{"Bad request"}, 400)
-}
-
-func (h *Handler) buildResponse(response interface{}, status int) ([]byte, int) {
-	responseString, err := json.Marshal(response)
-	if err != nil {
-		h.log.Errorln("Could not serialize response object", err)
-		return []byte(`{"message": "Internal server error"}`), 500
-	} else {
-		return responseString, status
-	}
-}
-
-func (h *Handler) okOrNotFound(obj interface{}, status int) ([]byte, int) {
-
-	var c []byte
-	var s int
-
-	if obj != nil {
-		c, s = h.ok(obj)
-	} else {
-		c, s = h.notFound()
-	}
-
-	return c, s
-}
-
-func (h *Handler) write(w http.ResponseWriter) func(c []byte, s int) {
-	return func(c []byte, s int) {
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(s)
-		w.Write(c)
 	}
 }
 

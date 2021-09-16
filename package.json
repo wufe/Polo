@@ -28,6 +28,8 @@
     "clean": "run-p clean:root clean:server",
     "clean:root": "rimraf dist public release",
     "clean:server": "yarn workspace @polo/server clean",
+    "pro:link": "zx scripts/link-pro.mjs",
+    "pro:unlink": "zx scripts/unlink-pro.mjs",
     "serve": "cross-env TAILWIND_MODE=watch node --max-old-space-size=8192 node_modules/webpack/bin/webpack.js serve",
     "build:release": "run-s clean build:client:prod build:server:prod:restore build:server:prod:statik build:release:windows build:release:macos build:release:linux",
     "build:release:windows": "yarn workspace @polo/server build:release:windows",
@@ -40,7 +42,7 @@
     "test:trace:watch": "cross-env POLO_CWD=$INIT_CWD yarn workspace @polo/server test:trace:watch",
     "test:prod": "cross-env POLO_CWD=$INIT_CWD yarn workspace @polo/server test:prod",
     "test:prod:watch": "cross-env POLO_CWD=$INIT_CWD yarn workspace @polo/server test:prod:watch",
-    "prepare": "husky install"
+    "prepare": "zx ./scripts/prepare.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^12.1.4",
@@ -53,7 +55,8 @@
     "npm-run-all": "^4.1.5",
     "webpack": "^5.17.0",
     "webpack-cli": "^4.4.0",
-    "webpack-dev-server": "^3.11.2"
+    "webpack-dev-server": "^3.11.2",
+    "zx": "^4.2.0"
   },
   "config": {
     "commitizen": {
