@@ -48,7 +48,7 @@ func (ce *sessionCommandExecutionImpl) ExecCommand(ctx context.Context, command 
 	for _, cmd := range cmds {
 		cmd.Env = append(
 			os.Environ(),
-			command.Environment...,
+			ce.buildEnvironmentVariables(command.Environment, session)...,
 		)
 		cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
 	}
@@ -63,6 +63,14 @@ func (ce *sessionCommandExecutionImpl) ExecCommand(ctx context.Context, command 
 	}, cmds...)
 
 	return err
+}
+
+func (ce *sessionCommandExecutionImpl) buildEnvironmentVariables(variables []string, session *models.Session) []string {
+	ret := []string{}
+	for _, variable := range variables {
+		ret = append(ret, session.Variables.ApplyTo(variable))
+	}
+	return ret
 }
 
 func (ce *sessionCommandExecutionImpl) buildCommand(command string, session *models.Session) (string, error) {
