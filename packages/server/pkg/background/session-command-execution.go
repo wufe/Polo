@@ -100,17 +100,18 @@ func ParseCommandContext(context context.Context, command string) []*exec.Cmd {
 
 	commands := []*exec.Cmd{}
 
-	for _, name := range strings.Split(command, "|") {
-		name = strings.TrimSpace(name)
-		nameAndArgs := strings.Split(name, " ")
+	var rawCmd []string
 
-		if runtime.GOOS == "windows" {
-			nameAndArgs = append([]string{"cmd", "/C"}, nameAndArgs...)
-		}
-
-		cmd := exec.CommandContext(context, nameAndArgs[0], nameAndArgs[1:]...)
-		commands = append(commands, cmd)
+	if runtime.GOOS == "windows" {
+		rawCmd = []string{"cmd", "/S", "/C"}
+	} else {
+		rawCmd = []string{"/bin/sh", "-c"}
 	}
+
+	rawCmd = append(rawCmd, command)
+
+	cmd := exec.CommandContext(context, rawCmd[0], rawCmd[1:]...)
+	commands = append(commands, cmd)
 
 	return commands
 }
