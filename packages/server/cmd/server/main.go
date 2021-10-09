@@ -40,6 +40,7 @@ func main() {
 	container.AddDatabase()
 	container.AddApplicationStorage()
 	container.AddSessionStorage()
+	container.AddUserStorage()
 
 	// Command
 
@@ -78,6 +79,7 @@ func main() {
 	container.AddQueryService()
 	container.AddRequestService()
 	container.AddAliasingService()
+	container.AddAuthenticationService()
 
 	// HTTP
 

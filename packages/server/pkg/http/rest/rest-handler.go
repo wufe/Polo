@@ -32,6 +32,7 @@ func NewHandler(
 	proxy *proxy.Handler,
 	query *services.QueryService,
 	request *services.RequestService,
+	authentication services.AuthenticationService,
 	logger logging.Logger,
 ) *Handler {
 	router := httprouter.New()
@@ -41,6 +42,8 @@ func NewHandler(
 		Router: router,
 		r:      response_builder.NewResponseBuilder(logger),
 	}
+
+	h.injectAuthEndpoints(router, authentication)
 
 	router.GET("/_polo_/", h.getManager(static, proxy))
 	router.GET("/_polo_/session/*catchall", h.getManager(static, proxy))
@@ -210,7 +213,7 @@ func (h *Handler) addSession(req *services.RequestService) httprouter.Handle {
 		}{}
 		err := json.NewDecoder(r.Body).Decode(input)
 		if err != nil {
-			write(h.r.BadRequest())
+			write(h.r.BadRequest(nil))
 			return
 		}
 

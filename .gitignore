@@ -571,3 +571,4 @@ MigrationBackup/
 /packages/*/public
 db
 __debug_bin
+/.db

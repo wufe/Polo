@@ -2,6 +2,7 @@ package response_builder
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/wufe/polo/pkg/logging"
@@ -44,14 +45,25 @@ func (b *ResponseBuilder) Ok(obj interface{}) ([]byte, int) {
 }
 
 func (b *ResponseBuilder) ServerError(reason interface{}) ([]byte, int) {
+	fmt.Println(reason)
 	return b.BuildResponse(ResponseObjectWithFailingReason{
 		ResponseObject{"Internal server error"},
 		reason,
 	}, 500)
 }
 
-func (b *ResponseBuilder) BadRequest() ([]byte, int) {
-	return b.BuildResponse(ResponseObject{"Bad request"}, 400)
+func (b *ResponseBuilder) Unauthorized(reason interface{}) ([]byte, int) {
+	return b.BuildResponse(ResponseObjectWithFailingReason{
+		ResponseObject{"Unauthorized"},
+		reason,
+	}, 401)
+}
+
+func (b *ResponseBuilder) BadRequest(reason interface{}) ([]byte, int) {
+	return b.BuildResponse(ResponseObjectWithFailingReason{
+		ResponseObject{"Bad request"},
+		reason,
+	}, 400)
 }
 
 func (b *ResponseBuilder) BuildResponse(response interface{}, status int) ([]byte, int) {

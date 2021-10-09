@@ -148,7 +148,7 @@ func (d *DI) AddInstance() {
 
 func (d *DI) AddDatabase() {
 	if err := d.container.Provide(func(environment utils.Environment, logger logging.Logger) storage.Database {
-		return storage_fixture.NewDB(logger)
+		return storage_fixture.NewDB(environment.GetExecutableFolder(), logger)
 	}); err != nil {
 		log.Panic(err)
 	}
@@ -165,6 +165,12 @@ func (d *DI) AddApplicationStorage() {
 
 func (d *DI) AddSessionStorage() {
 	if err := d.container.Provide(storage.NewSession); err != nil {
+		log.Panic(err)
+	}
+}
+
+func (d *DI) AddUserStorage() {
+	if err := d.container.Provide(storage.NewUser); err != nil {
 		log.Panic(err)
 	}
 }
@@ -385,6 +391,12 @@ func (d *DI) AddAliasingService() {
 	}
 }
 
+func (d *DI) AddAuthenticationService() {
+	if err := d.container.Provide(services.NewAuthenticationService); err != nil {
+		log.Panic(err)
+	}
+}
+
 // HTTP
 
 func (d *DI) AddPortRetriever() {
@@ -431,9 +443,10 @@ func (d *DI) AddHTTPRestHandler() {
 		proxy *proxy.Handler,
 		queryService *services.QueryService,
 		requestService *services.RequestService,
+		authenticationService services.AuthenticationService,
 		logger logging.Logger,
 	) *rest.Handler {
-		return rest.NewHandler(environment, staticService, routing, proxy, queryService, requestService, logger)
+		return rest.NewHandler(environment, staticService, routing, proxy, queryService, requestService, authenticationService, logger)
 	}); err != nil {
 		log.Panic(err)
 	}

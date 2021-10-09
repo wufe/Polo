@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/asaskevich/EventBus v0.0.0-20200907212545-49d423059eef
 	github.com/dgraph-io/badger/v3 v3.2011.1
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-git/go-git/v5 v5.2.0
 	github.com/google/uuid v1.2.0
 	github.com/julienschmidt/httprouter v1.3.0
@@ -17,7 +18,8 @@ require (
 	github.com/sasha-s/go-deadlock v0.2.0
 	github.com/sirupsen/logrus v1.7.0
 	go.uber.org/dig v1.10.0
-	golang.org/x/net v0.0.0-20210119194325-5f4716e94777 // indirect
-	golang.org/x/sys v0.0.0-20210426230700-d19ff857e887 // indirect
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	gopkg.in/yaml.v2 v2.4.0
+	gorm.io/driver/sqlite v1.1.6
+	gorm.io/gorm v1.21.15
 )

@@ -16,7 +16,7 @@
     ]
   },
   "scripts": {
-    "start": "cross-env POLO_CWD=$INIT_CWD GO_ENV=development go run packages/server/cmd/server/main.go",
+    "start": "zx ./scripts/start.mjs",
     "build:docker": "docker build -t polo:local -f ./docker/Dockerfile .",
     "build:client": "cross-env NODE_ENV=development webpack --config webpack.config.js",
     "build:client:prod": "cross-env NODE_ENV=production webpack --config webpack.config.js",

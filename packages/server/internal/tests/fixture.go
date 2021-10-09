@@ -37,6 +37,7 @@ func Fixture(injectable *InjectableServices, applicationConfigurations ...*model
 	container.AddDatabase()
 	container.AddApplicationStorage()
 	container.AddSessionStorage()
+	container.AddUserStorage()
 
 	// Command
 
@@ -75,6 +76,7 @@ func Fixture(injectable *InjectableServices, applicationConfigurations ...*model
 	container.AddQueryService()
 	container.AddRequestService()
 	container.AddAliasingService()
+	container.AddAuthenticationService()
 
 	// HTTP
 
