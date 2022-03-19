@@ -4,6 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
+    "start": "cross-env GO_ENV=development go run cmd/server/main.go",
+    "dev": "nodemon --watch . --ext 'go' --signal SIGTERM --exec 'yarn start'",
     "build:release:windows": "cross-env GOOS=windows GOARCH=amd64 go build -o ../../release/polo-windows-amd64.exe cmd/server/main.go",
     "build:release:macos": "cross-env GOOS=darwin GOARCH=amd64 go build -ldflags \"-X github.com/wufe/polo/pkg/storage.configurationFolder=/usr/local/etc/polo\" -o ../../release/polo-darwin-amd64 cmd/server/main.go",
     "build:release:linux": "cross-env GOOS=linux GOARCH=amd64 go build -ldflags \"-X github.com/wufe/polo/pkg/storage.configurationFolder=/etc/polo\" -o ../../release/polo-linux-amd64 cmd/server/main.go",

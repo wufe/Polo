@@ -16,7 +16,8 @@
     ]
   },
   "scripts": {
-    "start": "cross-env POLO_CWD=$INIT_CWD GO_ENV=development go run packages/server/cmd/server/main.go",
+    "dev": "cross-env POLO_CWD=$INIT_CWD run-p dev:server serve",
+    "dev:server": "yarn workspace @polo/server dev",
     "build:docker": "docker build -t polo:local -f ./docker/Dockerfile .",
     "build:client": "cross-env NODE_ENV=development webpack --config webpack.config.js",
     "build:client:prod": "cross-env NODE_ENV=production webpack --config webpack.config.js",
@@ -52,6 +53,7 @@
     "cz-conventional-changelog": "3.3.0",
     "husky": "^7.0.0",
     "lerna": "^4.0.0",
+    "nodemon": "^2.0.15",
     "npm-run-all": "^4.1.5",
     "webpack": "^5.17.0",
     "webpack-cli": "^4.4.0",
