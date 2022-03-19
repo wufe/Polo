@@ -1,11 +1,11 @@
+import {useState} from 'preact/compat';
 import { APIRequestResult } from '@polo/common/api/common';
 import { IAPISession, retrieveSessionStatusAPI, untrackSessionAPI } from '@polo/common/api/session';
-import React, { memo, useEffect, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { HelperStatus, HelperStatusContext } from '../contexts';
 import { expiredAgeValue, noExpirationAgeValue } from '../status/helper-status-provider';
 import { SessionAge } from './helper-session-age';
-import { LinkIcon } from '@heroicons/react/outline';
+// import { LinkIcon } from '@heroicons/react/outline';
 import './helper-session.scss';
 import { useClipboard } from '@polo/common/components/hooks/use-clipboard';
 
@@ -75,7 +75,7 @@ export const HelperSession = (props: TProps) => {
             <div className="__shortcut" onClick={copyPermalink}>
                 <span className="__desc">Copy permalink</span>
                 <div className="__icon-container">
-                    <LinkIcon width="14" height="14" />
+                    {/*<LinkIcon width="14" height="14" />*/}
                 </div>
             </div>
             <div className="__shortcut" onClick={goToLogs}>

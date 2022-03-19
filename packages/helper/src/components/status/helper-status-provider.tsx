@@ -1,7 +1,8 @@
+import {ComponentChildren} from 'preact';
+import {useEffect, useRef, useState} from 'preact/hooks';
 import { APIRequestResult } from '@polo/common/api/common';
 import { IAPISession, retrieveSessionStatusAPI } from '@polo/common/api/session';
 import { SessionStatus, SessionKillReason } from '@polo/common/state/models/session-model-enums';
-import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { HelperStatus, HelperStatusContext } from '../contexts';
 
 export const noExpirationAgeValue = -1;
@@ -16,8 +17,8 @@ type TInitialSessionStatus = {
 
 const useStatusRetrieval = (uuid: string, initial: TInitialSessionStatus) => {
     const [status, setStatus] = useState(initial);
-    const ageDecrementTimeout = useRef<NodeJS.Timeout | null>();
-    const realAgeRetrievalTimeout = useRef<NodeJS.Timeout | null>();
+    const ageDecrementTimeout = useRef<number | null>();
+    const realAgeRetrievalTimeout = useRef<number | null>();
 
     useEffect(() => {
         const ageRetrieval = async () => {
@@ -74,7 +75,7 @@ const useStatusRetrieval = (uuid: string, initial: TInitialSessionStatus) => {
     return status;
 }
 
-export const HelperStatusProvider = (props: React.PropsWithChildren<{ uuid: string, initial: TInitialSessionStatus }>) => {
+export const HelperStatusProvider = (props: { uuid: string, initial: TInitialSessionStatus, children: ComponentChildren }) => {
     const [helperStatus, setHelperStatus] = useState(HelperStatus.RUNNING);
 
     const { age, killReason, replacedBy, status } = useStatusRetrieval(props.uuid, props.initial);

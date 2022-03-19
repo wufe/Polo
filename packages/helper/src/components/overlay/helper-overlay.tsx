@@ -1,4 +1,4 @@
-import React, { memo, useLayoutEffect } from 'react';
+import {useLayoutEffect, memo} from 'preact/compat';
 import './helper-overlay.scss';
 import { HelperStatus } from '../contexts';
 

@@ -1,8 +1,7 @@
+import {render} from 'preact';
 import { IAPISession } from '@polo/common/api/session';
-import React, {  } from 'react';
 import './app.scss';
 import { HelperSession } from './session/helper-session';
-import { render } from 'react-dom';
 import { HelperStatusContext } from './contexts';
 import { HelperOverlay } from './overlay/helper-overlay';
 import { HelperStatusProvider } from './status/helper-status-provider';
@@ -13,7 +12,7 @@ type TProps = {
 export const App = (props: TProps) => {
 
     if (!props.session)
-        return null;
+        return <pre>No session</pre>;
 
     const { age, status, killReason, replacedBy } = props.session;
 

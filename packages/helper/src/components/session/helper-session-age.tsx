@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import {memo} from 'preact/compat';
 import { HelperStatusContext } from '../contexts';
 
 const SessionAgeInterval = memo((props: { age: number }) => {

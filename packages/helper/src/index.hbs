@@ -1,4 +1,16 @@
 <div data-pos-x="SESSION_HELPER_X" data-pos-y="SESSION_HELPER_Y" id="polo-session-helper"></div>
 <script>window.currentSession = JSON.parse(atob(`%%currentSession%%`));</script>
-{{{ htmlWebpackPlugin.tags.headTags }}}
-{{{ htmlWebpackPlugin.tags.bodyTags }}}
+<script>
+function ready(fn: () => void) {
+    if (document.readyState !== 'loading') {
+        fn();
+    } else {
+        document.addEventListener('DOMContentLoaded', fn);
+    }
+}
+try{
+    if(window.self!==window.top){
+        ready(import('{{publicPath}}{{helperFile}}'));
+    }
+}catch{}
+</script>

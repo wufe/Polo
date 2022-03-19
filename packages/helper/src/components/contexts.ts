@@ -1,5 +1,5 @@
 import { SessionStatus, SessionKillReason } from '@polo/common/state/models/session-model-enums';
-import { createContext } from 'react';
+import { createContext } from 'preact';
 
 export enum HelperStatus {
     RUNNING  = 'running',
