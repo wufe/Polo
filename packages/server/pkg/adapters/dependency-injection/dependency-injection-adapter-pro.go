@@ -5,9 +5,8 @@ package dependency_injection_adapter
 
 import (
 	"github.com/wufe/polo/pkg/logging"
+	pro_di "github.com/wufe/polo/third_party/polo-pro/di"
 	"go.uber.org/dig"
-
-	dependency_injection "github.com/wufe/polo/third_party/polo-pro/pkg/dependency-injection"
 )
 
 func Register(di *dig.Container) {
@@ -20,7 +19,7 @@ func Register(di *dig.Container) {
 	logger.Infoln("Pro build")
 	logger.Debugln("Injecting pro features")
 
-	dependency_injection.RegisterProvide(func(constructor interface{}) error {
+	pro_di.RegisterProvide(func(constructor interface{}) error {
 		return di.Provide(constructor)
 	})
 }
