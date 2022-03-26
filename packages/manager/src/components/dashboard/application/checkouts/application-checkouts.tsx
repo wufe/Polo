@@ -17,8 +17,8 @@ export const ApplicationCheckouts = observer((props: TProps) => {
         Array.from(props.tags.values());
 
     return <>
-        <h4 className="my-1 text-lg">New session</h4>
-        <span className="text-sm text-gray-500 opacity-80">
+        <h4 className="my-1 lg:text-lg pl-2 lg:pl-0">New session</h4>
+        <span className="text-sm text-gray-500 opacity-80 pl-2 lg:pl-0">
             Build a new session by choosing a build point.
         </span>
         <div className="flex justify-center mt-4 mb-3">

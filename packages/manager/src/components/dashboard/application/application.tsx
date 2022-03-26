@@ -26,6 +26,9 @@ type TProps = {
     sessions   : ISession[] | null;
     failures   : TFailuresDictionary | null;
     application: IApplication;
+
+    moreThanOneApplication?: boolean;
+    onApplicationsSelectorClick: () => void;
 }
 
 export const Application = observer((props: TProps) => {
@@ -67,10 +70,21 @@ export const Application = observer((props: TProps) => {
         application`}>
 
         <ApplicationNotifications application={props.application} />
-        <ApplicationHeader
-            name={props.application.configuration.name}
-            filename={props.application.filename}
-            failures={props.failures} />
+        <div className="hidden lg:block">
+            <ApplicationHeader
+                name={props.application.configuration.name}
+                filename={props.application.filename}
+                failures={props.failures} />
+        </div>
+        <div className="lg:hidden">
+            <ApplicationHeader
+                name={props.application.configuration.name}
+                filename={props.application.filename}
+                failures={props.failures}
+                showApplicationSelector={props.moreThanOneApplication}
+                onApplicationsSelectorClick={props.onApplicationsSelectorClick} />
+        </div>
+
         
         {props.sessions && props.sessions.length > 0 && <div className="py-4">
             <ApplicationSessions sessions={props.sessions} />

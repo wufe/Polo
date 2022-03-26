@@ -15,6 +15,9 @@ type TProps = {
     name: string;
     filename: string;
 
+    showApplicationSelector?: boolean;
+    onApplicationsSelectorClick?: () => void;
+
     failures: TFailuresDictionary | null;
 }
 export const ApplicationHeader = (props: TProps) => {
@@ -30,19 +33,32 @@ export const ApplicationHeader = (props: TProps) => {
         history.push(`/_polo_/session/failing/${session.uuid}`);
     }
 
+    const onApplicationHeaderClick = () => {
+        if (props.showApplicationSelector) {
+            props.onApplicationsSelectorClick?.();
+        }
+    };
+
+    const onApplicationOptionsClick = (event: React.MouseEvent) => {
+        event.stopPropagation();
+        show(applicationOptionsModalName);
+    };
 
     return <div className="application-header">
-        <div className="flex justify-between min-w-0 max-w-full flex-nowrap items-center">
-            <h3 className="text-xl lg:text-2xl leading-5 font-bold overflow-hidden overflow-ellipsis whitespace-nowrap flex-grow flex-shrink pr-6" title={props.name}>{props.name}</h3>
+        <div className="flex justify-between min-w-0 max-w-full flex-nowrap">
+            <div className="flex-grow flex-shrink pr-6 min-w-0" onClick={onApplicationHeaderClick}>
+                <h3 className="text-xl lg:text-2xl leading-10 font-bold overflow-hidden overflow-ellipsis whitespace-nowrap __title" title={props.name}>{props.name}</h3>
+                <span className="text-gray-400 text-sm __filename">{props.filename}</span>
+            </div>
             <Button
                 ghost
                 largeIcon
-                onClick={() => show(applicationOptionsModalName)}
+                onClick={onApplicationOptionsClick}
                 icon={<MenuIcon />}>
                 {anyUnacknowledged && <div className="__error-circle"></div>}
             </Button>
         </div>
-        <span className="text-gray-400 text-sm">{props.filename}</span>
+
 
         <ApplicationOptionsModal
             modalName={applicationOptionsModalName}

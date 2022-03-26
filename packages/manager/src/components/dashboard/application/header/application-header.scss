@@ -4,4 +4,18 @@
     .__error-circle {
         @apply absolute top-3 right-1 bg-nord11 w-2 h-2 rounded-full;
     }
+
+    @media (max-width: 1023px) {
+        @apply border-l-2 border-gray-400 dark:border-gray-500 pl-2 cursor-pointer;
+
+        .__title {
+            &:hover {
+                @apply text-nord10 underline;
+            }
+        }
+
+        .__filename {
+//             @apply pl-1;
+        }
+    }
 }

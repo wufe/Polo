@@ -4,6 +4,8 @@ import { IApp, IApplication } from '@polo/common/state/models';
 import { Application } from './application/application';
 import { values } from 'mobx';
 import { useHistory } from 'react-router';
+import {ApplicationSelectorModal} from "@/components/dashboard/application/selector/application-selector-modal";
+import {useModal} from "@/components/modal/modal-hooks";
 
 type TProps = {
     app: IApp;
@@ -11,6 +13,7 @@ type TProps = {
 export const Dashboard = observer((props: TProps) => {
 
     const [selectedAppIndex, setSelectedAppIndex] = useState(-1);
+    const {show, hide} = useModal();
 
     const selectedApplicationLocalStorageKey = 'selected-application-name';
 
@@ -19,6 +22,8 @@ export const Dashboard = observer((props: TProps) => {
     }
 
     const applications = Array.from(props.app.applications.values());
+
+    const applicationSelectorModalName = 'applications-selector';
 
     useEffect(() => {
         const apps = applications;
@@ -42,7 +47,12 @@ export const Dashboard = observer((props: TProps) => {
     const openApplication = (name: string, index: number) => () => {
         setSelectedAppIndex(index);
         localStorage.setItem(selectedApplicationLocalStorageKey, name);
-    }
+        hide();
+    };
+
+    const openApplicationSelectorModal = () => {
+        show(applicationSelectorModalName);
+    };
 
     const selected: IApplication = applications[selectedAppIndex];
 
@@ -62,11 +72,17 @@ export const Dashboard = observer((props: TProps) => {
                     <Application
                         sessions={props.app.sessionsByApplicationName[selected.configuration.name]}
                         failures={props.app.failures.byApplicationName[selected.configuration.name]}
-                        application={selected} />
+                        application={selected}
+                        moreThanOneApplication={applications.length > 1}
+                        onApplicationsSelectorClick={openApplicationSelectorModal} />
                 </div>}
             </div>
         </div>
-        
+
+        <ApplicationSelectorModal
+            modalName={applicationSelectorModalName}
+            applications={applications}
+            onApplicationClick={(name, index) => openApplication(name, index)()}/>
     </div>;
 })
 

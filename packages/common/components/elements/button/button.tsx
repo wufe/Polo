@@ -14,7 +14,7 @@ type TProps = {
     label?       : string;
     hideOnMobile?: boolean;
     absolute?    : boolean;
-    onClick?     : () => void;
+    onClick?     : (event: React.MouseEvent) => void;
     className?   : string;
     icon?        : JSX.Element | null
 }
