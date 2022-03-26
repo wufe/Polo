@@ -182,6 +182,7 @@ function colorByStatus(status: SessionStatus): string {
         case SessionStatus.STOPPING:
             return '#d08770';
         case SessionStatus.START_FAILED:
+        case SessionStatus.STOP_FAILED:
             return '#bf616a';
     }
 }

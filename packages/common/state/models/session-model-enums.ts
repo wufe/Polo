@@ -4,6 +4,7 @@ export enum SessionStatus {
     STARTING     = 'starting',
     STARTED      = 'started',
     START_FAILED = 'start_failed',
+    STOP_FAILED  = 'stop_failed',
     STOPPING     = 'stopping',
     DEGRADED     = 'degraded',
 }
