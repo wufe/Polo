@@ -13,12 +13,12 @@ export type TApplicationNotification = TNotificationResult & {
 export const useApplicationNotifications = (application: IApplication) => {
 
     type TApplicationNotificationsMap = TDictionary<IApplicationNotification>;
-    const [notifications, setNotifications] = useState<IApplicationNotification[]>(() => values(application.notifications) as IApplicationNotification[]);
+    const [notifications, setNotifications] = useState<IApplicationNotification[]>(() => values(application.notifications) as unknown as IApplicationNotification[]);
     const { notify } = useNotification();
     const showedNotifications = useRef<TDictionary<TApplicationNotification>>({});
 
     useEffect(() => {
-        setNotifications(values(application.notifications) as IApplicationNotification[]);
+        setNotifications(values(application.notifications) as unknown as IApplicationNotification[]);
         const disposer = observe(application.notifications, ({ object }) => {
             setNotifications(values(object) as IApplicationNotification[]);
         });
