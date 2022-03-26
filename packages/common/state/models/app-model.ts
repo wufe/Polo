@@ -147,7 +147,7 @@ export const AppModel = types.model({
 })
 .views(self => ({
     get sessionsByApplicationName() {
-        return (values(self.sessions) as any as ISession[])
+        return (Array.from(self.sessions.values()))
             .reduce<{ [name: string]: ISession[] }>((accumulator, session: ISession) => {
                 const applicationName = session.applicationName;
                 if (!accumulator[applicationName]) accumulator[applicationName] = [];

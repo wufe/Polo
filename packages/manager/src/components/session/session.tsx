@@ -50,7 +50,7 @@ export const Session = observer((props: TProps) => {
         </div>
         <CommitMessage {...props.session} maxHeight />
         <SessionLogs
-            logs={values(props.session.logs) as any as ISessionLog[]}
+            logs={Array.from(props.session.logs.values())}
             onLogsProportionChanged={setOverlayProportions} />
     </div>
 });

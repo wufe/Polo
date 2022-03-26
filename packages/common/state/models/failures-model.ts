@@ -81,10 +81,10 @@ export const FailuresModel = types.model({
     return {
         get byApplicationName(): TFailuresByApplicationDictionary {
             return sessionsToMap(
-                    values(self.unacknowledged) as any as ISession[],
+                    Array.from(self.unacknowledged.values()),
                     FailureStatus.UNACK,
                     sessionsToMap(
-                        values(self.acknowledged) as any as ISession[],
+                        Array.from(self.acknowledged.values()),
                         FailureStatus.ACK
                     )
             );

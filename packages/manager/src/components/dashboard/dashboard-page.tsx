@@ -18,8 +18,10 @@ export const Dashboard = observer((props: TProps) => {
         await props.app.retrieveStatusData();
     }
 
+    const applications = Array.from(props.app.applications.values());
+
     useEffect(() => {
-        const apps = values(props.app.applications) as any as IApplication[];
+        const apps = applications;
         if (selectedAppIndex > -1 || apps.length === 0) return;
         const applicationName = localStorage.getItem(selectedApplicationLocalStorageKey);
         const foundIndex = apps
@@ -29,7 +31,7 @@ export const Dashboard = observer((props: TProps) => {
         } else {
             setSelectedAppIndex(0);
         }
-    }, [values(props.app.applications)]);
+    }, [applications.length, selectedAppIndex]);
 
     useEffect(() => {
         requestData();
@@ -42,14 +44,14 @@ export const Dashboard = observer((props: TProps) => {
         localStorage.setItem(selectedApplicationLocalStorageKey, name);
     }
 
-    const selected: IApplication = values(props.app.applications)[selectedAppIndex] as any;
+    const selected: IApplication = applications[selectedAppIndex];
 
     return <div className="font-quicksand w-full py-8 pb-12">
         <div className="w-full mx-auto lg:max-w-1500 px-5">
             <div className="flex">
                 <div className="py-0 pr-5 hidden lg:block flex-shrink-0 w-3/12">
                 <div className="mb-3 text-lg lg:text-xl font-medium text-nord1 dark:text-nord5">Applications</div>
-                    {(values(props.app.applications) as any as IApplication[]).map((application, index) =>
+                    {applications.map((application, index) =>
                         <a
                             key={index}
                             className={`block cursor-pointer px-5 py-3 rounded-md text-sm lg:text-base mb-3
