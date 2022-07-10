@@ -23,6 +23,7 @@ func NewCLIGitClient(commandRunner execution.CommandRunner) GitClient {
 
 func (client *CLIGitClient) Clone(baseFolder string, outputFolder string, remote string) error {
 	cmd := exec.Command("git", "clone", remote, outputFolder)
+	cmd.Env = append(cmd.Env, "GIT_TERMINAL_PROMPT=0")
 	cmd.Dir = baseFolder
 	return client.execCommands(cmd)
 }
@@ -37,15 +38,18 @@ func (client *CLIGitClient) FetchAll(repoFolder string) error {
 	}
 
 	cmd := exec.Command("git", "fetch", "--force", "-u", "origin", "+refs/*:refs/*", "--prune")
+	cmd.Env = append(cmd.Env, "GIT_TERMINAL_PROMPT=0")
 	cmd.Dir = repoFolder
 	return client.execCommands(cmd)
 }
 
 func (client *CLIGitClient) HardReset(repoFolder string, commit string) error {
 	stash := exec.Command("git", "stash", "-u")
+	stash.Env = append(stash.Env, "GIT_TERMINAL_PROMPT=0")
 	stash.Dir = repoFolder
 
 	reset := exec.Command("git", "reset", "--hard", commit)
+	reset.Env = append(reset.Env, "GIT_TERMINAL_PROMPT=0")
 	reset.Dir = repoFolder
 
 	return client.execCommands(stash, reset)

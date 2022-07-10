@@ -132,7 +132,7 @@ func execCmd(ctx context.Context, cmd *exec.Cmd, callback func(*StdLine)) error 
 
 	exitCode := cmd.ProcessState.ExitCode()
 	if exitCode > 0 {
-		return fmt.Errorf("Command exit with code %d", exitCode)
+		return fmt.Errorf("command exited with code %d", exitCode)
 	}
 
 	if err != nil && err.Error() == "signal: killed" {
