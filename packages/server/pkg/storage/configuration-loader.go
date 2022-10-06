@@ -17,7 +17,7 @@ var configurationFolder string
 
 func LoadConfigurations(environment utils.Environment, applicationBuilder *models.ApplicationBuilder, logger logging.Logger) (*models.RootConfiguration, []*models.Application) {
 
-	fmt.Println("Configuration Folder: ", configurationFolder)
+	logger.Infof("Looking for configuration in folder: %s", configurationFolder)
 
 	files := []string{}
 
@@ -26,8 +26,12 @@ func LoadConfigurations(environment utils.Environment, applicationBuilder *model
 		files = append(files, getYamlFiles(configurationFolder, logger)...)
 	}
 
+	executableFolder := environment.GetExecutableFolder()
+
+	logger.Infof("Looking for configuration in folder: %s", executableFolder)
+
 	// Then try with yaml files in the executable folder
-	files = append(files, getYamlFiles(environment.GetExecutableFolder(), logger)...)
+	files = append(files, getYamlFiles(executableFolder, logger)...)
 
 	return unmarshalConfigurations(files, applicationBuilder, logger, environment)
 
