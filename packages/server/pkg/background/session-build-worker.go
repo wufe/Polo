@@ -78,6 +78,17 @@ func (w *SessionBuildWorker) RequestNewSession(buildInput *queues.SessionBuildIn
 
 func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput) *queues.SessionBuildResult {
 
+	var result *queues.SessionBuildResult
+
+	defer func() {
+		if err := recover(); err != nil {
+			result = &queues.SessionBuildResult{
+				Result:        queues.SessionBuildResultFailed,
+				FailingReason: fmt.Errorf("uncaught error: %v", err).Error(),
+			}
+		}
+	}()
+
 	appBus := input.Application.GetEventBus()
 
 	conf := input.Application.GetConfiguration()
@@ -165,7 +176,17 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 	session.LogInfo(fmt.Sprintf("Found new free port: %d", session.Port))
 
 	session.CommitID = commitID
-	session.Commit = *input.Application.CommitMap[commitID]
+
+	commit, ok := input.Application.CommitMap[commitID]
+
+	if !ok || commit == nil {
+		return &queues.SessionBuildResult{
+			Result:        queues.SessionBuildResultFailed,
+			FailingReason: "Commit not available",
+		}
+	}
+
+	session.Commit = *commit
 	session.LogInfo(fmt.Sprintf("Requested checkout to %s (%s)", input.Checkout, session.CommitID))
 
 	// Set display-name based on checkout being a commit ID or not
@@ -216,11 +237,13 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 
 	go w.buildSession(session)
 
-	return &queues.SessionBuildResult{
+	result = &queues.SessionBuildResult{
 		Result:   queues.SessionBuildResultSucceeded,
 		Session:  session,
 		EventBus: session.GetEventBus(),
 	}
+
+	return result
 }
 
 func (w *SessionBuildWorker) buildSession(session *models.Session) {
