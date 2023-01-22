@@ -19,15 +19,15 @@ func NewEmbeddedGitClient(auth transport.AuthMethod) GitClient {
 	}
 }
 
-func (client *EmbeddedGitClient) Clone(baseFolder string, outFolder string, remote string) error {
-	_, err := git.PlainClone(filepath.Join(baseFolder, outFolder), false, &git.CloneOptions{
+func (client *EmbeddedGitClient) Clone(baseFolder string, outputFolder string, remote string, _ bool) error {
+	_, err := git.PlainClone(filepath.Join(baseFolder, outputFolder), false, &git.CloneOptions{
 		URL:  remote,
 		Auth: client.Auth,
 	})
 	return err
 }
 
-func (client *EmbeddedGitClient) HardReset(repoFolder string, commit string) error {
+func (client *EmbeddedGitClient) HardReset(repoFolder string, commit string, _ bool) error {
 	repo, err := git.PlainOpen(repoFolder)
 	if err != nil {
 		return err
@@ -42,7 +42,7 @@ func (client *EmbeddedGitClient) HardReset(repoFolder string, commit string) err
 	})
 }
 
-func (client *EmbeddedGitClient) FetchAll(repoFolder string) error {
+func (client *EmbeddedGitClient) FetchAll(repoFolder string, _ bool) error {
 	repo, err := git.PlainOpen(repoFolder)
 	if err != nil {
 		return err

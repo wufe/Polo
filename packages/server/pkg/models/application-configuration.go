@@ -48,6 +48,10 @@ func NewApplicationConfiguration(configuration *ApplicationConfiguration, mutexB
 	if configuration.Remote == "" {
 		return nil, errors.New("application.remote (required) not defined; put the git repository URL")
 	}
+	if configuration.DisableTerminalPrompt == nil {
+		disableTerminalPrompt := true
+		configuration.DisableTerminalPrompt = &disableTerminalPrompt
+	}
 	if configuration.Forwards == nil {
 		configuration.Forwards = make([]Forward, 0)
 	}

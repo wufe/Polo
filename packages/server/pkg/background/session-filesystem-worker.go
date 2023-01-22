@@ -57,7 +57,9 @@ func (w *SessionFilesystemWorker) buildSessionCommitStructure(session *models.Se
 
 func (w *SessionFilesystemWorker) buildStructureCopying(session *models.Session, checkout string) (string, error) {
 
+	conf := session.GetConfiguration()
 	applicationBaseFolder := session.Application.BaseFolder
+	disableTerminalPrompt := *conf.DisableTerminalPrompt
 	sessionCommitFolder := filepath.Join(session.Application.Folder, checkout)
 	sessionCommit := session.CommitID
 
@@ -72,7 +74,7 @@ func (w *SessionFilesystemWorker) buildStructureCopying(session *models.Session,
 	}
 
 	session.LogInfo("Performing an hard reset to the selected commit")
-	err := w.gitClient.HardReset(applicationBaseFolder, sessionCommit)
+	err := w.gitClient.HardReset(applicationBaseFolder, sessionCommit, disableTerminalPrompt)
 	if err != nil {
 		session.LogError(fmt.Sprintf("Error while performing hard reset: %s", err.Error()))
 		return "", err
@@ -100,13 +102,14 @@ func (w *SessionFilesystemWorker) buildStructureCloning(session *models.Session,
 	})
 	conf := session.GetConfiguration()
 	appRemote := conf.Remote
+	disableTerminalPrompt := *conf.DisableTerminalPrompt
 
 	sessionCommitFolder := filepath.Join(appFolder, checkout)
 	sessionCommit := session.CommitID
 
 	if _, err := os.Stat(sessionCommitFolder); os.IsNotExist(err) {
 		session.LogInfo(fmt.Sprintf("Cloning from remote %s into %s", appRemote, sessionCommitFolder))
-		err := w.gitClient.Clone(appFolder, checkout, appRemote)
+		err := w.gitClient.Clone(appFolder, checkout, appRemote, disableTerminalPrompt)
 		if err != nil {
 			session.LogError(fmt.Sprintf("Error while cloning: %s", err.Error()))
 			return "", err
@@ -114,14 +117,14 @@ func (w *SessionFilesystemWorker) buildStructureCloning(session *models.Session,
 	}
 
 	session.LogInfo("Fetching from remote")
-	err := w.gitClient.FetchAll(sessionCommitFolder)
+	err := w.gitClient.FetchAll(sessionCommitFolder, disableTerminalPrompt)
 	if err != nil {
 		session.LogError(fmt.Sprintf("Error while fetching from remote: %s", err.Error()))
 		return "", err
 	}
 
 	session.LogInfo("Performing an hard reset to the selected commit")
-	err = w.gitClient.HardReset(sessionCommitFolder, sessionCommit)
+	err = w.gitClient.HardReset(sessionCommitFolder, sessionCommit, disableTerminalPrompt)
 	if err != nil {
 		session.LogError(fmt.Sprintf("Error while performing hard reset: %s", err.Error()))
 		return "", err

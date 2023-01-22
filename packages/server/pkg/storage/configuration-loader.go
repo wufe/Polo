@@ -50,8 +50,9 @@ func getYamlFiles(root string, logger logging.Logger) []string {
 			abs, err := filepath.Abs(filepath.Join(root, info.Name()))
 			if err != nil {
 				logger.Fatalln("Error resolving configuration file", err)
+			} else {
+				files = append(files, abs)
 			}
-			files = append(files, abs)
 		}
 	}
 

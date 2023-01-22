@@ -17,7 +17,7 @@ type FetcherError struct {
 }
 
 type RepositoryFetcher interface {
-	Fetch(baseFolder string) (*FetchResult, []*FetcherError)
+	Fetch(baseFolder string, disableTerminalPrompt bool) (*FetchResult, []*FetcherError)
 }
 type RepositoryFetcherImpl struct {
 	gitClient GitClient
@@ -39,7 +39,7 @@ type FetchResult struct {
 	CommitMap        map[string]*object.Commit
 }
 
-func (fetcher *RepositoryFetcherImpl) Fetch(baseFolder string) (*FetchResult, []*FetcherError) {
+func (fetcher *RepositoryFetcherImpl) Fetch(baseFolder string, disableTerminalPrompt bool) (*FetchResult, []*FetcherError) {
 	objectsToHashMap := make(map[string]string)
 	hashToObjectsMap := make(map[string]*models.RemoteObject)
 	appBranches := make(map[string]*models.Branch)
@@ -69,7 +69,7 @@ func (fetcher *RepositoryFetcherImpl) Fetch(baseFolder string) (*FetchResult, []
 	}
 
 	// Fetch
-	err = fetcher.gitClient.FetchAll(baseFolder)
+	err = fetcher.gitClient.FetchAll(baseFolder, disableTerminalPrompt)
 	if err != nil && err != git.NoErrAlreadyUpToDate {
 		errors = append(errors, &FetcherError{
 			Error:    fmt.Errorf("%s\n\nEnsure your git cli can do a `fetch` inside %s", err.Error(), baseFolder),

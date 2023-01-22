@@ -3,6 +3,7 @@ global:
 applications:
   - name: Test Server
     remote: "https://github.com/wufe/polo-testserver"
+    disable_terminal_prompt: false
     is_default: true
     commands:
       start:

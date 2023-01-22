@@ -55,8 +55,9 @@ func (w *ApplicationFetchWorker) FetchApplicationRemote(application *models.Appl
 	conf := application.GetConfiguration()
 	appName := conf.Name
 	appID := conf.ID
+	disableTerminalPrompt := *conf.DisableTerminalPrompt
 
-	fetchResult, errors := w.repositoryFetcher.Fetch(baseFolder)
+	fetchResult, errors := w.repositoryFetcher.Fetch(baseFolder, disableTerminalPrompt)
 	if len(errors) > 0 {
 		for _, err := range errors {
 			w.log.Errorf("Error while loading application: %s", err.Error.Error())

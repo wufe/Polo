@@ -49,6 +49,7 @@ func (w *ApplicationInitWorker) InitApplication(application *models.Application)
 	conf := application.GetConfiguration()
 	name := conf.Name
 	remote := conf.Remote
+	disableTerminalPrompt := *conf.DisableTerminalPrompt
 
 	w.log.Infof("[APP:%s] Initializing", name)
 	sessionsFolder, err := filepath.Abs(w.global.SessionsFolder)
@@ -74,11 +75,17 @@ func (w *ApplicationInitWorker) InitApplication(application *models.Application)
 	baseFolder := filepath.Join(applicationFolder, "_base") // Folder used for performing periodic git fetch --all and/or git log
 	if _, err := os.Stat(baseFolder); os.IsNotExist(err) {  // Application folder does not exist
 
-		err = w.gitClient.Clone(applicationFolder, "_base", remote)
+		err = w.gitClient.Clone(applicationFolder, "_base", remote, disableTerminalPrompt)
 		if err != nil {
+
+			additionalErrorInstructions := ""
+			if disableTerminalPrompt {
+				additionalErrorInstructions = "\nIf it's not working only on Polo, try to set `disable_terminal_prompt: false` after the `remote` url, in configuration"
+			}
+
 			application.AddNotification(
 				models.ApplicationNotificationTypeGitClone,
-				fmt.Sprintf("%s\n\nEnsure your git cli can do a `clone` and restart the application", err.Error()),
+				fmt.Sprintf("%s\n\nEnsure your git cli can do a `clone` and restart the application%s", err.Error(), additionalErrorInstructions),
 				models.ApplicationNotificationLevelCritical,
 				true,
 			)
