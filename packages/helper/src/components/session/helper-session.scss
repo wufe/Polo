@@ -19,6 +19,9 @@
     --text-color: #2e3440;
     --text-color-light: #4C566A;
 
+    backdrop-filter: blur(.2rem);
+    border-radius: 0 .2rem 0 0;
+
     color: var(--text-color);
     font-size: .8em;
     display: flex;
