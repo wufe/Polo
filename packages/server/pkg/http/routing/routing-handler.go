@@ -210,7 +210,7 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 				defer originalBody.Close()
 
 				var err error
-				usingGzip := false
+				unzippedBody := false
 
 				var bodyReader io.Reader = r.Body
 
@@ -219,7 +219,7 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 					if err != nil {
 						log.Printf("Error deflating body: %v", err)
 					} else {
-						usingGzip = true
+						unzippedBody = true
 					}
 				}
 
@@ -234,8 +234,6 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 
 				bodyIndexPattern := regexp.MustCompile(`<body([^>]*?)>`)
 				bodyIndex := bodyIndexPattern.FindStringIndex(body)
-
-				fmt.Println("bodyIndex", bodyIndex)
 
 				if len(bodyIndex) > 1 {
 					serializedSession, err := json.Marshal(session.ToOutput())
@@ -256,21 +254,28 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 					buffer = bytes.NewBufferString(body)
 
 				} else {
-					fmt.Println("Cannot inject")
 					buffer = bytes.NewBufferString(body)
 				}
 
 				contentLength := 0
 
-				if usingGzip {
-					var buf bytes.Buffer
-					zw := gzip.NewWriter(&buf)
-					_, _ = zw.Write([]byte(body))
-					_ = zw.Close()
-					r.Body = ioutil.NopCloser(&buf)
-					contentLength = buf.Len()
-					//r.Header.Del("Content-Encoding")
-				} else {
+				zippedBody := false
+
+				if unzippedBody {
+
+					zippedBodyReader, length, err := tryZipBody(body)
+					if err != nil {
+						r.Header.Del("Content-Encoding")
+						log.Printf("Cannot deflate body back: %v", err)
+					} else {
+						zippedBody = true
+						contentLength = length
+
+						r.Body = ioutil.NopCloser(zippedBodyReader)
+					}
+				}
+
+				if !zippedBody {
 					contentLength = buffer.Len()
 					r.Body = ioutil.NopCloser(buffer)
 				}
@@ -281,6 +286,19 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 		}
 		return proxy
 	}
+}
+
+func tryZipBody(body string) (io.Reader, int, error) {
+	var zipBuffer bytes.Buffer
+	zw := gzip.NewWriter(&zipBuffer)
+	_, err := zw.Write([]byte(body))
+	if err != nil {
+		return nil, 0, fmt.Errorf("error writing deflated content: %w", err)
+	}
+	if err := zw.Close(); err != nil {
+		return nil, 0, fmt.Errorf("error closing deflating writer: %w", err)
+	}
+	return &zipBuffer, zipBuffer.Len(), nil
 }
 
 func (h *Handler) tryGetSessionByRequestURL(req *http.Request) (foundSession *models.Session, path string, redirect bool) {
