@@ -36,6 +36,21 @@ export const App = (props: TProps) => {
 
 render(<App session={window.currentSession} />, document.getElementById('polo-session-helper'));
 
+setInterval(() =>
+{
+    if (!document.getElementById('polo-session-helper'))
+    {
+        const helper = document.createElement('div');
+        helper.id = 'polo-session-helper';
+        helper.setAttribute('data-pos-x', 'left');
+        helper.setAttribute('data-pos-y', 'bottom');
+        document.body.prepend(helper);
+
+        render(<App session={window.currentSession} />, document.getElementById('polo-session-helper'));
+    }
+}, 1000);
+
+
 declare global {
     interface Window {
         currentSession: any;
