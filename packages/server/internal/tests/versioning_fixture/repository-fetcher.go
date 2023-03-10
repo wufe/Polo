@@ -34,7 +34,7 @@ func NewRepositoryFetcher() *FixtureRepositoryFetcher {
 	}
 }
 
-func (f *FixtureRepositoryFetcher) Fetch(baseFolder string) (*versioning.FetchResult, []*versioning.FetcherError) {
+func (f *FixtureRepositoryFetcher) Fetch(baseFolder string, disableTerminalPrompt bool) (*versioning.FetchResult, []*versioning.FetcherError) {
 	return f.result, []*versioning.FetcherError{}
 }
 

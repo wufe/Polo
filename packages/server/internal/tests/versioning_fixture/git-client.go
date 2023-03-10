@@ -10,17 +10,17 @@ func NewGitClient() versioning.GitClient {
 	return &FixtureGitClient{}
 }
 
-func (c *FixtureGitClient) Clone(baseFolder string, outputFolder string, remote string) error {
+func (c *FixtureGitClient) Clone(baseFolder string, outputFolder string, remote string, disableTerminalPrompt bool) error {
 	// NOOP
 	return nil
 }
 
-func (c *FixtureGitClient) FetchAll(repoFolder string) error {
+func (c *FixtureGitClient) FetchAll(repoFolder string, disableTerminalPrompt bool) error {
 	// NOOP
 	return nil
 }
 
-func (c *FixtureGitClient) HardReset(repoFolder string, commit string) error {
+func (c *FixtureGitClient) HardReset(repoFolder string, commit string, disableTerminalPrompt bool) error {
 	// NOOP
 	return nil
 }
