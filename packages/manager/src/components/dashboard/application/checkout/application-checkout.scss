@@ -2,4 +2,5 @@
 
 .application-checkout {
     @include items-list();
+    @apply mt-2 pt-2;
 }

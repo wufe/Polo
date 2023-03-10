@@ -16,6 +16,10 @@
         .__subtitle-container {
             @apply flex flex-nowrap text-xs text-gray-500 items-center;
 
+            &:not(:last-child) {
+                @apply mb-1 text-sm;
+            }
+
             .__subtitle-item {
                 @apply flex flex-nowrap items-center;
 
