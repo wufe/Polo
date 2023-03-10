@@ -2,9 +2,11 @@ package routing
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -190,23 +192,52 @@ func getHostURL(full *url.URL) *url.URL {
 	return url
 }
 
+func tryUnzipBody(bodyReader io.Reader) (io.Reader, error) {
+	zReader, err := gzip.NewReader(bodyReader)
+	if err != nil {
+		return nil, fmt.Errorf("error deflating gzip stream: %w", err)
+	}
+
+	return zReader, nil
+}
+
 func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Builder {
 	return func(url *url.URL) *httputil.ReverseProxy {
 		proxy := httputil.NewSingleHostReverseProxy(url)
 		proxy.ModifyResponse = func(r *http.Response) error {
 			if strings.Contains(r.Header.Get("Content-Type"), "text/html") {
-				body, err := ioutil.ReadAll(r.Body)
+				originalBody := r.Body
+				defer originalBody.Close()
+
+				var err error
+				usingGzip := false
+
+				var bodyReader io.Reader = r.Body
+
+				if r.Header.Get("Content-Encoding") == "gzip" {
+					bodyReader, err = tryUnzipBody(bodyReader)
+					if err != nil {
+						log.Printf("Error deflating body: %v", err)
+					} else {
+						usingGzip = true
+					}
+				}
+
+				bodyBytes, err := ioutil.ReadAll(bodyReader)
 				if err != nil {
 					log.Printf("Error reading body: %v", err)
 				}
 
-				stringBody := string(body)
+				body := string(bodyBytes)
 
 				var buffer *bytes.Buffer
 
 				bodyIndexPattern := regexp.MustCompile(`<body([^>]*?)>`)
+				bodyIndex := bodyIndexPattern.FindStringIndex(body)
 
-				if bodyIndex := bodyIndexPattern.FindStringIndex(stringBody); len(bodyIndex) > 1 {
+				fmt.Println("bodyIndex", bodyIndex)
+
+				if len(bodyIndex) > 1 {
 					serializedSession, err := json.Marshal(session.ToOutput())
 					if err != nil {
 						serializedSession = []byte(`{}`)
@@ -220,16 +251,31 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 					sessionHelper = strings.ReplaceAll(sessionHelper, "SESSION_HELPER_X", positionX)
 					sessionHelper = strings.ReplaceAll(sessionHelper, "SESSION_HELPER_Y", positionY)
 
-					stringBody = stringBody[:bodyIndex[1]] + sessionHelper + stringBody[bodyIndex[1]:]
+					body = body[:bodyIndex[1]] + sessionHelper + body[bodyIndex[1]:]
 
-					buffer = bytes.NewBufferString(stringBody)
+					buffer = bytes.NewBufferString(body)
 
 				} else {
-					buffer = bytes.NewBuffer(body)
+					fmt.Println("Cannot inject")
+					buffer = bytes.NewBufferString(body)
 				}
 
-				r.Body = ioutil.NopCloser(buffer)
-				r.Header["Content-Length"] = []string{fmt.Sprint(buffer.Len())}
+				contentLength := 0
+
+				if usingGzip {
+					var buf bytes.Buffer
+					zw := gzip.NewWriter(&buf)
+					_, _ = zw.Write([]byte(body))
+					_ = zw.Close()
+					r.Body = ioutil.NopCloser(&buf)
+					contentLength = buf.Len()
+					//r.Header.Del("Content-Encoding")
+				} else {
+					contentLength = buffer.Len()
+					r.Body = ioutil.NopCloser(buffer)
+				}
+
+				r.Header["Content-Length"] = []string{fmt.Sprint(contentLength)}
 			}
 			return nil
 		}
