@@ -195,14 +195,15 @@ func (s *Startup) startSessions() {
 }
 
 func (s *Startup) startServer() {
-	port := fmt.Sprint(s.configuration.Global.Port)
+	address := fmt.Sprintf("%s:%d", s.configuration.Global.Host, s.configuration.Global.Port)
+
 	server := &http.Server{
-		Addr:    ":" + port,
+		Addr:    address,
 		Handler: s.handler.Router,
 	}
 
-	s.log.Infof("Server started on port %s", port)
-	if port == "443" {
+	s.log.Infof("Server started on address %s", address)
+	if s.configuration.Global.Port == 443 {
 		if err := server.ListenAndServeTLS(s.configuration.Global.TLSCertFile, s.configuration.Global.TLSKeyFile); err != http.ErrServerClosed {
 			panic(err)
 		}

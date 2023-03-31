@@ -17,6 +17,7 @@ type RootConfiguration struct {
 }
 
 type GlobalConfiguration struct {
+	Host                  string
 	Port                  int
 	TLSCertFile           string `yaml:"tls_cert,omitempty"`
 	TLSKeyFile            string `yaml:"tls_key,omitempty"`

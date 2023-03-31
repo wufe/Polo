@@ -93,6 +93,10 @@ func unmarshalConfigurations(files []string, applicationBuilder *models.Applicat
 		rootConfiguration.Global.Port = 8888
 	}
 
+	if rootConfiguration.Global.Host == "" {
+		rootConfiguration.Global.Host = "0.0.0.0"
+	}
+
 	if rootConfiguration.Global.SessionsFolder == "" {
 		rootConfiguration.Global.SessionsFolder = filepath.Join(environment.GetExecutableFolder(), ".sessions")
 	}
