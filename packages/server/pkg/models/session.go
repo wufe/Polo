@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -99,6 +100,7 @@ type Session struct {
 	Variables       Variables     `json:"variables"`
 	Metrics         []Metric      `json:"metrics"`
 	Context         *contextStore `json:"-"`
+	l4Forwards      []*L4Forward
 	logs            []Log
 	shortUUID       string
 	createdAt       time.Time
@@ -112,6 +114,16 @@ type Session struct {
 	diagnostics []DiagnosticsData
 	bus         *SessionLifetimeEventBus
 	log         logging.Logger
+}
+
+type L4Forward struct {
+	sync.RWMutex
+	IsActive        bool
+	Protocol        string
+	SourceHost      string
+	SourcePort      string
+	DestinationHost string
+	DestinationPort string
 }
 
 // Variables are those variables used by a single session.

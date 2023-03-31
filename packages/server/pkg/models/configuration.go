@@ -101,6 +101,7 @@ type Command struct {
 	WorkingDir          string   `yaml:"working_dir" json:"workingDir"`
 	StartHealthchecking bool     `yaml:"start_healthchecking" json:"startHealthchecking"`
 	Timeout             int      `json:"timeout"`
+	FireAndForget       bool     `yaml:"fire_and_forget" json:"fireAndForget"`
 }
 
 type PortConfiguration struct {

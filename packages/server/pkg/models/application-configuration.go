@@ -58,27 +58,49 @@ func NewApplicationConfiguration(configuration *ApplicationConfiguration, mutexB
 		configuration.Forwards = make([]Forward, 0)
 	}
 	for i, forward := range configuration.Forwards {
-		if forward.Pattern == "" {
-			return nil, fmt.Errorf("application.forwards[%d].pattern not defined", i)
+		if forward.Protocol == "" {
+			forward.Protocol = "HTTP"
 		}
-		_, err := regexp.Compile(forward.Pattern)
-		if err != nil {
-			return nil, fmt.Errorf("application.forwards[%d].pattern is not a valid regex: %s", i, err.Error())
-		}
-		if forward.To == "" {
-			return nil, fmt.Errorf("application.forwards[%d].to not defined", i)
-		}
-		if forward.Headers.Add == nil {
-			forward.Headers.Add = []Header{}
-		}
-		if forward.Headers.Del == nil {
-			forward.Headers.Del = []string{}
-		}
-		if forward.Headers.Set == nil {
-			forward.Headers.Set = []Header{}
-		}
-		if forward.Headers.Replace == nil {
-			forward.Headers.Replace = []Header{}
+
+		switch strings.ToLower(forward.Protocol) {
+		case "http", "https":
+			if forward.Pattern == "" {
+				return nil, fmt.Errorf("application.forwards[%d].pattern not defined", i)
+			}
+			_, err := regexp.Compile(forward.Pattern)
+			if err != nil {
+				return nil, fmt.Errorf("application.forwards[%d].pattern is not a valid regex: %s", i, err.Error())
+			}
+			if forward.To == "" {
+				return nil, fmt.Errorf("application.forwards[%d].to not defined", i)
+			}
+			if forward.Headers.Add == nil {
+				forward.Headers.Add = []Header{}
+			}
+			if forward.Headers.Del == nil {
+				forward.Headers.Del = []string{}
+			}
+			if forward.Headers.Set == nil {
+				forward.Headers.Set = []Header{}
+			}
+			if forward.Headers.Replace == nil {
+				forward.Headers.Replace = []Header{}
+			}
+		case "tcp", "udp":
+			if forward.SourceHost == "" {
+				forward.SourceHost = "0.0.0.0"
+			}
+			if forward.SourcePort == "" {
+				return nil, fmt.Errorf("application.forwards[%d].source_port is not valid: a %s forward needs a source port", i, strings.ToUpper(forward.Protocol))
+			}
+			if forward.DestinationHost == "" {
+				return nil, fmt.Errorf("application.forwards[%d].destination_host is not valid: a %s forward needs a destination host", i, strings.ToUpper(forward.Protocol))
+			}
+			if forward.DestinationPort == "" {
+				return nil, fmt.Errorf("application.forwards[%d].destination_port is not valid: a %s forward needs a destination port", i, strings.ToUpper(forward.Protocol))
+			}
+		default:
+			return nil, fmt.Errorf("application.forwards[%d].protocol is not valid: supported protocols are TCP, UDP and HTTP", i)
 		}
 	}
 	if configuration.Fetch.Interval <= 0 {
@@ -256,10 +278,15 @@ type Startup struct {
 }
 
 type Forward struct {
-	Pattern string  `json:"pattern"`
-	To      string  `json:"to"`
-	Host    string  `json:"host"`
-	Headers Headers `json:"headers"`
+	Protocol        string  `json:"protocol"`
+	SourceHost      string  `yaml:"source_host" json:"sourceHost"`
+	SourcePort      string  `yaml:"source_port" json:"sourcePort"`
+	DestinationHost string  `yaml:"destination_host" json:"destinationHost"`
+	DestinationPort string  `yaml:"destination_port" json:"destinationPort"`
+	Pattern         string  `json:"pattern"`
+	To              string  `json:"to"`
+	Host            string  `json:"host"`
+	Headers         Headers `json:"headers"`
 }
 
 type Fetch struct {

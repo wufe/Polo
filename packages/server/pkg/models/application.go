@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -32,6 +33,7 @@ type Application struct {
 	Commits                 []string                  `json:"-"`
 	CommitMap               map[string]*object.Commit `json:"-"`
 	CompiledForwardPatterns []CompiledForwardPattern  `json:"-"`
+	L4Forwards              []applicationL4Forward    `json:"-"`
 	notifications           []ApplicationNotification
 	bus                     *ApplicationEventBus
 	log                     logging.Logger
@@ -42,6 +44,14 @@ type ApplicationStatus string
 type CompiledForwardPattern struct {
 	Pattern *regexp.Regexp
 	Forward Forward
+}
+
+type applicationL4Forward struct {
+	protocol        string
+	sourceHost      string
+	sourcePort      string
+	destinationHost string
+	destinationPort string
 }
 
 type ApplicationCommand struct {
@@ -93,11 +103,16 @@ func newApplication(
 	if err != nil {
 		return nil, err
 	}
-	compiled, err := initForwards(configuration.Forwards)
+	compiled, err := compileForwardsWithPattern(configuration.Forwards)
+	if err != nil {
+		return nil, err
+	}
+	l4Forwards, err := initL4Forwards(configuration.Forwards)
 	if err != nil {
 		return nil, err
 	}
 	application.CompiledForwardPatterns = compiled
+	application.L4Forwards = l4Forwards
 	application.ObjectsToHashMap = make(map[string]string)
 	application.HashToObjectsMap = make(map[string]*RemoteObject)
 	application.BranchesMap = make(map[string]*Branch)
@@ -111,22 +126,42 @@ func newApplication(
 	return application, nil
 }
 
-func initForwards(forwards []Forward) ([]CompiledForwardPattern, error) {
+func compileForwardsWithPattern(forwards []Forward) ([]CompiledForwardPattern, error) {
 	compiled := []CompiledForwardPattern{}
 	for i, forward := range forwards {
-		compiledPattern, err := regexp.Compile(forward.Pattern)
-		if err != nil {
-			return nil, fmt.Errorf("application.forwards[%d].pattern is not a valid regex: %s", i, err.Error())
+		switch strings.ToLower(forward.Protocol) {
+		case "http", "https":
+			compiledPattern, err := regexp.Compile(forward.Pattern)
+			if err != nil {
+				return nil, fmt.Errorf("application.forwards[%d].pattern is not a valid regex: %s", i, err.Error())
+			}
+			compiled = append(
+				compiled,
+				CompiledForwardPattern{
+					compiledPattern,
+					forward,
+				},
+			)
 		}
-		compiled = append(
-			compiled,
-			CompiledForwardPattern{
-				compiledPattern,
-				forward,
-			},
-		)
 	}
 	return compiled, nil
+}
+
+func initL4Forwards(forwards []Forward) ([]applicationL4Forward, error) {
+	initialized := []applicationL4Forward{}
+	for _, forward := range forwards {
+		switch strings.ToLower(forward.Protocol) {
+		case "tcp", "udp":
+			initialized = append(initialized, applicationL4Forward{
+				protocol:        strings.ToLower(forward.Protocol),
+				sourceHost:      forward.SourceHost,
+				sourcePort:      forward.SourcePort,
+				destinationHost: forward.DestinationHost,
+				destinationPort: forward.DestinationPort,
+			})
+		}
+	}
+	return initialized, nil
 }
 
 // ToOutput converts this model into an output model

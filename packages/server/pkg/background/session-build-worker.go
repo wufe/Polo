@@ -228,10 +228,10 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 
 	session.LogInfo(fmt.Sprintf("Session target is %s", session.GetTarget()))
 
-	session.Variables["uuid"] = session.UUID
-	session.Variables["name"] = session.Alias
-	session.Variables["port"] = fmt.Sprint(session.Port)
-	session.Variables["commit"] = session.CommitID
+	session.SetVariable("uuid", session.UUID)
+	session.SetVariable("name", session.Alias)
+	session.SetVariable("port", fmt.Sprint(session.Port))
+	session.SetVariable("commit", session.CommitID)
 
 	w.sessionStorage.Add(session)
 
