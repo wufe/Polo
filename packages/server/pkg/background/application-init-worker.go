@@ -50,6 +50,7 @@ func (w *ApplicationInitWorker) InitApplication(application *models.Application)
 	name := conf.Name
 	remote := conf.Remote
 	disableTerminalPrompt := *conf.DisableTerminalPrompt
+	recurseSubmodules := *conf.RecurseSubmodules
 
 	w.log.Infof("[APP:%s] Initializing", name)
 	sessionsFolder, err := filepath.Abs(w.global.SessionsFolder)
@@ -75,7 +76,13 @@ func (w *ApplicationInitWorker) InitApplication(application *models.Application)
 	baseFolder := filepath.Join(applicationFolder, "_base") // Folder used for performing periodic git fetch --all and/or git log
 	if _, err := os.Stat(baseFolder); os.IsNotExist(err) {  // Application folder does not exist
 
-		err = w.gitClient.Clone(applicationFolder, "_base", remote, disableTerminalPrompt)
+		err = w.gitClient.Clone(
+			applicationFolder,
+			"_base",
+			remote,
+			versioning.WithCloneDisableTerminalPrompt(disableTerminalPrompt),
+			versioning.WithCloneRecurseSubmodules(recurseSubmodules),
+		)
 		if err != nil {
 
 			additionalErrorInstructions := ""

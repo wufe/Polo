@@ -49,8 +49,10 @@ func NewApplicationConfiguration(configuration *ApplicationConfiguration, mutexB
 		return nil, errors.New("application.remote (required) not defined; put the git repository URL")
 	}
 	if configuration.DisableTerminalPrompt == nil {
-		disableTerminalPrompt := true
-		configuration.DisableTerminalPrompt = &disableTerminalPrompt
+		configuration.DisableTerminalPrompt = func(b bool) *bool { return &b }(true)
+	}
+	if configuration.RecurseSubmodules == nil {
+		configuration.RecurseSubmodules = func(b bool) *bool { return &b }(true)
 	}
 	if configuration.Forwards == nil {
 		configuration.Forwards = make([]Forward, 0)
@@ -176,6 +178,12 @@ func (a *ApplicationConfiguration) OverrideWith(override SharedConfiguration) {
 	}
 	if override.Remote != "" {
 		a.Remote = override.Remote
+	}
+	if override.DisableTerminalPrompt != nil {
+		a.DisableTerminalPrompt = override.DisableTerminalPrompt
+	}
+	if override.RecurseSubmodules != nil {
+		a.RecurseSubmodules = override.RecurseSubmodules
 	}
 	if override.Target != "" {
 		a.Target = override.Target

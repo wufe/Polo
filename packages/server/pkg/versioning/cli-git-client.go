@@ -21,16 +21,41 @@ func NewCLIGitClient(commandRunner execution.CommandRunner) GitClient {
 	}
 }
 
-func (client *CLIGitClient) Clone(baseFolder string, outputFolder string, remote string, disableTerminalPrompt bool) error {
-	cmd := exec.Command("git", "clone", remote, outputFolder)
-	if disableTerminalPrompt {
+func (client *CLIGitClient) Clone(baseFolder string, outputFolder string, remote string, opts ...GitCloneOpt) error {
+
+	cfg := &GitCloneConfig{}
+
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	args := []string{}
+
+	args = append(args, "clone")
+
+	if cfg.recurseSubmodules {
+		args = append(args, "--recurse-submodules")
+	}
+
+	args = append(args, remote)
+	args = append(args, outputFolder)
+
+	cmd := exec.Command("git", args...)
+	if cfg.disableTerminalPrompt {
 		cmd.Env = append(cmd.Env, "GIT_TERMINAL_PROMPT=0")
 	}
 	cmd.Dir = baseFolder
 	return client.execCommands(cmd)
 }
 
-func (client *CLIGitClient) FetchAll(repoFolder string, disableTerminalPrompt bool) error {
+func (client *CLIGitClient) FetchAll(repoFolder string, opts ...GitFetchAllOpt) error {
+
+	cfg := &GitFetchAllConfig{}
+
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
 	refsPath := path.Join(repoFolder, ".git", "refs", "remotes", "origin")
 	if _, err := os.Stat(refsPath); !os.IsNotExist(err) {
 		err := os.RemoveAll(refsPath)
@@ -40,22 +65,29 @@ func (client *CLIGitClient) FetchAll(repoFolder string, disableTerminalPrompt bo
 	}
 
 	cmd := exec.Command("git", "fetch", "--force", "-u", "origin", "+refs/*:refs/*", "--prune")
-	if disableTerminalPrompt {
+	if cfg.disableTerminalPrompt {
 		cmd.Env = append(cmd.Env, "GIT_TERMINAL_PROMPT=0")
 	}
 	cmd.Dir = repoFolder
 	return client.execCommands(cmd)
 }
 
-func (client *CLIGitClient) HardReset(repoFolder string, commit string, disableTerminalPrompt bool) error {
+func (client *CLIGitClient) HardReset(repoFolder string, commit string, opts ...GitHardResetOpt) error {
+
+	cfg := &GitHardResetConfig{}
+
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
 	stash := exec.Command("git", "stash", "-u")
-	if disableTerminalPrompt {
+	if cfg.disableTerminalPrompt {
 		stash.Env = append(stash.Env, "GIT_TERMINAL_PROMPT=0")
 	}
 	stash.Dir = repoFolder
 
 	reset := exec.Command("git", "reset", "--hard", commit)
-	if disableTerminalPrompt {
+	if cfg.disableTerminalPrompt {
 		reset.Env = append(reset.Env, "GIT_TERMINAL_PROMPT=0")
 	}
 	reset.Dir = repoFolder

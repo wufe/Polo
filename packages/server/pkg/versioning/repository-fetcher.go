@@ -69,7 +69,7 @@ func (fetcher *RepositoryFetcherImpl) Fetch(baseFolder string, disableTerminalPr
 	}
 
 	// Fetch
-	err = fetcher.gitClient.FetchAll(baseFolder, disableTerminalPrompt)
+	err = fetcher.gitClient.FetchAll(baseFolder, WithFetchAllDisableTerminalPrompt(disableTerminalPrompt))
 	if err != nil && err != git.NoErrAlreadyUpToDate {
 		errors = append(errors, &FetcherError{
 			Error:    fmt.Errorf("%s\n\nEnsure your git cli can do a `fetch` inside %s", err.Error(), baseFolder),

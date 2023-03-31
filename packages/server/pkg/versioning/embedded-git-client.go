@@ -19,15 +19,30 @@ func NewEmbeddedGitClient(auth transport.AuthMethod) GitClient {
 	}
 }
 
-func (client *EmbeddedGitClient) Clone(baseFolder string, outputFolder string, remote string, _ bool) error {
+func (client *EmbeddedGitClient) Clone(baseFolder string, outputFolder string, remote string, opts ...GitCloneOpt) error {
+
+	cfg := &GitCloneConfig{}
+
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	var recurseSubmodules git.SubmoduleRescursivity
+	if cfg.recurseSubmodules {
+		recurseSubmodules = git.DefaultSubmoduleRecursionDepth
+	} else {
+		recurseSubmodules = git.NoRecurseSubmodules
+	}
+
 	_, err := git.PlainClone(filepath.Join(baseFolder, outputFolder), false, &git.CloneOptions{
-		URL:  remote,
-		Auth: client.Auth,
+		URL:               remote,
+		Auth:              client.Auth,
+		RecurseSubmodules: recurseSubmodules,
 	})
 	return err
 }
 
-func (client *EmbeddedGitClient) HardReset(repoFolder string, commit string, _ bool) error {
+func (client *EmbeddedGitClient) HardReset(repoFolder string, commit string, opts ...GitHardResetOpt) error {
 	repo, err := git.PlainOpen(repoFolder)
 	if err != nil {
 		return err
@@ -42,7 +57,7 @@ func (client *EmbeddedGitClient) HardReset(repoFolder string, commit string, _ b
 	})
 }
 
-func (client *EmbeddedGitClient) FetchAll(repoFolder string, _ bool) error {
+func (client *EmbeddedGitClient) FetchAll(repoFolder string, opts ...GitFetchAllOpt) error {
 	repo, err := git.PlainOpen(repoFolder)
 	if err != nil {
 		return err

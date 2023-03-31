@@ -11,6 +11,7 @@ type SharedConfiguration struct {
 	Recycle               Recycle           `json:"recycle"`
 	Remote                string            `json:"remote"`
 	DisableTerminalPrompt *bool             `yaml:"disable_terminal_prompt" json:"disableTerminalPrompt" default:"true"`
+	RecurseSubmodules     *bool             `yaml:"recurse_submodules" json:"recurseSubmodules" default:"true"`
 	Startup               Startup           `json:"startup"`
 	Target                string            `json:"target"`
 	Warmup                Warmups           `yaml:"warmup"`
