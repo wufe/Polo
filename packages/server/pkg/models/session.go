@@ -100,7 +100,7 @@ type Session struct {
 	Variables       Variables     `json:"variables"`
 	Metrics         []Metric      `json:"metrics"`
 	Context         *contextStore `json:"-"`
-	l4Forwards      []*L4Forward
+	L4Forwards      []*L4Forward  `json:"-"`
 	logs            []Log
 	shortUUID       string
 	createdAt       time.Time
@@ -116,14 +116,87 @@ type Session struct {
 	log         logging.Logger
 }
 
+// L4Forward is a struct which represents a Level 4 forwarding
+// A forwarding should get activated when the healthcheck has finished successfully
+// and the traffic needs to be forwarded through these protocols
 type L4Forward struct {
 	sync.RWMutex
 	IsActive        bool
+	Forwarder       utils.Forwarder
 	Protocol        string
 	SourceHost      string
 	SourcePort      string
 	DestinationHost string
 	DestinationPort string
+}
+
+func (f *L4Forward) Activate(onClientConnectCallback func(address string)) error {
+	f.Lock()
+	defer f.Unlock()
+
+	if strings.ContainsAny(f.SourceHost, "{}") {
+		return fmt.Errorf("cannot use %s as source host: placeholder not yet resolved", f.SourceHost)
+	}
+
+	if strings.ContainsAny(f.SourcePort, "{}") {
+		return fmt.Errorf("cannot use %s as source port: placeholder not yet resolved", f.SourcePort)
+	}
+
+	if strings.ContainsAny(f.DestinationHost, "{}") {
+		return fmt.Errorf("cannot use %s as destination host: placeholder not yet resolved", f.DestinationHost)
+	}
+
+	if strings.ContainsAny(f.DestinationPort, "{}") {
+		return fmt.Errorf("cannot use %s as destination port: placeholder not yet resolved", f.DestinationPort)
+	}
+
+	if f.IsActive {
+		return nil
+	}
+
+	var forwarder utils.Forwarder
+	var err error
+	if strings.ToLower(f.Protocol) == "tcp" {
+		forwarder, err = utils.ForwardTCP(
+			fmt.Sprintf("%s:%s", f.SourceHost, f.SourcePort),
+			fmt.Sprintf("%s:%s", f.DestinationHost, f.DestinationPort),
+		)
+	} else {
+		forwarder, err = utils.ForwardUDP(
+			fmt.Sprintf("%s:%s", f.SourceHost, f.SourcePort),
+			fmt.Sprintf("%s:%s", f.DestinationHost, f.DestinationPort),
+		)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	f.IsActive = true
+	f.Forwarder = forwarder
+	forwarder.OnConnect(onClientConnectCallback)
+
+	return nil
+}
+
+func (f *L4Forward) Deactivate() {
+	f.Lock()
+	defer f.Unlock()
+
+	if !f.IsActive {
+		return
+	}
+
+	f.Forwarder.Close()
+	f.IsActive = false
+	f.Forwarder = nil
+}
+
+func (f *L4Forward) RefreshWithVariables(vars Variables) {
+	f.SourceHost = vars.ApplyTo(f.SourceHost)
+	f.SourcePort = vars.ApplyTo(f.SourcePort)
+	f.DestinationHost = vars.ApplyTo(f.DestinationHost)
+	f.DestinationPort = vars.ApplyTo(f.DestinationPort)
 }
 
 // Variables are those variables used by a single session.
@@ -166,11 +239,14 @@ func newSession(
 	if session.Metrics == nil {
 		session.Metrics = []Metric{}
 	}
+
 	session.createdAt = time.Now()
 	session.killReason = KillReasonNone
 	session.Context = NewContextStore(mutexBuilder)
 	if session.Application != nil {
 		session.configuration = session.getMatchingConfiguration()
+
+		session.InitializeL4Forwards()
 	}
 	if session.diagnostics == nil {
 		session.diagnostics = []DiagnosticsData{}
@@ -179,6 +255,26 @@ func newSession(
 		session.replaces = []*Session{}
 	}
 	return session
+}
+
+// InitializeL4Forwards gets called when a session gets built or
+// when a session has already been built, like when Polo shuts down,
+// a session is still alive, and when it goes up again, the session gets resumed.
+// In this case the newSession gets called but no application has already been associated
+// so we try to initialize the level 4 forwards a second time.
+func (session *Session) InitializeL4Forwards() {
+	if len(session.L4Forwards) == 0 {
+		for _, f := range session.Application.L4Forwards {
+			session.L4Forwards = append(session.L4Forwards, &L4Forward{
+				IsActive:        false,
+				Protocol:        f.protocol,
+				SourceHost:      f.sourceHost,
+				SourcePort:      f.sourcePort,
+				DestinationHost: f.destinationHost,
+				DestinationPort: f.destinationPort,
+			})
+		}
+	}
 }
 
 func (session *Session) GetCreatedAt() time.Time {

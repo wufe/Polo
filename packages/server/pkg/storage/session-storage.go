@@ -63,6 +63,7 @@ func (s *Session) LoadSessions(application *Application, sessionBuilder *models.
 		app := application.Get(session.ApplicationName)
 		session.Application = app
 		session.InitializeConfiguration()
+		session.InitializeL4Forwards()
 		if session.Application == nil {
 			s.log.Errorf("Session with id %s and application name %s could not be attached to any configured application. Shutdown it manually.", session.UUID, session.ApplicationName)
 			s.Delete(session)

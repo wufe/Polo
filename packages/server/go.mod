@@ -3,6 +3,7 @@ module github.com/wufe/polo
 go 1.18
 
 require (
+	github.com/1lann/udp-forward v0.0.0-20191015034046-6b774a53ea39
 	github.com/asaskevich/EventBus v0.0.0-20200907212545-49d423059eef
 	github.com/dgraph-io/badger/v3 v3.2103.5
 	github.com/go-git/go-git/v5 v5.2.0

@@ -1,6 +1,7 @@
 package background
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/wufe/polo/pkg/logging"
@@ -68,6 +69,28 @@ func (w *SessionStartWorker) MarkSessionAsStarted(session *models.Session) {
 	session.SetReplaces(nil)
 
 	w.sessionStorage.Update(session)
+
+	for _, f := range session.L4Forwards {
+		f.RefreshWithVariables(session.Variables)
+
+		err := f.Activate(func(address string) {
+			session.MarkAsBeingRequested()
+		})
+
+		forwarding := fmt.Sprintf(
+			"[%s:%s]->[%s:%s]",
+			f.SourceHost,
+			f.SourcePort,
+			f.DestinationHost,
+			f.DestinationPort,
+		)
+
+		if err != nil {
+			session.LogError(fmt.Sprintf("Cannot forward %s: %v", forwarding, err))
+		} else {
+			session.LogInfo(fmt.Sprintf("Forwarding %s", forwarding))
+		}
+	}
 
 	session.GetEventBus().PublishEvent(models.SessionEventTypeSessionStarted, session)
 }

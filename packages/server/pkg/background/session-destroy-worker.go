@@ -42,6 +42,10 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 	conf := session.GetConfiguration()
 	appStopCommands := conf.Commands.Stop
 
+	for _, f := range session.L4Forwards {
+		f.Deactivate()
+	}
+
 	session.SetStatus(models.SessionStatusStopping)
 	if _, cancel, ok := session.Context.TryGet(models.SessionBuildContextKey); ok {
 		cancel()
