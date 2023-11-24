@@ -4,6 +4,11 @@
     <br />
     <h1 align="center">Polo</h1>
     <p align="center">Serve your application development branches</p>
+    <br />
+</p>
+
+<p align="center">
+    <img src="https://raw.githubusercontent.com/Wufe/Polo/main/.assets/polo.jpg" />
     <br /><br />
 </p>
 
