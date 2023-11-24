@@ -14,6 +14,8 @@ import (
 	"github.com/wufe/polo/pkg/services"
 	"github.com/wufe/polo/pkg/storage"
 	"go.uber.org/dig"
+
+	_ "net/http/pprof"
 )
 
 type Startup struct {
@@ -119,6 +121,11 @@ func (s *Startup) Start(options *StartupOptions) {
 	if options.LoadSessionHelper {
 		s.static.LoadSessionHelper()
 	}
+
+	if s.configuration.Global.Debug {
+		s.startDebugServer()
+	}
+
 	if options.StartServer {
 		s.startServer()
 	}
@@ -212,4 +219,13 @@ func (s *Startup) startServer() {
 			panic(err)
 		}
 	}
+}
+
+func (s *Startup) startDebugServer() {
+	address := "0.0.0.0:7779"
+	s.log.Infof("Starting debug server on address %s", address)
+
+	go func() {
+		s.log.Infof("running debug server: %s", http.ListenAndServe(address, nil))
+	}()
 }
