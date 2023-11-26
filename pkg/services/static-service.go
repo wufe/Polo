@@ -1,21 +1,24 @@
 package services
 
 import (
+	"embed"
 	"fmt"
+	"github.com/wufe/polo/pkg/logging"
+	"github.com/wufe/polo/pkg/utils"
+	"io/fs"
 	"io/ioutil"
 	"net/http"
 	"time"
-
-	"github.com/rakyll/statik/fs"
-	"github.com/wufe/polo/pkg/logging"
-	"github.com/wufe/polo/pkg/utils"
 )
+
+//go:embed static/*
+var static embed.FS
 
 type StaticService struct {
 	utils.RWLocker
 	isDev                bool
 	devServer            string
-	FileSystem           http.FileSystem
+	FileSystem           fs.FS
 	sessionHelperContent string
 	log                  logging.Logger
 }
@@ -65,7 +68,7 @@ func (s *StaticService) LoadSessionHelper() {
 			}
 		}()
 	} else {
-		file, err := s.FileSystem.Open("/session-helper.html")
+		file, err := s.FileSystem.Open("session-helper.html")
 		if err != nil {
 			s.log.Errorf("Error while getting session helper: %s", err.Error())
 		} else {
@@ -81,10 +84,10 @@ func (s *StaticService) LoadSessionHelper() {
 }
 
 func (s *StaticService) GetManager() []byte {
-	file, err := s.FileSystem.Open("/manager.html")
+	file, err := s.FileSystem.Open("manager.html")
 	content, err := ioutil.ReadAll(file)
 	if err != nil {
-		s.log.Errorf("Could not read /manager.html")
+		s.log.Errorf("Could not read manager.html")
 		return nil
 	}
 	return content
@@ -92,10 +95,10 @@ func (s *StaticService) GetManager() []byte {
 
 func (s *StaticService) initStaticFileSystem() {
 	if !s.isDev {
-		fileSystem, err := fs.New()
+		var err error
+		s.FileSystem, err = fs.Sub(static, "static")
 		if err != nil {
 			panic(err)
 		}
-		s.FileSystem = fileSystem
 	}
 }

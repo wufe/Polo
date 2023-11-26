@@ -1,6 +1,6 @@
 module github.com/wufe/polo
 
-go 1.18
+go 1.21
 
 require (
 	github.com/1lann/udp-forward v0.0.0-20191015034046-6b774a53ea39
@@ -13,7 +13,6 @@ require (
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/logrusorgru/aurora/v3 v3.0.0
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
-	github.com/rakyll/statik v0.1.7
 	github.com/sasha-s/go-deadlock v0.2.0
 	github.com/sirupsen/logrus v1.7.0
 	go.uber.org/dig v1.10.0

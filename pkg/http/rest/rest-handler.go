@@ -300,7 +300,8 @@ func (h *Handler) serveStatic(st *services.StaticService) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		if !h.isDev {
 
-			fileServer := http.FileServer(st.FileSystem)
+			//fileServer := http.FileServer(st.FileSystem)
+			fileServer := http.FileServer(http.FS(st.FileSystem))
 
 			w.Header().Set("Cache-Control", "public, max-age=604800, immutable")
 

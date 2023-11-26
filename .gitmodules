@@ -1,3 +1,3 @@
-[submodule "packages/server/third_party/polo-pro"]
-	path = packages/server/third_party/polo-pro
+[submodule "third_party/polo-pro"]
+	path = third_party/polo-pro
 	url = git@github.com:Wufe/polo-pro.git

@@ -25,7 +25,7 @@ module.exports = {
 		publicPath: '/_polo_/public/',
 		filename: isDevelopment ? '[name].js' : '[name].[fullhash].js',
 		chunkFilename: isDevelopment ? '[id]-chunk.js' : '[id]-chunk.[fullhash].js',
-		path: path.resolve(cwd, 'public')
+		path: path.resolve(cwd, 'pkg/services/static')
 	},
 	devtool: 'source-map',
 	resolve: {

@@ -4,7 +4,7 @@ import 'zx/globals';
 
 const cwd = process.cwd();
 
-const poloProDestPath = path.resolve(cwd, 'packages/server/third_party/polo-pro');
+const poloProDestPath = path.resolve(cwd, 'third_party/polo-pro');
 const poloSettingsPath = path.resolve(cwd, '.vscode/settings.json');
 
 // Removing link to source folder

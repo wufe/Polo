@@ -1,9 +1,10 @@
 global:
   host: 0.0.0.0
   port: 7777
+  debug: true
 applications:
   - name: Test Server
-    remote: "https://github.com/wufe/polo-testserver"
+    remote: /Users/simonebembi/Projects/polo-testserver
     disable_terminal_prompt: false
     is_default: true
     commands:
@@ -23,8 +24,8 @@ applications:
     startup:
       retries: 5
     branches:
-      - test: ^dev$
-        watch: false
+      - test: ^main$
+        watch: true
         main: true
       - test: feature/my-watched-feature
         watch: false

@@ -5,7 +5,7 @@ import 'zx/globals';
 const cwd = process.cwd();
 
 const poloProSrcPath = path.resolve(cwd, '../polo-pro');
-const poloProDestPath = path.resolve(cwd, 'packages/server/third_party/polo-pro');
+const poloProDestPath = path.resolve(cwd, 'third_party/polo-pro');
 const poloSettingsPath = path.resolve(cwd, '.vscode/settings.json');
 
 if (!fs.existsSync(poloProSrcPath))
