@@ -82,6 +82,8 @@ func (fetcher *RepositoryFetcherImpl) Fetch(baseFolder string, disableTerminalPr
 	if err != nil {
 		errors = append(errors, &FetcherError{err, false})
 	}
+	defer branches.Close()
+
 	refPrefix := "refs/heads/"
 	branches.ForEach(func(ref *plumbing.Reference) error {
 		refName := ref.Name().String()
@@ -128,6 +130,7 @@ func (fetcher *RepositoryFetcherImpl) Fetch(baseFolder string, disableTerminalPr
 		errors = append(errors, &FetcherError{err, false})
 		return nil, errors
 	}
+	defer tags.Close()
 
 	tagPrefix := "refs/tags/"
 	err = tags.ForEach(func(ref *plumbing.Reference) error {
@@ -171,6 +174,7 @@ func (fetcher *RepositoryFetcherImpl) Fetch(baseFolder string, disableTerminalPr
 		errors = append(errors, &FetcherError{err, false})
 		return nil, errors
 	}
+	defer tagObjects.Close()
 
 	err = tagObjects.ForEach(func(ref *object.Tag) error {
 		refName := ref.Name
@@ -215,6 +219,7 @@ func (fetcher *RepositoryFetcherImpl) Fetch(baseFolder string, disableTerminalPr
 		errors = append(errors, &FetcherError{err, false})
 		return nil, errors
 	}
+	defer logs.Close()
 
 	err = logs.ForEach(func(commit *object.Commit) error {
 		commitHash := commit.Hash.String()
