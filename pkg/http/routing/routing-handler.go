@@ -235,27 +235,26 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 				bodyIndexPattern := regexp.MustCompile(`<body([^>]*?)>`)
 				bodyIndex := bodyIndexPattern.FindStringIndex(body)
 
-				if len(bodyIndex) > 1 {
-					serializedSession, err := json.Marshal(session.ToOutput())
-					if err != nil {
-						serializedSession = []byte(`{}`)
-					}
-
-					serializedSession = []byte(strings.ReplaceAll(string(serializedSession), `\\`, `\\\\`))
-					sessionHelper := strings.ReplaceAll(h.static.GetSessionHelperContent(), "%%currentSession%%", base64.StdEncoding.EncodeToString(serializedSession))
-
-					conf := session.GetConfiguration()
-					positionX, positionY := conf.Helper.Position.GetStyle()
-					sessionHelper = strings.ReplaceAll(sessionHelper, "SESSION_HELPER_X", positionX)
-					sessionHelper = strings.ReplaceAll(sessionHelper, "SESSION_HELPER_Y", positionY)
-
-					body = body[:bodyIndex[1]] + sessionHelper + body[bodyIndex[1]:]
-
-					buffer = bytes.NewBufferString(body)
-
-				} else {
-					buffer = bytes.NewBufferString(body)
+				serializedSession, err := json.Marshal(session.ToOutput())
+				if err != nil {
+					serializedSession = []byte(`{}`)
 				}
+
+				serializedSession = []byte(strings.ReplaceAll(string(serializedSession), `\\`, `\\\\`))
+				sessionHelper := strings.ReplaceAll(h.static.GetSessionHelperContent(), "%%currentSession%%", base64.StdEncoding.EncodeToString(serializedSession))
+
+				conf := session.GetConfiguration()
+				positionX, positionY := conf.Helper.Position.GetStyle()
+				sessionHelper = strings.ReplaceAll(sessionHelper, "SESSION_HELPER_X", positionX)
+				sessionHelper = strings.ReplaceAll(sessionHelper, "SESSION_HELPER_Y", positionY)
+
+				if len(bodyIndex) > 1 {
+					body = body[:bodyIndex[1]] + sessionHelper + body[bodyIndex[1]:]
+				} else {
+					body = "<body>" + sessionHelper + body + "</body>"
+				}
+
+				buffer = bytes.NewBufferString(body)
 
 				contentLength := 0
 
