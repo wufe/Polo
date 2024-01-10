@@ -77,7 +77,7 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 
 			target, err := url.Parse(session.GetTarget())
 			if err != nil {
-				session.LogError(fmt.Sprintf("Could not parse target URL: %s", err.Error()))
+				session.LogError([]byte(fmt.Sprintf("Could not parse target URL: %s", err.Error())))
 				w.log.Errorln("Could not parse target URL", err)
 				w.mediator.DestroySession.Enqueue(session, nil)
 				w.sessions.Remove(session)
@@ -111,7 +111,7 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 				retryCount++
 
 				if session.Status == models.SessionStatusStarted {
-					session.LogWarn("Session health degraded")
+					session.LogWarn([]byte("Session health degraded"))
 					session.SetStatus(models.SessionStatusDegraded)
 				}
 				if retryCount >= maxRetries {
@@ -120,7 +120,7 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 						session.SetKillReason(models.KillReasonHealthcheckFailed)
 					}
 
-					session.LogError("Session healthcheck failed. Destroying session")
+					session.LogError([]byte("Session healthcheck failed. Destroying session"))
 					w.mediator.DestroySession.Enqueue(session, nil)
 					w.sessions.Remove(session)
 					session.GetEventBus().PublishEvent(models.SessionEventTypeHealthcheckFailed, session)
@@ -128,11 +128,11 @@ func (w *SessionHealthcheckWorker) startHealthchecking(session *models.Session) 
 					return
 				}
 
-				session.LogError(fmt.Sprintf("[%d/%d] Session healthcheck failed. Retrying in %.2f seconds", retryCount, maxRetries, healthcheck.RetryInterval))
+				session.LogError([]byte(fmt.Sprintf("[%d/%d] Session healthcheck failed. Retrying in %.2f seconds", retryCount, maxRetries, healthcheck.RetryInterval)))
 			} else {
 				status := session.GetStatus()
 				if status == models.SessionStatusStarting {
-					session.LogInfo("Session available")
+					session.LogInfo([]byte("Session available"))
 					session.GetEventBus().PublishEvent(models.SessionEventTypeHealthcheckSucceded, session)
 					session.GetEventBus().PublishEvent(models.SessionEventTypeSessionAvailable, session)
 				}

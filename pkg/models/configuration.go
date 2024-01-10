@@ -19,11 +19,28 @@ type RootConfiguration struct {
 type GlobalConfiguration struct {
 	Host                  string
 	Port                  int
-	Debug                 bool   `yaml:"debug,omitempty"`
-	TLSCertFile           string `yaml:"tls_cert,omitempty"`
-	TLSKeyFile            string `yaml:"tls_key,omitempty"`
-	SessionsFolder        string `yaml:"sessions_folder"`
-	MaxConcurrentSessions int    `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
+	Debug                 bool                         `yaml:"debug,omitempty"`
+	TLSCertFile           string                       `yaml:"tls_cert,omitempty"`
+	TLSKeyFile            string                       `yaml:"tls_key,omitempty"`
+	SessionsFolder        string                       `yaml:"sessions_folder"`
+	MaxConcurrentSessions int                          `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
+	FeaturesPreview       FeaturesPreviewConfiguration `yaml:"features_preview" json:"featuresPreview"`
+}
+
+type FeaturesPreviewConfiguration struct {
+	AdvancedTerminalOutput bool `yaml:"advanced_terminal_output"`
+}
+
+// ManagerConfiguration is the struct containing all the configuration
+// pieced which will be serialized and sent to the manager
+type ManagerConfiguration struct {
+	AdvancedTerminalOutput bool `json:"advancedTerminalOutput"`
+}
+
+func (c *RootConfiguration) GetManagerConfiguration() ManagerConfiguration {
+	return ManagerConfiguration{
+		AdvancedTerminalOutput: c.Global.FeaturesPreview.AdvancedTerminalOutput,
+	}
 }
 
 type Header string

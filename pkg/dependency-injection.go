@@ -366,8 +366,8 @@ func (d *DI) AddPortRetriever() {
 }
 
 func (d *DI) AddHTTPProxy() {
-	if err := d.container.Provide(func(environment utils.Environment, logger logging.Logger) *proxy.Handler {
-		return proxy.NewHandler(environment, logger)
+	if err := d.container.Provide(func(environment utils.Environment, logger logging.Logger, conf *models.RootConfiguration) *proxy.Handler {
+		return proxy.NewHandler(environment, logger, conf)
 	}); err != nil {
 		log.Panic(err)
 	}

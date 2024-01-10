@@ -39,7 +39,7 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 			bus := session.GetEventBus()
 
 			killReason := session.GetKillReason()
-			session.LogInfo("Cleaning up session")
+			session.LogInfo([]byte("Cleaning up session"))
 			session.SetStatus(sessionToClean.Status)
 			w.sessionStorage.Update(sessionToClean.Session)
 			conf := session.GetConfiguration()
@@ -71,9 +71,9 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 
 						err := w.sessionCommandExecution.ExecCommand(sessionCleanContext, &command, session)
 						if err != nil {
-							session.LogError(err.Error())
+							session.LogError([]byte(err.Error()))
 							if !command.ContinueOnError {
-								session.LogError("Halting")
+								session.LogError([]byte("Halting"))
 								abort()
 							}
 						}
@@ -81,7 +81,7 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 				}
 
 				if aborted {
-					session.LogWarn("Clean aborted")
+					session.LogWarn([]byte("Clean aborted"))
 				}
 
 				cancelSessionClean()
@@ -90,7 +90,7 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 			}()
 			wg.Wait()
 
-			session.LogInfo("Session cleaned up")
+			session.LogInfo([]byte("Session cleaned up"))
 			appStartupRetries := conf.Startup.Retries
 			appCleanOnExit := *conf.CleanOnExit
 
@@ -106,11 +106,11 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 					if retriesCount < maxRetries {
 						sessionGetsRecycled = true
 						retriesCount++
-						session.LogWarn(fmt.Sprintf("[%d/%d] Retrying session startup.", retriesCount, maxRetries))
+						session.LogWarn([]byte(fmt.Sprintf("[%d/%d] Retrying session startup.", retriesCount, maxRetries)))
 						bus.PublishEvent(models.SessionEventTypeBuildGettingRetried, session)
 						w.mediator.BuildSession.Enqueue(session.Checkout, session.Application, session, nil, false)
 					} else {
-						session.LogWarn("Max startup retries exceeded.")
+						session.LogWarn([]byte("Max startup retries exceeded."))
 						shouldTryCleanFolders = true
 						sessionFailed = true
 						deleteSession = false
@@ -127,10 +127,10 @@ func (w *SessionCleanWorker) startAcceptingSessionCleanRequests() {
 			if shouldTryCleanFolders {
 				if appCleanOnExit {
 					bus.PublishEvent(models.SessionEventTypeFolderClean, session)
-					session.LogInfo(fmt.Sprintf("Deleting session folder %s", session.Folder))
+					session.LogInfo([]byte(fmt.Sprintf("Deleting session folder %s", session.Folder)))
 					err := os.RemoveAll(session.Folder)
 					if err != nil {
-						session.LogError(fmt.Sprintf("Error while removing session folder: %s", err.Error()))
+						session.LogError([]byte(fmt.Sprintf("Error while removing session folder: %s", err.Error())))
 					}
 				}
 			}

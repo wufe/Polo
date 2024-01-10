@@ -1,5 +1,14 @@
-import { APIPayload, APIRequestResult } from "../../api/common";
-import { IAPISession, IAPISessionLogsAndStatus, killSessionAPI, retrieveLogsAndStatusAPI, retrieveSessionStatusAPI, trackSessionAPI, untrackSessionAPI } from "../../api/session";
+import { APIPayload, APIRequestResult } from '../../api/common';
+import {
+    getLogsWSURL,
+    IAPISession,
+    IAPISessionLogsAndStatus, IApiSessionStatus,
+    killSessionAPI,
+    retrieveLogsAndStatusAPI,
+    retrieveSessionStatusAPI,
+    trackSessionAPI,
+    untrackSessionAPI
+} from '../../api/session';
 import { flow, IAnyModelType, Instance, types } from "mobx-state-tree";
 import { SessionStatus, SessionKillReason } from "./session-model-enums";
 
@@ -84,11 +93,19 @@ export const SessionModel = types.model({
     });
 
     const retrieveAge = flow(function* retrieveAge() {
-        const age: APIPayload<number> = yield retrieveSessionStatusAPI(self.uuid);
-        if (age.result === APIRequestResult.SUCCEEDED) {
-            self.age = age.payload;
+        const sess: APIPayload<IApiSessionStatus> = yield retrieveSessionStatusAPI(self.uuid);
+        if (sess.result === APIRequestResult.SUCCEEDED) {
+            self.age = sess.payload.age;
         }
-        return age;
+    });
+
+    const retrieveStatus = flow(function* retrieveAge() {
+        const age: APIPayload<IApiSessionStatus> = yield retrieveSessionStatusAPI(self.uuid);
+        if (age.result === APIRequestResult.SUCCEEDED) {
+            self.status = age.payload.status;
+            return self.status;
+        }
+        return SessionStatus.NONE;
     });
 
     const retrieveLogsAndStatus = flow(function* retrieveLogsAndStatus(lastLogUUID?: string) {
@@ -109,7 +126,7 @@ export const SessionModel = types.model({
         return kill;
     })
 
-    return { retrieveAge, track, untrack, kill, retrieveLogsAndStatus };
+    return { retrieveAge, retrieveStatus, track, untrack, kill, retrieveLogsAndStatus };
 });
 
 export interface ISession extends Instance<typeof SessionModel> {}

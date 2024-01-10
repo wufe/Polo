@@ -1,7 +1,7 @@
 package logging
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -43,11 +43,13 @@ func NewLogger(environment utils.Environment) Logger {
 	if environment.IsDiagnostics() ||
 		environment.IsDebugRace() {
 		log.SetLevel(logrus.TraceLevel)
+	} else if environment.IsDev() {
+		log.SetLevel(logrus.DebugLevel)
 	} else {
 		log.SetLevel(logrus.InfoLevel)
 	}
 
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 
 	log.AddHook(&writer.Hook{
 		Writer: os.Stderr,

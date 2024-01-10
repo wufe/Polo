@@ -42,3 +42,7 @@ export function retrieveSessionStatusAPI(uuid: string) {
 export function retrieveLogsAndStatusAPI(uuid: string, lastUUID: string = "<none>") {
     return buildRequest<IAPISessionLogsAndStatus>(() => Axios.get(`/_polo_/api/session/${uuid}/logs/${lastUUID}`));
 }
+
+export function getLogsWSURL(uuid: string) {
+    return `/_polo_/api/session/${uuid}/logs`;
+}

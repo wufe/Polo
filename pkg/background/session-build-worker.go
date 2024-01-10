@@ -162,7 +162,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 		}
 	}
 
-	session.LogInfo(fmt.Sprintf("Creating session %s", session.UUID))
+	session.LogInfo([]byte(fmt.Sprintf("Creating session %s", session.UUID)))
 
 	freePort, err := w.portRetriever.GetFreePort(appPort)
 	if err != nil {
@@ -173,7 +173,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 		}
 	}
 	session.Port = freePort
-	session.LogInfo(fmt.Sprintf("Found new free port: %d", session.Port))
+	session.LogInfo([]byte(fmt.Sprintf("Found new free port: %d", session.Port)))
 
 	session.CommitID = commitID
 
@@ -187,7 +187,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 	}
 
 	session.Commit = *commit
-	session.LogInfo(fmt.Sprintf("Requested checkout to %s (%s)", input.Checkout, session.CommitID))
+	session.LogInfo([]byte(fmt.Sprintf("Requested checkout to %s (%s)", input.Checkout, session.CommitID)))
 
 	// Set display-name based on checkout being a commit ID or not
 	// If input.detectBranchOrTag is set to true, the session's display name
@@ -218,7 +218,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 			input.Application,
 		)
 		if sessionAlreadyBeingBuilt != nil {
-			session.LogWarn(fmt.Sprintf("Another session with the UUID %s has already being requested for checkout %s", sessionAlreadyBeingBuilt.UUID, input.Checkout))
+			session.LogWarn([]byte(fmt.Sprintf("Another session with the UUID %s has already being requested for checkout %s", sessionAlreadyBeingBuilt.UUID, input.Checkout)))
 			return &queues.SessionBuildResult{
 				Result:  queues.SessionBuildResultAlreadyBuilt,
 				Session: sessionAlreadyBeingBuilt,
@@ -226,7 +226,7 @@ func (w *SessionBuildWorker) acceptSessionBuild(input *queues.SessionBuildInput)
 		}
 	}
 
-	session.LogInfo(fmt.Sprintf("Session target is %s", session.GetTarget()))
+	session.LogInfo([]byte(fmt.Sprintf("Session target is %s", session.GetTarget())))
 
 	session.SetVariable("uuid", session.UUID)
 	session.SetVariable("name", session.Alias)
@@ -274,7 +274,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 	session.GetEventBus().PublishEvent(models.SessionEventTypePreparingFolders, session)
 	err := w.prepareFolders(session)
 	if err != nil {
-		session.LogError(fmt.Sprintf("Could not build session commit structure: %s", err.Error()))
+		session.LogError([]byte(fmt.Sprintf("Could not build session commit structure: %s", err.Error())))
 		session.SetKillReason(models.KillReasonBuildFailed)
 		session.GetEventBus().PublishEvent(models.SessionEventTypePreparingFoldersFailed, session)
 		abort()
@@ -288,7 +288,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 		for {
 			select {
 			case <-quit:
-				session.LogError("Execution aborted")
+				session.LogError([]byte("Execution aborted"))
 				if session.GetKillReason() == models.KillReasonNone {
 					session.SetKillReason(models.KillReasonBuildFailed)
 				}
@@ -305,10 +305,10 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 			if session.GetKillReason() == models.KillReasonNone {
 				session.SetKillReason(models.KillReasonStopped)
 			} else {
-				session.LogTrace("Commands: it has been killed by the user, right?")
+				session.LogTrace([]byte("Commands: it has been killed by the user, right?"))
 			}
 		}
-		session.LogError(err.Error())
+		session.LogError([]byte(err.Error()))
 		session.GetEventBus().PublishEvent(models.SessionEventTypeCommandsExecutionFailed, session)
 		abort()
 		return
@@ -323,10 +323,10 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 				if session.GetKillReason() == models.KillReasonNone {
 					session.SetKillReason(models.KillReasonStopped)
 				} else {
-					session.LogTrace("Warmup: it has been killed by the user, right?")
+					session.LogTrace([]byte("Warmup: it has been killed by the user, right?"))
 				}
 			}
-			session.LogError(err.Error())
+			session.LogError([]byte(err.Error()))
 			session.GetEventBus().PublishEvent(models.SessionEventTypeWarmupFailed, session)
 			abort()
 			return
@@ -342,7 +342,7 @@ func (w *SessionBuildWorker) buildSession(session *models.Session) {
 				Session: session,
 			})
 		}
-		session.LogInfo("Session started")
+		session.LogInfo([]byte("Session started"))
 	} else {
 		if !healthcheckingStarted {
 			w.mediator.HealthcheckSession.Enqueue(queues.SessionHealthcheckInput{
@@ -392,7 +392,7 @@ func (w *SessionBuildWorker) execCommands(ctx context.Context, session *models.S
 				if !command.ContinueOnError {
 					return healthcheckingStarted, err
 				} else {
-					session.LogError(err.Error())
+					session.LogError([]byte(err.Error()))
 				}
 			} else {
 				w.sessionStorage.Update(session)
@@ -429,9 +429,9 @@ func (w *SessionBuildWorker) execWarmups(ctx context.Context, session *models.Se
 			success, url, err := w.execWarmup(ctx, session, conf, warmup, warmups)
 			if !success {
 				if err != nil {
-					session.LogError(fmt.Sprintf("Cannot execute warmup of URL %s: %s", url, err.Error()))
+					session.LogError([]byte(fmt.Sprintf("Cannot execute warmup of URL %s: %s", url, err.Error())))
 				} else {
-					session.LogError(fmt.Sprintf("Cannot execute warmup of URL %s", url))
+					session.LogError([]byte(fmt.Sprintf("Cannot execute warmup of URL %s", url)))
 				}
 			}
 		}
@@ -467,7 +467,7 @@ func (w *SessionBuildWorker) execWarmup(ctx context.Context, session *models.Ses
 		}
 
 		url := session.Variables.ApplyTo(warmup.URL)
-		session.LogTrace(fmt.Sprintf("Requesting warmup URL %s", url))
+		session.LogTrace([]byte(fmt.Sprintf("Requesting warmup URL %s", url)))
 		req, err := http.NewRequest(warmup.Method, url, nil)
 		if err != nil {
 			return false, url, err
@@ -487,9 +487,9 @@ func (w *SessionBuildWorker) execWarmup(ctx context.Context, session *models.Ses
 			retryCount++
 
 			if err != nil {
-				session.LogTrace(fmt.Sprintf("Warmup error: %s", err.Error()))
+				session.LogTrace([]byte(fmt.Sprintf("Warmup error: %s", err.Error())))
 			} else {
-				session.LogTrace(fmt.Sprintf("Warmup error: received status code %d, wanted %d", response.StatusCode, warmup.Status))
+				session.LogTrace([]byte(fmt.Sprintf("Warmup error: received status code %d, wanted %d", response.StatusCode, warmup.Status)))
 			}
 
 			if retryCount >= warmups.MaxRetries {

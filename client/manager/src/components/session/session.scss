@@ -1,0 +1,9 @@
+@import "@polo/common/styles/index";
+
+.xterm-rows {
+    @apply m-3;
+}
+
+.xterm-cursor {
+    display: none !important;
+}

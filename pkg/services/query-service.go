@@ -88,6 +88,15 @@ func (s *QueryService) GetSessionLogsAndStatus(uuid string, lastLogUUID string) 
 	return retLogs, session.Status, nil
 }
 
+func (s *QueryService) GetSessionTTY(uuid string) (utils.TTY, models.SessionStatus, error) {
+	session := s.GetAliveSession(uuid)
+	if session == nil {
+		return nil, models.SessionStatusStarting, ErrSessionNotFound
+	}
+
+	return session.GetTTYOutput().GetReadSeeker(), session.Status, nil
+}
+
 // GetMatchingCheckoutBySmartUrl
 // The rawInput parameter is without prefix "/s/"
 func (s *QueryService) GetMatchingCheckoutBySmartUrl(rawInput string) (checkout string, application string, path string, found bool, foundSession *models.Session) {

@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models/output"
@@ -53,6 +54,17 @@ const (
 	// SessionBuildContextKey is the name of the shared BUILD context.
 	// It is shared to allow an early session destruction to stop a running build of a session
 	SessionBuildContextKey string = "build"
+)
+
+var (
+	stdinColor    = color.New(color.BgHiCyan, color.FgBlack)
+	traceColor    = color.New(color.FgHiMagenta)
+	debugColor    = color.New(color.BgHiBlue, color.FgWhite)
+	infoColor     = color.New(color.FgBlack)
+	warnColor     = color.New(color.FgHiYellow)
+	errorColor    = color.New(color.FgHiRed)
+	criticalColor = color.New(color.BgHiRed, color.FgBlack)
+	pointerColor  = color.New(color.FgHiBlack)
 )
 
 // SessionStatus is the status of the session
@@ -109,11 +121,13 @@ type Session struct {
 	startupRetries  int
 	killReason      KillReason
 	// If set, states that this session replaces a previous one
-	replaces    []*Session
-	replacedBy  *Session
-	diagnostics []DiagnosticsData
-	bus         *SessionLifetimeEventBus
-	log         logging.Logger
+	replaces               []*Session
+	replacedBy             *Session
+	diagnostics            []DiagnosticsData
+	bus                    *SessionLifetimeEventBus
+	log                    logging.Logger
+	tty                    utils.TTYOutput
+	advancedTerminalOutput bool
 }
 
 // L4Forward is a struct which represents a Level 4 forwarding
@@ -219,6 +233,7 @@ func newSession(
 	session *Session,
 	mutexBuilder utils.MutexBuilder,
 	logger logging.Logger,
+	advancedTerminalOutput bool,
 ) *Session {
 	session.log = logger
 	session.shortUUID = strings.Split(session.UUID, "-")[0]
@@ -254,6 +269,10 @@ func newSession(
 	if session.replaces == nil {
 		session.replaces = []*Session{}
 	}
+
+	session.tty = utils.NewTTYOutput()
+	session.advancedTerminalOutput = advancedTerminalOutput
+
 	return session
 }
 
@@ -371,102 +390,167 @@ func (session *Session) getMatchingConfiguration() ApplicationConfiguration {
 }
 
 // LogCritical logs a message to stdout and stores it in the session logs slice
-func (session *Session) LogCritical(message string) {
+func (session *Session) LogCritical(message []byte) {
 	session.Lock()
-	session.log.Errorf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
 	defer session.Unlock()
-	session.logs = append(
-		session.logs,
-		NewLog(message, LogTypeCritical),
-	)
+
+	session.log.Errorf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, string(message)))
+
+	if session.advancedTerminalOutput {
+		session.logFormattedOutput(criticalColor.Sprint(string(message)))
+	} else {
+		session.logs = append(
+			session.logs,
+			NewLog(string(message), LogTypeCritical),
+		)
+	}
 }
 
 // LogError logs a message to stdout and stores it in the session logs slice
-func (session *Session) LogError(message string) {
+func (session *Session) LogError(message []byte) {
 	session.Lock()
-	session.log.Errorf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
 	defer session.Unlock()
-	session.logs = append(
-		session.logs,
-		NewLog(message, LogTypeError),
-	)
+
+	session.log.Errorf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, string(message)))
+
+	if session.advancedTerminalOutput {
+		session.logFormattedOutput(errorColor.Sprint(string(message)))
+	} else {
+		session.logs = append(
+			session.logs,
+			NewLog(string(message), LogTypeError),
+		)
+	}
 }
 
 // LogWarn logs a message to stdout and stores it in the session logs slice
-func (session *Session) LogWarn(message string) {
+func (session *Session) LogWarn(message []byte) {
 	session.Lock()
-	session.log.Warnf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
 	defer session.Unlock()
-	session.logs = append(
-		session.logs,
-		NewLog(message, LogTypeWarn),
-	)
+
+	session.log.Warnf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, string(message)))
+
+	if session.advancedTerminalOutput {
+		session.logFormattedOutput(warnColor.Sprint(string(message)))
+	} else {
+		session.logs = append(
+			session.logs,
+			NewLog(string(message), LogTypeWarn),
+		)
+	}
 }
 
 // LogInfo logs a message to stdout and stores it in the session logs slice
-func (session *Session) LogInfo(message string) {
+func (session *Session) LogInfo(message []byte) {
 	session.Lock()
-	session.log.Infof(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
 	defer session.Unlock()
-	session.logs = append(
-		session.logs,
-		NewLog(message, LogTypeInfo),
-	)
+
+	session.log.Infof(fmt.Sprintf("\t[%s]: %s", session.shortUUID, string(message)))
+
+	if session.advancedTerminalOutput {
+		session.logFormattedOutput(infoColor.Sprint(string(message)))
+	} else {
+		session.logs = append(
+			session.logs,
+			NewLog(string(message), LogTypeInfo),
+		)
+	}
 }
 
 // LogDebug logs a message to stdout and stores it in the session logs slice
-func (session *Session) LogDebug(message string) {
+func (session *Session) LogDebug(message []byte) {
 	session.Lock()
-	session.log.Debugf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
 	defer session.Unlock()
-	session.logs = append(
-		session.logs,
-		NewLog(message, LogTypeDebug),
-	)
+
+	session.log.Debugf(fmt.Sprintf("\t[%s]: %s", session.shortUUID, string(message)))
+
+	if session.advancedTerminalOutput {
+		session.logFormattedOutput(debugColor.Sprint(string(message)))
+	} else {
+		session.logs = append(
+			session.logs,
+			NewLog(string(message), LogTypeDebug),
+		)
+	}
 }
 
 // LogTrace logs a message to stdout and stores it in the session logs slice
-func (session *Session) LogTrace(message string) {
+func (session *Session) LogTrace(message []byte) {
 	session.Lock()
-	session.log.Tracef(fmt.Sprintf("\t[%s]: %s", session.shortUUID, message))
 	defer session.Unlock()
-	session.logs = append(
-		session.logs,
-		NewLog(message, LogTypeTrace),
-	)
+
+	session.log.Tracef(fmt.Sprintf("\t[%s]: %s", session.shortUUID, string(message)))
+
+	if session.advancedTerminalOutput {
+		session.logFormattedOutput(traceColor.Sprint(string(message)))
+	} else {
+		session.logs = append(
+			session.logs,
+			NewLog(string(message), LogTypeTrace),
+		)
+	}
 }
 
 // LogStdin logs a message to stdout and stores it in the session logs slice
-func (session *Session) LogStdin(message string) {
+func (session *Session) LogStdin(message []byte) {
 	session.Lock()
-	session.log.Infof(fmt.Sprintf("\t\t[%s (stdin)>]: %s", session.shortUUID, message))
 	defer session.Unlock()
-	session.logs = append(
-		session.logs,
-		NewLog(message, LogTypeStdin),
+	session.log.Infof(fmt.Sprintf("\t\t[%s (stdin)>]: %s", session.shortUUID, string(message)))
+
+	if session.advancedTerminalOutput {
+		session.logFormattedOutput(stdinColor.Sprint(string(message)))
+	} else {
+		session.logs = append(
+			session.logs,
+			NewLog(string(message), LogTypeStdin),
+		)
+	}
+}
+
+func (session *Session) logFormattedOutput(message string) error {
+
+	formatted := append(
+		[]byte(pointerColor.Sprintf("[%s] ▶ ", time.Now().Format(time.TimeOnly))),
+		append(
+			[]byte(message),
+			[]byte{'\r', '\n'}...,
+		)...,
 	)
+
+	_, err := session.tty.Write(formatted)
+	return err
 }
 
 // LogStdout logs a message to stdout and stores it in the session logs slice
-func (session *Session) LogStdout(message string) {
+func (session *Session) LogStdout(message []byte) {
 	session.Lock()
-	session.log.Infof(fmt.Sprintf("\t\t[%s (stdout)>]: %s", session.shortUUID, message))
 	defer session.Unlock()
-	session.logs = append(
-		session.logs,
-		NewLog(message, LogTypeStdout),
-	)
+	session.log.Infof(fmt.Sprintf("\t\t[%s (stdout)>]: %s", session.shortUUID, string(message)))
+
+	if session.advancedTerminalOutput {
+		session.tty.Write(append(message, '\r', '\n'))
+	} else {
+		session.logs = append(
+			session.logs,
+			NewLog(string(message), LogTypeStdout),
+		)
+	}
 }
 
 // LogStderr logs a message to stdout and stores it in the session logs slice
-func (session *Session) LogStderr(message string) {
+func (session *Session) LogStderr(message []byte) {
 	session.Lock()
-	session.log.Infof(fmt.Sprintf("\t\t[%s (stderr)>]: %s", session.shortUUID, message))
 	defer session.Unlock()
-	session.logs = append(
-		session.logs,
-		NewLog(message, LogTypeStderr),
-	)
+	session.log.Infof(fmt.Sprintf("\t\t[%s (stderr)>]: %s", session.shortUUID, string(message)))
+
+	if session.advancedTerminalOutput {
+		session.tty.Write(append(message, '\r', '\n'))
+	} else {
+		session.logs = append(
+			session.logs,
+			NewLog(string(message), LogTypeStderr),
+		)
+	}
 }
 
 // MarkAsBeingRequested informs the session that it has been used by a proxy
@@ -628,4 +712,10 @@ func (session *Session) GetTarget() string {
 func (session *Session) getTargetInternal() string {
 	target := session.configuration.Target
 	return session.Variables.ApplyTo(target)
+}
+
+func (session *Session) GetTTYOutput() utils.TTYOutput {
+	session.RLock()
+	defer session.RUnlock()
+	return session.tty
 }

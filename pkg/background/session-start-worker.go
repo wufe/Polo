@@ -86,9 +86,9 @@ func (w *SessionStartWorker) MarkSessionAsStarted(session *models.Session) {
 		)
 
 		if err != nil {
-			session.LogError(fmt.Sprintf("Cannot forward %s: %v", forwarding, err))
+			session.LogError([]byte(fmt.Sprintf("Cannot forward %s: %v", forwarding, err)))
 		} else {
-			session.LogInfo(fmt.Sprintf("Forwarding %s", forwarding))
+			session.LogInfo([]byte(fmt.Sprintf("Forwarding %s", forwarding)))
 		}
 	}
 

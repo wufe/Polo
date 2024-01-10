@@ -46,7 +46,7 @@ func (w *SessionFilesystemWorker) buildSessionCommitStructure(session *models.Se
 	conf := session.GetConfiguration()
 	useFolderCopy := conf.UseFolderCopy
 
-	session.LogInfo(fmt.Sprintf("Trying to build session commit structure in folder %s", session.Application.Folder))
+	session.LogInfo([]byte(fmt.Sprintf("Trying to build session commit structure in folder %s", session.Application.Folder)))
 	checkout := sanitize.Name(session.CommitID)
 
 	if useFolderCopy {
@@ -65,29 +65,29 @@ func (w *SessionFilesystemWorker) buildStructureCopying(session *models.Session,
 
 	// If the folder exists delete it
 	if _, err := os.Stat(sessionCommitFolder); err != nil {
-		session.LogInfo(fmt.Sprintf("Removing folder %s", sessionCommitFolder))
+		session.LogInfo([]byte(fmt.Sprintf("Removing folder %s", sessionCommitFolder)))
 		err := os.RemoveAll(sessionCommitFolder)
 		if err != nil {
-			session.LogError(fmt.Sprintf("Error while deleting commit folder: %s", err.Error()))
+			session.LogError([]byte(fmt.Sprintf("Error while deleting commit folder: %s", err.Error())))
 			return "", err
 		}
 	}
 
-	session.LogInfo("Performing an hard reset to the selected commit")
+	session.LogInfo([]byte("Performing an hard reset to the selected commit"))
 	err := w.gitClient.HardReset(applicationBaseFolder, sessionCommit, versioning.WithHardResetDisableTerminalPrompt(disableTerminalPrompt))
 	if err != nil {
-		session.LogError(fmt.Sprintf("Error while performing hard reset: %s", err.Error()))
+		session.LogError([]byte(fmt.Sprintf("Error while performing hard reset: %s", err.Error())))
 		return "", err
 	}
 
 	// Copy directories except .git folder
-	session.LogInfo(fmt.Sprintf("Copying files from %s to %s", applicationBaseFolder, sessionCommitFolder))
+	session.LogInfo([]byte(fmt.Sprintf("Copying files from %s to %s", applicationBaseFolder, sessionCommitFolder)))
 	err = utils.CopyDir(applicationBaseFolder, sessionCommitFolder, func(fi os.FileInfo) bool {
 		return fi.Name() != ".git"
 	})
 
 	if err != nil {
-		session.LogError(fmt.Sprintf("Error while copying source directory: %s", err.Error()))
+		session.LogError([]byte(fmt.Sprintf("Error while copying source directory: %s", err.Error())))
 		return "", err
 	}
 
@@ -109,7 +109,7 @@ func (w *SessionFilesystemWorker) buildStructureCloning(session *models.Session,
 	sessionCommit := session.CommitID
 
 	if _, err := os.Stat(sessionCommitFolder); os.IsNotExist(err) {
-		session.LogInfo(fmt.Sprintf("Cloning from remote %s into %s", appRemote, sessionCommitFolder))
+		session.LogInfo([]byte(fmt.Sprintf("Cloning from remote %s into %s", appRemote, sessionCommitFolder)))
 		err := w.gitClient.Clone(
 			appFolder,
 			checkout,
@@ -118,22 +118,22 @@ func (w *SessionFilesystemWorker) buildStructureCloning(session *models.Session,
 			versioning.WithCloneRecurseSubmodules(recurseSubmodules),
 		)
 		if err != nil {
-			session.LogError(fmt.Sprintf("Error while cloning: %s", err.Error()))
+			session.LogError([]byte(fmt.Sprintf("Error while cloning: %s", err.Error())))
 			return "", err
 		}
 	}
 
-	session.LogInfo("Fetching from remote")
+	session.LogInfo([]byte("Fetching from remote"))
 	err := w.gitClient.FetchAll(sessionCommitFolder, versioning.WithFetchAllDisableTerminalPrompt(disableTerminalPrompt))
 	if err != nil {
-		session.LogError(fmt.Sprintf("Error while fetching from remote: %s", err.Error()))
+		session.LogError([]byte(fmt.Sprintf("Error while fetching from remote: %s", err.Error())))
 		return "", err
 	}
 
-	session.LogInfo("Performing an hard reset to the selected commit")
+	session.LogInfo([]byte("Performing an hard reset to the selected commit"))
 	err = w.gitClient.HardReset(sessionCommitFolder, sessionCommit, versioning.WithHardResetDisableTerminalPrompt(disableTerminalPrompt))
 	if err != nil {
-		session.LogError(fmt.Sprintf("Error while performing hard reset: %s", err.Error()))
+		session.LogError([]byte(fmt.Sprintf("Error while performing hard reset: %s", err.Error())))
 		return "", err
 	}
 

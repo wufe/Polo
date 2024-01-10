@@ -1,11 +1,17 @@
 package rest
 
 import (
+	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"strings"
+	"sync"
+	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/julienschmidt/httprouter"
 	response_builder "github.com/wufe/polo/internal/rest/response-builder"
 	"github.com/wufe/polo/pkg/http/proxy"
@@ -57,6 +63,7 @@ func NewHandler(
 	router.POST("/_polo_/api/session/:uuid/track", h.trackSession(query))
 	router.DELETE("/_polo_/api/session/:uuid/track", h.untrackSession())
 	router.GET("/_polo_/api/session/:uuid/logs/:last_log", h.getSessionLogsAndStatus(query))
+	router.GET("/_polo_/api/session/:uuid/logs", h.getSessionPTY(query, logger))
 	router.GET("/_polo_/api/ping", h.ping())
 	if !environment.IsDev() {
 		router.GET("/_polo_/public/*filepath", h.serveStatic(static))
@@ -161,6 +168,146 @@ func (h *Handler) getSessionLogsAndStatus(query *services.QueryService) httprout
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(s)
 		w.Write(c)
+	}
+}
+
+func (h *Handler) getSessionPTY(query *services.QueryService, logger logging.Logger) httprouter.Handle {
+	upgrader := websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		uuid := p.ByName("uuid")
+		tty, _, err := query.GetSessionTTY(uuid)
+		defer tty.Close()
+
+		if err != nil {
+			logger.Error("Error retrieving session TTY: %s", err)
+			c, s := h.r.NotFound()
+			w.Header().Add("Content-Type", "application/json")
+			w.WriteHeader(s)
+			w.Write(c)
+			return
+		}
+
+		if _, err := tty.Seek(0, io.SeekStart); err != nil {
+			logger.Error("Error seeking TTY output: %s\n", err)
+			c, s := h.r.ServerError(err)
+			w.Header().Add("Content-Type", "application/json")
+			w.WriteHeader(s)
+			w.Write(c)
+			return
+		}
+
+		connection, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			fmt.Printf("error while upgrading the connection: %s\n", err)
+			return
+		}
+
+		var wg sync.WaitGroup
+		var mutex sync.Mutex
+
+		connectionClosed := false
+
+		lastPong := time.Now()
+		connection.SetPongHandler(func(appData string) error {
+			logger.Debug("ping received")
+			lastPong = time.Now()
+			return nil
+		})
+		go func() {
+			for !connectionClosed {
+				mutex.Lock()
+
+				if err := connection.WriteMessage(websocket.PingMessage, []byte("keepalive")); err != nil {
+					logger.Debug("failed to write ping message")
+					mutex.Unlock()
+					return
+				}
+				mutex.Unlock()
+
+				keepalivePingTimeout := 20 * time.Second
+				time.Sleep(keepalivePingTimeout / 2) // TODO: Make it configurable
+				if time.Since(lastPong) > keepalivePingTimeout {
+					logger.Warn("failed to get pong response")
+					connectionClosed = true
+					return
+				}
+
+				logger.Debug("ping sent")
+			}
+		}()
+
+		wg.Add(1)
+		// tty >> xterm.js
+		go func() {
+			defer wg.Done()
+
+			buffer := make([]byte, 1000)
+			errorsCount := 0
+			for {
+				if errorsCount > 10 {
+					logger.Debug("too many consecutive errors: closing")
+					return
+				}
+
+				n, err := tty.Read(buffer)
+				if err != nil {
+					logger.Debugf("error reading from tty: %s", err)
+					return
+				}
+
+				if n > 0 {
+					mutex.Lock()
+					if err := connection.WriteMessage(websocket.BinaryMessage, buffer[:n]); err != nil {
+						logger.Debugf("error writing message to websocket: %s", err)
+						errorsCount++
+						mutex.Unlock()
+						continue
+					}
+					mutex.Unlock()
+				}
+
+				errorsCount = 0
+			}
+		}()
+
+		// tty << xterm.js
+		go func() {
+			for {
+				messageType, data, err := connection.ReadMessage()
+				if err != nil {
+					if !connectionClosed {
+						logger.Debugf("error while reading message from connection: %s", err)
+					}
+					return
+				}
+
+				dataBuf := bytes.Trim(data, "\x00")
+
+				// handle resizing
+				if messageType == websocket.BinaryMessage {
+					if dataBuf[0] == 1 {
+						ttySize := utils.TTYSize{}
+						resizeMessage := bytes.Trim(dataBuf[1:], " \n\r\t\x00\x01")
+						if err := json.Unmarshal(resizeMessage, &ttySize); err != nil {
+							logger.Errorf("failed to unmarshal received size message '%s': %s", string(resizeMessage), err)
+							continue
+						}
+
+						tty.Resize(ttySize)
+						continue
+					}
+				}
+			}
+		}()
+
+		wg.Wait()
+		logger.Debug("closing websocket connection")
+		connectionClosed = true
 	}
 }
 

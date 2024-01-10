@@ -139,7 +139,9 @@ module.exports = {
 		}),
 	].filter(Boolean),
 	devServer: {
-		static: path.join(__dirname, '../../public'),
+		static: {
+			directory: path.join(__dirname, '../../public'),
+		},
 		compress: true,
 		port: 9000,
 		hot: true

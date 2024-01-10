@@ -1,24 +1,35 @@
+import {SessionLogsContainer} from '@/components/session/session-logs-container';
+import {SessionTerminalContainer} from '@/components/session/session-terminal-container';
 import { IApp } from '@polo/common/state/models/app-model';
-import { useNotification } from '@polo/common/state/models/notification-hook';
-import { ISession, ISessionLog } from '@polo/common/state/models/session-model';
-import { buildFailedNotification } from '@polo/common/state/notifications/build-failed-notification';
-import { values } from 'mobx';
+import {useNotification} from '@polo/common/state/models/notification-hook';
+import { ISession } from '@polo/common/state/models/session-model';
+import {buildFailedNotification} from '@polo/common/state/notifications/build-failed-notification';
 import { observer } from 'mobx-react-lite';
 import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import {useHistory} from 'react-router-dom';
 import { CommitMessage } from '../shared/commit-message';
-import { SessionLogs } from './session-logs';
-import { useSessionRetrieval } from './session-retrieval-hook';
+import 'xterm/css/xterm.css';
+import '@polo/manager/src/components/session/session.scss';
+
+declare global {
+    interface Window {
+        configuration: {
+            advancedTerminalOutput: boolean;
+        };
+    }
+}
+
+const useAdvancedTerminal = window.configuration.advancedTerminalOutput;
 
 type TProps = {
     app: IApp;
     session: ISession;
-}
-export const Session = observer((props: TProps) => {
+};
 
-    const [overlayBottom, setOverlayBottom] = useState(100);
+export const Session = observer((props: TProps) => {
     const history = useHistory();
     const { notify } = useNotification();
+    const [overlayBottom, setOverlayBottom] = useState(100);
 
     const onSessionFail = () => {
         notify(
@@ -26,21 +37,13 @@ export const Session = observer((props: TProps) => {
                 props.session,
                 notification =>
                     notification.remove()
-                )
-            );
+            )
+        );
         history.replace(`/_polo_/session/failing/${props.session.uuid}`);
-    }
-    
-    useSessionRetrieval(props.app.failures.retrieveFailedSession, onSessionFail, props.session);
-
-    const setOverlayProportions = (proportions: number) => {
-        const percentage = parseInt(`${proportions * 100}`);
-        const inversePercentage = 100 - percentage;
-        setOverlayBottom(inversePercentage);
-    }
+    };
 
     return <div className="
-        mx-auto w-full max-w-6xl flex flex-col min-w-0 min-h-0 flex-1 pt-3 font-quicksand" style={{height:'calc(100vh - 120px)'}}>
+        mx-auto w-full max-w-6xl flex flex-col min-w-0 min-h-0 flex-1 pt-3 font-quicksand" style={{maxHeight:'calc(100vh - 120px)'}}>
         <div className="main-gradient-faded absolute left-0 right-0 top-0 pointer-events-none" style={{ bottom: `${overlayBottom}%`, zIndex: 1 }}></div>
         <h1 className="text-4xl px-2 lg:px-0 mb-3 font-quicksand font-light text-nord1 dark:text-nord5 z-10">
             Session
@@ -49,9 +52,9 @@ export const Session = observer((props: TProps) => {
             <span>{props.session.displayName}</span>
         </div>
         <CommitMessage {...props.session} maxHeight />
-        <SessionLogs
-            logs={Array.from(props.session.logs.values())}
-            onLogsProportionChanged={setOverlayProportions} />
+        {useAdvancedTerminal && <SessionTerminalContainer app={props.app} session={props.session} onSessionFail={onSessionFail} />}
+        {!useAdvancedTerminal && <SessionLogsContainer app={props.app} session={props.session} setOverlayBottom={setOverlayBottom} onSessionFail={onSessionFail} />}
+
     </div>
 });
 

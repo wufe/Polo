@@ -3,12 +3,16 @@ package background
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"regexp"
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/creack/pty"
+	"github.com/wufe/polo/pkg/logging"
 
 	"github.com/wufe/polo/pkg/execution"
 	"github.com/wufe/polo/pkg/http/net"
@@ -22,12 +26,21 @@ type SessionCommandExecution interface {
 type sessionCommandExecutionImpl struct {
 	portRetriever net.PortRetriever
 	commandRunner execution.CommandRunner
+	configuration *models.RootConfiguration
+	log           logging.Logger
 }
 
-func NewSessionCommandExecution(portRetriever net.PortRetriever, commandRunner execution.CommandRunner) SessionCommandExecution {
+func NewSessionCommandExecution(
+	portRetriever net.PortRetriever,
+	commandRunner execution.CommandRunner,
+	configuration *models.RootConfiguration,
+	log logging.Logger,
+) SessionCommandExecution {
 	return &sessionCommandExecutionImpl{
 		portRetriever: portRetriever,
 		commandRunner: commandRunner,
+		configuration: configuration,
+		log:           log,
 	}
 }
 
@@ -36,7 +49,6 @@ func (ce *sessionCommandExecutionImpl) ExecCommand(ctx context.Context, command 
 	if err != nil {
 		return err
 	}
-	session.LogStdin(builtCommand)
 
 	cmdCtx := ctx
 	if command.Timeout > 0 {
@@ -44,23 +56,50 @@ func (ce *sessionCommandExecutionImpl) ExecCommand(ctx context.Context, command 
 		defer cancel()
 		cmdCtx = timeoutCtx
 	}
-	cmds := ParseCommandContext(cmdCtx, builtCommand)
-	for _, cmd := range cmds {
-		cmd.Env = append(
-			os.Environ(),
-			ce.buildEnvironmentVariables(command.Environment, session)...,
-		)
-		cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
-	}
 
-	err = ce.commandRunner.ExecCmds(ctx, func(line *execution.StdLine) {
-		if line.Type == execution.StdTypeOut {
-			session.LogStdout(line.Line)
-		} else {
-			session.LogStderr(line.Line)
+	cmd := ParseCommandContext(cmdCtx, builtCommand)
+	cmd.Env = append(
+		os.Environ(),
+		ce.buildEnvironmentVariables(command.Environment, session)...,
+	)
+	cmd.Dir = getWorkingDir(session.Folder, command.WorkingDir)
+
+	session.LogStdin([]byte(builtCommand))
+
+	if ce.configuration.Global.FeaturesPreview.AdvancedTerminalOutput {
+		tty, err := pty.Start(cmd)
+		if err != nil {
+			return fmt.Errorf("error starting pty: %w", err)
 		}
-		parseSessionCommandOuput(session, command, line.Line)
-	}, cmds...)
+
+		outputBuffer := session.GetTTYOutput()
+
+		buffer := make([]byte, 1024)
+
+		for {
+			n, err := tty.Read(buffer)
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				ce.log.Warnf("Error reading from PTY: %s", err)
+				break
+			}
+
+			if _, err := outputBuffer.Write(buffer[:n]); err != nil {
+				ce.log.Warnf("Error writing to PTY output buffer: %s", err)
+			}
+		}
+	} else {
+		err = ce.commandRunner.ExecCmds(ctx, func(line *execution.StdLine) {
+			if line.Type == execution.StdTypeOut {
+				session.LogStdout([]byte(line.Line))
+			} else {
+				session.LogStderr([]byte(line.Line))
+			}
+			parseSessionCommandOuput(session, command, line.Line)
+		}, cmd)
+	}
 
 	return err
 }
@@ -96,10 +135,7 @@ func (ce *sessionCommandExecutionImpl) addPortsOnDemand(input string, session *m
 	return input, nil
 }
 
-func ParseCommandContext(context context.Context, command string) []*exec.Cmd {
-
-	commands := []*exec.Cmd{}
-
+func ParseCommandContext(context context.Context, command string) *exec.Cmd {
 	var rawCmd []string
 
 	if runtime.GOOS == "windows" {
@@ -110,8 +146,5 @@ func ParseCommandContext(context context.Context, command string) []*exec.Cmd {
 
 	rawCmd = append(rawCmd, command)
 
-	cmd := exec.CommandContext(context, rawCmd[0], rawCmd[1:]...)
-	commands = append(commands, cmd)
-
-	return commands
+	return exec.CommandContext(context, rawCmd[0], rawCmd[1:]...)
 }

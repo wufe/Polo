@@ -60,7 +60,7 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 			for {
 				select {
 				case <-sessionStopContext.Done():
-					session.LogWarn("Destruction aborted")
+					session.LogWarn([]byte("Destruction aborted"))
 					w.mediator.CleanSession.Enqueue(session, models.SessionStatusStopFailed)
 					return
 				case <-done:
@@ -80,9 +80,9 @@ func (w *SessionDestroyWorker) DestroySession(session *models.Session, callback 
 
 				err := w.sessionCommandExecution.ExecCommand(sessionStopContext, &command, session)
 				if err != nil {
-					session.LogError(err.Error())
+					session.LogError([]byte(err.Error()))
 					if !command.ContinueOnError {
-						session.LogError("Halting")
+						session.LogError([]byte("Halting"))
 						cancelSessionStop()
 						return
 					}

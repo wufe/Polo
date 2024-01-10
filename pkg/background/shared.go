@@ -27,7 +27,7 @@ func parseSessionCommandOuput(session *models.Session, command *models.Command, 
 		key := variable[1]
 		value := variable[2]
 		session.SetVariable(key, value)
-		session.LogWarn(fmt.Sprintf("Setting variable %s=%s", key, value))
+		session.LogWarn([]byte(fmt.Sprintf("Setting variable %s=%s", key, value)))
 	}
 
 	if command.OutputVariable != "" {

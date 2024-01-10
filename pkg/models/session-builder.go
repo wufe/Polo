@@ -6,18 +6,20 @@ import (
 )
 
 type SessionBuilder struct {
-	mutexBuilder utils.MutexBuilder
-	logger       logging.Logger
+	mutexBuilder  utils.MutexBuilder
+	logger        logging.Logger
+	configuration *RootConfiguration
 }
 
-func NewSessionBuilder(mutexBuilder utils.MutexBuilder, logger logging.Logger) *SessionBuilder {
+func NewSessionBuilder(mutexBuilder utils.MutexBuilder, logger logging.Logger, configuration *RootConfiguration) *SessionBuilder {
 	return &SessionBuilder{
-		mutexBuilder: mutexBuilder,
-		logger:       logger,
+		mutexBuilder:  mutexBuilder,
+		logger:        logger,
+		configuration: configuration,
 	}
 }
 
 func (b *SessionBuilder) Build(session *Session) *Session {
 	b.logger.Trace("Building new session")
-	return newSession(session, b.mutexBuilder, b.logger)
+	return newSession(session, b.mutexBuilder, b.logger, b.configuration.Global.FeaturesPreview.AdvancedTerminalOutput)
 }
