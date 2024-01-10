@@ -42,7 +42,8 @@ type Startup struct {
 
 type StartupParams struct {
 	dig.In
-	Configuration      *models.RootConfiguration
+	Configuration *models.RootConfiguration
+	// Applications is initially loaded from DI's AddConfiguration method
 	Applications       []*models.Application
 	Handler            *rest.Handler
 	Static             *services.StaticService
