@@ -6,7 +6,7 @@ global:
     advanced_terminal_output: true
 applications:
   - name: Test Server
-    remote: /Users/simonebembi/Projects/polo-testserver
+    remote: https://github.com/wufe/polo-testserver
     disable_terminal_prompt: false
     is_default: true
     commands:
@@ -25,6 +25,9 @@ applications:
       inactivity_timeout: 6000
     startup:
       retries: 5
+    forwards:
+      - pattern: ^/fwd\-test$
+        to: /fwd-dest-test
     branches:
       - test: ^main$
         watch: true
