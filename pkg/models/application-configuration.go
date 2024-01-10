@@ -102,6 +102,8 @@ func NewApplicationConfiguration(configuration *ApplicationConfiguration, mutexB
 		default:
 			return nil, fmt.Errorf("application.forwards[%d].protocol is not valid: supported protocols are TCP, UDP and HTTP", i)
 		}
+
+		configuration.Forwards[i] = forward
 	}
 	if configuration.Fetch.Interval <= 0 {
 		configuration.Fetch.Interval = 60
