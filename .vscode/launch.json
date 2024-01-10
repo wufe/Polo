@@ -9,25 +9,25 @@
 			"type": "go",
 			"request": "launch",
 			"mode": "auto",
-			"cwd": "${workspaceFolder}/packages/server",
+			"cwd": "${workspaceFolder}",
 			"env": {
 				"POLO_CWD": "${cwd}",
 				"GO_ENV": "development"
 			},
-			"program": "${workspaceFolder}/packages/server/cmd/server/main.go"
+			"program": "${workspaceFolder}/cmd/server/main.go"
 		},
 		{
 			"name": "Debug server (PRO)",
 			"type": "go",
 			"request": "launch",
 			"mode": "auto",
-			"cwd": "${workspaceFolder}/packages/server",
+			"cwd": "${workspaceFolder}",
 			"env": {
 				"POLO_CWD": "${cwd}",
 				"GO_ENV": "development"
 			},
 			"buildFlags": "-tags=pro",
-			"program": "${workspaceFolder}/packages/server/cmd/server/main.go"
+			"program": "${workspaceFolder}/cmd/server/main.go"
 		},
 		{
 			"name": "Debug server (race)",
