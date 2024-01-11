@@ -2,13 +2,18 @@ package services
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
-	"github.com/wufe/polo/pkg/logging"
-	"github.com/wufe/polo/pkg/utils"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/wufe/polo/pkg/logging"
+	"github.com/wufe/polo/pkg/models"
+	"github.com/wufe/polo/pkg/utils"
 )
 
 //go:embed static/*
@@ -21,14 +26,20 @@ type StaticService struct {
 	FileSystem           fs.FS
 	sessionHelperContent string
 	log                  logging.Logger
+	configuration        *models.RootConfiguration
 }
 
-func NewStaticService(environment utils.Environment, logger logging.Logger) *StaticService {
+func NewStaticService(
+	environment utils.Environment,
+	logger logging.Logger,
+	configuration *models.RootConfiguration,
+) *StaticService {
 	service := &StaticService{
-		RWLocker:  utils.GetMutex(environment),
-		isDev:     environment.IsDev(),
-		devServer: environment.DevServerURL(),
-		log:       logger,
+		RWLocker:      utils.GetMutex(environment),
+		isDev:         environment.IsDev(),
+		devServer:     environment.DevServerURL(),
+		log:           logger,
+		configuration: configuration,
 	}
 	service.initStaticFileSystem()
 	return service
@@ -85,11 +96,23 @@ func (s *StaticService) LoadSessionHelper() {
 
 func (s *StaticService) GetManager() []byte {
 	file, err := s.FileSystem.Open("manager.html")
-	content, err := ioutil.ReadAll(file)
+	if err != nil {
+		s.log.Errorf("error opening file: %s", err)
+		return nil
+	}
+	content, err := io.ReadAll(file)
 	if err != nil {
 		s.log.Errorf("Could not read manager.html")
 		return nil
 	}
+
+	serializedConfiguration, err := json.Marshal(s.configuration.GetManagerConfiguration())
+	if err != nil {
+		s.log.Errorf("error serializing configuration: %s", err)
+		return nil
+	}
+	content = []byte(strings.ReplaceAll(string(content), "{}", string(serializedConfiguration)))
+
 	return content
 }
 

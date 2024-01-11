@@ -356,9 +356,7 @@ func (d *DI) AddApplicationFetchWorker() {
 // Services
 
 func (d *DI) AddStaticService() {
-	if err := d.container.Provide(func(environment utils.Environment, logger logging.Logger) *services.StaticService {
-		return services.NewStaticService(environment, logger)
-	}); err != nil {
+	if err := d.container.Provide(services.NewStaticService); err != nil {
 		log.Panic(err)
 	}
 }
