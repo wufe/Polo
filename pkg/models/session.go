@@ -274,7 +274,11 @@ func newSession(
 		session.replaces = []*Session{}
 	}
 
-	session.tty = utils.NewTTYOutput()
+	if session.tty == nil {
+		// checking if the tty is nil, because if it is not it means
+		// that this is a retried session and the tty has already been set
+		session.tty = utils.NewTTYOutput()
+	}
 	session.advancedTerminalOutput = advancedTerminalOutput
 
 	return session
