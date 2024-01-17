@@ -112,7 +112,7 @@ module.exports = {
 		]
 	},
 	target: 'web',
-		optimization: {
+	optimization: {
 		minimizer: [
 			"...",
 			isProduction && new CssMinimizerPlugin(),
@@ -144,6 +144,7 @@ module.exports = {
 		},
 		compress: true,
 		port: 9000,
-		hot: true
+		hot: true,
+		allowedHosts: 'all'
 	}
 };

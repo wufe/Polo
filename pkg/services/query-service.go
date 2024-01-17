@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
+	integrations_output_models "github.com/wufe/polo/pkg/integrations/models/output"
 	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/models/output"
@@ -54,6 +55,14 @@ func (s *QueryService) GetSessionStatus(uuid string) (output.SessionStatus, erro
 		return output.SessionStatus{}, ErrSessionNotFound
 	}
 	return models.MapSessionStatus(session), nil
+}
+
+func (s *QueryService) GetSessionIntegrationsStatus(uuid string) (*integrations_output_models.Session, error) {
+	session := s.sessionStorage.GetByUUID(uuid)
+	if session == nil {
+		return nil, ErrSessionNotFound
+	}
+	return models.MapIntegrations(session.Integrations), nil
 }
 
 func (s *QueryService) GetSessionMetrics(uuid string) ([]models.Metric, error) {

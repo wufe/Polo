@@ -9,6 +9,7 @@ import (
 	"github.com/wufe/polo/pkg/background"
 	"github.com/wufe/polo/pkg/background/queues"
 	"github.com/wufe/polo/pkg/http/rest"
+	"github.com/wufe/polo/pkg/integrations"
 	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/services"
@@ -19,16 +20,17 @@ import (
 )
 
 type Startup struct {
-	configuration      *models.RootConfiguration
-	applications       []*models.Application
-	handler            *rest.Handler
-	static             *services.StaticService
-	appStorage         *storage.Application
-	sesStorage         *storage.Session
-	mediator           *background.Mediator
-	applicationBuilder *models.ApplicationBuilder
-	sessionBuilder     *models.SessionBuilder
-	log                logging.Logger
+	configuration       *models.RootConfiguration
+	applications        []*models.Application
+	handler             *rest.Handler
+	integrationsHandler *integrations.Handler
+	static              *services.StaticService
+	appStorage          *storage.Application
+	sesStorage          *storage.Session
+	mediator            *background.Mediator
+	applicationBuilder  *models.ApplicationBuilder
+	sessionBuilder      *models.SessionBuilder
+	log                 logging.Logger
 
 	sessionBuildWorker       *background.SessionBuildWorker
 	sessionStartWorker       *background.SessionStartWorker
@@ -44,15 +46,16 @@ type StartupParams struct {
 	dig.In
 	Configuration *models.RootConfiguration
 	// Applications is initially loaded from DI's AddConfiguration method
-	Applications       []*models.Application
-	Handler            *rest.Handler
-	Static             *services.StaticService
-	AppStorage         *storage.Application
-	SesStorage         *storage.Session
-	Mediator           *background.Mediator
-	ApplicationBuilder *models.ApplicationBuilder
-	SessionBuilder     *models.SessionBuilder
-	Logger             logging.Logger
+	Applications        []*models.Application
+	Handler             *rest.Handler
+	IntegrationsHandler *integrations.Handler
+	Static              *services.StaticService
+	AppStorage          *storage.Application
+	SesStorage          *storage.Session
+	Mediator            *background.Mediator
+	ApplicationBuilder  *models.ApplicationBuilder
+	SessionBuilder      *models.SessionBuilder
+	Logger              logging.Logger
 
 	SessionBuildWorker       *background.SessionBuildWorker
 	SessionStartWorker       *background.SessionStartWorker
@@ -72,16 +75,17 @@ type StartupOptions struct {
 
 func NewStartup(params StartupParams) *Startup {
 	return &Startup{
-		configuration:      params.Configuration,
-		applications:       params.Applications,
-		handler:            params.Handler,
-		static:             params.Static,
-		appStorage:         params.AppStorage,
-		sesStorage:         params.SesStorage,
-		mediator:           params.Mediator,
-		applicationBuilder: params.ApplicationBuilder,
-		sessionBuilder:     params.SessionBuilder,
-		log:                params.Logger,
+		configuration:       params.Configuration,
+		applications:        params.Applications,
+		handler:             params.Handler,
+		integrationsHandler: params.IntegrationsHandler,
+		static:              params.Static,
+		appStorage:          params.AppStorage,
+		sesStorage:          params.SesStorage,
+		mediator:            params.Mediator,
+		applicationBuilder:  params.ApplicationBuilder,
+		sessionBuilder:      params.SessionBuilder,
+		log:                 params.Logger,
 
 		sessionBuildWorker:       params.SessionBuildWorker,
 		sessionStartWorker:       params.SessionStartWorker,
@@ -125,6 +129,10 @@ func (s *Startup) Start(options *StartupOptions) {
 
 	if s.configuration.Global.Debug {
 		s.startDebugServer()
+	}
+
+	if s.configuration.Global.Integrations.Enabled {
+		s.startIntegrationServer()
 	}
 
 	if options.StartServer {
@@ -228,5 +236,21 @@ func (s *Startup) startDebugServer() {
 
 	go func() {
 		s.log.Infof("running debug server: %s", http.ListenAndServe(address, nil))
+	}()
+}
+
+func (s *Startup) startIntegrationServer() {
+	address := fmt.Sprintf("%s:%d", s.configuration.Global.Integrations.Server.Host, s.configuration.Global.Integrations.Server.Port)
+
+	server := &http.Server{
+		Addr:    address,
+		Handler: s.integrationsHandler.Router,
+	}
+
+	s.log.Infof("Starting integrations server on address %s", address)
+	go func() {
+		if err := server.ListenAndServe(); err != http.ErrServerClosed {
+			panic(err)
+		}
 	}()
 }

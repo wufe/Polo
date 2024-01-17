@@ -73,6 +73,7 @@ func Fixture(injectable *InjectableServices, applicationConfigurations ...*model
 
 	container.AddStaticService()
 	container.AddQueryService()
+	container.AddIntegrationsStatusRetriever()
 	container.AddRequestService()
 	container.AddAliasingService()
 
@@ -82,6 +83,7 @@ func Fixture(injectable *InjectableServices, applicationConfigurations ...*model
 	container.AddHTTPProxy()
 	container.AddHTTPRouter()
 	container.AddHTTPRestHandler()
+	container.AddIntegrationsHTTPHandler()
 
 	// Startup
 

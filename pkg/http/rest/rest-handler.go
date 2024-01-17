@@ -60,6 +60,7 @@ func NewHandler(
 	router.GET("/_polo_/api/session/:uuid", h.getSession(query))
 	router.DELETE("/_polo_/api/session/:uuid", h.deleteSession(request))
 	router.GET("/_polo_/api/session/:uuid/status", h.getSessionStatus(query))
+	router.GET("/_polo_/api/session/:uuid/status/integrations", h.getSessionIntegrationsStatus(query))
 	router.POST("/_polo_/api/session/:uuid/track", h.trackSession(query))
 	router.DELETE("/_polo_/api/session/:uuid/track", h.untrackSession())
 	router.GET("/_polo_/api/session/:uuid/logs/:last_log", h.getSessionLogsAndStatus(query))
@@ -136,6 +137,26 @@ func (h *Handler) getSessionStatus(query *services.QueryService) httprouter.Hand
 			c, s = h.r.NotFound()
 		} else {
 			c, s = h.r.Ok(age)
+		}
+
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(s)
+		w.Write(c)
+	}
+}
+
+func (h *Handler) getSessionIntegrationsStatus(query *services.QueryService) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		uuid := p.ByName("uuid")
+		integrationsStatus, err := query.GetSessionIntegrationsStatus(uuid)
+
+		var c []byte
+		var s int
+
+		if err != nil {
+			c, s = h.r.NotFound()
+		} else {
+			c, s = h.r.Ok(integrationsStatus)
 		}
 
 		w.Header().Add("Content-Type", "application/json")

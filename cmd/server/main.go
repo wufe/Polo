@@ -76,6 +76,7 @@ func main() {
 
 	container.AddStaticService()
 	container.AddQueryService()
+	container.AddIntegrationsStatusRetriever()
 	container.AddRequestService()
 	container.AddAliasingService()
 
@@ -85,6 +86,7 @@ func main() {
 	container.AddHTTPProxy()
 	container.AddHTTPRouter()
 	container.AddHTTPRestHandler()
+	container.AddIntegrationsHTTPHandler()
 
 	// Startup
 

@@ -19,6 +19,15 @@ export interface IApiSessionStatus {
     replacedBy: string;
 }
 
+export interface IAPISessionIntegrations {
+    tilt: {
+        dashboards: Array<{
+            id: string;
+            url: string;
+        }>;
+    }
+}
+
 export function killSessionAPI(uuid: string) {
     return buildRequest<void>(() => Axios.delete(`/_polo_/api/session/${uuid}`));
 }
@@ -37,6 +46,10 @@ export function untrackSessionAPI() {
 
 export function retrieveSessionStatusAPI(uuid: string) {
     return buildRequest<IApiSessionStatus>(() => Axios.get(`/_polo_/api/session/${uuid}/status`));
+}
+
+export function retrieveSessionIntegrationsStatusAPI(uuid: string) {
+    return buildRequest<IAPISessionIntegrations>(() => Axios.get(`/_polo_/api/session/${uuid}/status/integrations`));
 }
 
 export function retrieveLogsAndStatusAPI(uuid: string, lastUUID: string = "<none>") {

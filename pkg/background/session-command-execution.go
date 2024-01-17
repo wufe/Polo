@@ -1,6 +1,7 @@
 package background
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/creack/pty"
@@ -76,6 +78,24 @@ func (ce *sessionCommandExecutionImpl) ExecCommand(ctx context.Context, command 
 
 		buffer := make([]byte, 1024)
 
+		pipeReader, pipeWriter := io.Pipe()
+
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			scanner := bufio.NewScanner(pipeReader)
+			for scanner.Scan() {
+				line := scanner.Text()
+				parseSessionCommandOuput(session, command, line)
+			}
+
+			if err := scanner.Err(); err != nil {
+				ce.log.Warnf("error reading from the pipe reader: %s", err)
+			}
+		}()
+
 		for {
 			n, err := tty.Read(buffer)
 			if err == io.EOF {
@@ -86,10 +106,17 @@ func (ce *sessionCommandExecutionImpl) ExecCommand(ctx context.Context, command 
 				break
 			}
 
+			if _, err := pipeWriter.Write(buffer[:n]); err != nil {
+				ce.log.Warnf("Error writing to pipe writer: %s", err)
+			}
+
 			if _, err := outputBuffer.Write(buffer[:n]); err != nil {
 				ce.log.Warnf("Error writing to PTY output buffer: %s", err)
 			}
 		}
+		pipeWriter.Close()
+
+		wg.Wait()
 	} else {
 		err = ce.commandRunner.ExecCmds(ctx, func(line *execution.StdLine) {
 			if line.Type == execution.StdTypeOut {

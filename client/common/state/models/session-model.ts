@@ -2,9 +2,11 @@ import { APIPayload, APIRequestResult } from '../../api/common';
 import {
     getLogsWSURL,
     IAPISession,
+    IAPISessionIntegrations,
     IAPISessionLogsAndStatus, IApiSessionStatus,
     killSessionAPI,
     retrieveLogsAndStatusAPI,
+    retrieveSessionIntegrationsStatusAPI,
     retrieveSessionStatusAPI,
     trackSessionAPI,
     untrackSessionAPI
@@ -15,6 +17,21 @@ import { SessionStatus, SessionKillReason } from "./session-model-enums";
 export const SessionConfigurationModel = types.model({
     isDefault: types.boolean,
 });
+
+//#region Integrations
+export const TiltDashboardModel = types.model({
+    id: types.string,
+    url: types.string,
+});
+
+export const TiltSessionIntegrationModel = types.model({
+    dashboards: types.array(TiltDashboardModel),
+});
+
+export const SessionIntegrationsModel = types.model({
+    tilt: TiltSessionIntegrationModel,
+});
+//#endregion
 
 export enum SessionLogType {
     TRACE    = 'trace',
@@ -77,6 +94,7 @@ export const SessionModel = types.model({
     replacedBy       : types.string,
     permalink        : types.string,
     smartURL         : types.string,
+    integrations     : SessionIntegrationsModel,
 }).views(self => ({
     get beingReplacedBySession() {
         return self.beingReplacedBy as ISession;
@@ -119,14 +137,30 @@ export const SessionModel = types.model({
         }
 
         return logsAndStatus;
-    })
+    });
+
+    const retrieveIntegrationsStatus = flow(function* retrieveIntegrations() {
+        const integrations: APIPayload<IAPISessionIntegrations> = yield retrieveSessionIntegrationsStatusAPI(self.uuid);
+
+        if (integrations.result === APIRequestResult.SUCCEEDED) {
+            self.integrations = {
+                ...self.integrations,
+                tilt: TiltSessionIntegrationModel.create({
+                    dashboards: integrations.payload.tilt.dashboards.map(dashboard => TiltDashboardModel.create({
+                        id: dashboard.id,
+                        url: dashboard.url,
+                    })),
+                }),
+            };
+        }
+    });
 
     const kill = flow(function* kill() {
         const kill: APIPayload<void> = yield killSessionAPI(self.uuid);
         return kill;
     })
 
-    return { retrieveAge, retrieveStatus, track, untrack, kill, retrieveLogsAndStatus };
+    return { retrieveAge, retrieveStatus, track, untrack, kill, retrieveLogsAndStatus, retrieveIntegrationsStatus };
 });
 
 export interface ISession extends Instance<typeof SessionModel> {}

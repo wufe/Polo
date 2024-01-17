@@ -1,6 +1,8 @@
 package models
 
 import (
+	integrations_models "github.com/wufe/polo/pkg/integrations/models"
+	integrations_output_models "github.com/wufe/polo/pkg/integrations/models/output"
 	"github.com/wufe/polo/pkg/models/output"
 )
 
@@ -34,6 +36,7 @@ func MapSession(model *Session) *output.Session {
 		ForwardLink:       mapForwardLink(model, conf),
 		Permalink:         mapPermalink(model, conf),
 		SmartURL:          mapSmartURL(model, conf),
+		Integrations:      MapIntegrations(model.Integrations),
 	}
 	model.RUnlock()
 	session.ReplacesSessions = mapReplaces(model.GetReplaces())
@@ -144,4 +147,16 @@ func mapSmartURL(session *Session, conf ApplicationConfiguration) string {
 		return ""
 	}
 	return "/s/" + session.Checkout
+}
+
+// MapIntegrations is cloning the session model instead of producing a new output model
+// because apart from main core domain model, it's not worth it to produce a new output model
+// for each domain model of the integrations, at least for now.
+func MapIntegrations(model *integrations_models.Session) *integrations_output_models.Session {
+	if model == nil {
+		return nil
+	}
+	return &integrations_output_models.Session{
+		Tilt: *model.Tilt.ToOutput(),
+	}
 }

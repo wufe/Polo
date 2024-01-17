@@ -9,6 +9,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	integrations_models "github.com/wufe/polo/pkg/integrations/models"
 	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models/output"
 	"github.com/wufe/polo/pkg/utils"
@@ -104,15 +105,16 @@ type Session struct {
 	ApplicationName string       `json:"applicationName"`
 	Application     *Application `json:"-"`
 	configuration   ApplicationConfiguration
-	Status          SessionStatus `json:"status"`
-	CommitID        string        `json:"commitID"` // The object to be checked out (branch/tag/commit id)
-	Checkout        string        `json:"checkout"`
-	Commit          object.Commit `json:"commit"`
-	Folder          string        `json:"folder"`
-	Variables       Variables     `json:"variables"`
-	Metrics         []Metric      `json:"metrics"`
-	Context         *contextStore `json:"-"`
-	L4Forwards      []*L4Forward  `json:"-"`
+	Status          SessionStatus                `json:"status"`
+	CommitID        string                       `json:"commitID"` // The object to be checked out (branch/tag/commit id)
+	Checkout        string                       `json:"checkout"`
+	Commit          object.Commit                `json:"commit"`
+	Folder          string                       `json:"folder"`
+	Variables       Variables                    `json:"variables"`
+	Metrics         []Metric                     `json:"metrics"`
+	Integrations    *integrations_models.Session `json:"integrations"`
+	Context         *contextStore                `json:"-"`
+	L4Forwards      []*L4Forward                 `json:"-"`
 	logs            []Log
 	shortUUID       string
 	createdAt       time.Time
@@ -254,6 +256,8 @@ func newSession(
 	if session.Metrics == nil {
 		session.Metrics = []Metric{}
 	}
+
+	session.Integrations = integrations_models.NewSession(session.Integrations)
 
 	session.createdAt = time.Now()
 	session.killReason = KillReasonNone

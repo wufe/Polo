@@ -88,7 +88,10 @@ export const useSessionTerminalRetrieval = (
 
             let fetchFailed = false;
             try {
-                const status = await session.retrieveStatus();
+                // Refreshes the status, which will be checked automatically
+                // from the component (or one of its ancestors) containing this hook
+                await session.retrieveStatus();
+                await session.retrieveIntegrationsStatus();
                 interval.current = setTimeout(() => sessionStatusRetrieval(), 1000);
             } catch (e) {
                 console.error(e);
@@ -182,17 +185,12 @@ export const useSessionTerminalRetrieval = (
             setTimeout(() => fitAddon.fit(), 0);
         };
 
-        ws.onmessage = message => {
-            console.log(message.type, message.data)
-        };
-
         terminal.onResize(function(event) {
             const rows = event.rows;
             const cols = event.cols;
             const size = JSON.stringify({cols: cols, rows: rows + 1});
             const send = new TextEncoder().encode("\x01" + size);
             ws.send(send);
-            console.log('resizing', rows, cols)
         });
 
         const onWindowResize = () => {

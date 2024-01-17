@@ -12,6 +12,7 @@ import (
 	"github.com/wufe/polo/pkg/http/proxy"
 	"github.com/wufe/polo/pkg/http/rest"
 	"github.com/wufe/polo/pkg/http/routing"
+	"github.com/wufe/polo/pkg/integrations"
 	"github.com/wufe/polo/pkg/logging"
 	"github.com/wufe/polo/pkg/models"
 	"github.com/wufe/polo/pkg/services"
@@ -341,6 +342,14 @@ func (d *DI) AddQueryService() {
 	}
 }
 
+func (d *DI) AddIntegrationsStatusRetriever() {
+	if err := d.container.Provide(func(query *services.QueryService) integrations.SessionIntegrationsStatusRetriever {
+		return query
+	}); err != nil {
+		log.Panic(err)
+	}
+}
+
 func (d *DI) AddRequestService() {
 	if err := d.container.Provide(func(environment utils.Environment, sesStorage *storage.Session, appStorage *storage.Application, mediator *background.Mediator) *services.RequestService {
 		return services.NewRequestService(environment, sesStorage, appStorage, mediator)
@@ -400,6 +409,12 @@ func (d *DI) AddHTTPRestHandler() {
 	) *rest.Handler {
 		return rest.NewHandler(environment, staticService, routing, proxy, queryService, requestService, logger)
 	}); err != nil {
+		log.Panic(err)
+	}
+}
+
+func (d *DI) AddIntegrationsHTTPHandler() {
+	if err := d.container.Provide(integrations.NewHandler); err != nil {
 		log.Panic(err)
 	}
 }

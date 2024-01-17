@@ -15,6 +15,11 @@ import (
 // Injected at compile time
 var configurationFolder string
 
+const mainServerPort = 8888
+const mainServerHost = "0.0.0.0"
+const integrationsServerPort = 8889
+const integrationsServerHost = "0.0.0.0"
+
 func LoadConfigurations(environment utils.Environment, applicationBuilder *models.ApplicationBuilder, logger logging.Logger) (*models.RootConfiguration, []*models.Application) {
 
 	logger.Infof("Looking for configuration in folder: %s", configurationFolder)
@@ -90,11 +95,19 @@ func unmarshalConfigurations(files []string, applicationBuilder *models.Applicat
 
 	// Default global configurations
 	if rootConfiguration.Global.Port == 0 {
-		rootConfiguration.Global.Port = 8888
+		rootConfiguration.Global.Port = mainServerPort
 	}
 
 	if rootConfiguration.Global.Host == "" {
-		rootConfiguration.Global.Host = "0.0.0.0"
+		rootConfiguration.Global.Host = mainServerHost
+	}
+
+	if rootConfiguration.Global.PublicURL == "" {
+		scheme := "http"
+		if rootConfiguration.Global.Port == 443 {
+			scheme = "https"
+		}
+		rootConfiguration.Global.PublicURL = fmt.Sprintf("%s://127.0.0.1:%d", scheme, rootConfiguration.Global.Port)
 	}
 
 	if rootConfiguration.Global.SessionsFolder == "" {
@@ -103,6 +116,22 @@ func unmarshalConfigurations(files []string, applicationBuilder *models.Applicat
 
 	if rootConfiguration.Global.MaxConcurrentSessions == 0 {
 		rootConfiguration.Global.MaxConcurrentSessions = 10
+	}
+
+	if rootConfiguration.Global.Integrations.Server.Host == "" {
+		rootConfiguration.Global.Integrations.Server.Host = integrationsServerHost
+	}
+
+	if rootConfiguration.Global.Integrations.Server.Port == 0 {
+		rootConfiguration.Global.Integrations.Server.Port = integrationsServerPort
+	}
+
+	if rootConfiguration.Global.Integrations.Server.PublicURL == "" {
+		scheme := "http"
+		if rootConfiguration.Global.Integrations.Server.Port == 443 {
+			scheme = "https"
+		}
+		rootConfiguration.Global.Integrations.Server.PublicURL = fmt.Sprintf("%s://127.0.0.1:%d", scheme, rootConfiguration.Global.Integrations.Server.Port)
 	}
 
 	return rootConfiguration, applications

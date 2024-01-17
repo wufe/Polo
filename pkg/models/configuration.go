@@ -19,12 +19,30 @@ type RootConfiguration struct {
 type GlobalConfiguration struct {
 	Host                  string
 	Port                  int
+	PublicURL             string                       `yaml:"public_url,omitempty"`
 	Debug                 bool                         `yaml:"debug,omitempty"`
 	TLSCertFile           string                       `yaml:"tls_cert,omitempty"`
 	TLSKeyFile            string                       `yaml:"tls_key,omitempty"`
 	SessionsFolder        string                       `yaml:"sessions_folder"`
 	MaxConcurrentSessions int                          `yaml:"max_concurrent_sessions" json:"maxConcurrentSessions"`
 	FeaturesPreview       FeaturesPreviewConfiguration `yaml:"features_preview" json:"featuresPreview"`
+	Integrations          IntegrationsConfiguration    `yaml:"integrations" json:"integrations"`
+}
+
+type IntegrationsConfiguration struct {
+	Enabled bool                            `yaml:"enabled" json:"enabled"`
+	Server  IntegrationsServerConfiguration `yaml:"server" json:"server"`
+	Tilt    TiltConfiguration               `yaml:"tilt" json:"tilt"`
+}
+
+type IntegrationsServerConfiguration struct {
+	Host      string `yaml:"host" json:"host"`
+	Port      int    `yaml:"port" json:"port"`
+	PublicURL string `yaml:"public_url" json:"publicURL"`
+}
+
+type TiltConfiguration struct {
+	Enabled bool `yaml:"enabled" json:"enabled"`
 }
 
 type FeaturesPreviewConfiguration struct {
@@ -34,12 +52,14 @@ type FeaturesPreviewConfiguration struct {
 // ManagerConfiguration is the struct containing all the configuration
 // pieced which will be serialized and sent to the manager
 type ManagerConfiguration struct {
-	AdvancedTerminalOutput bool `json:"advancedTerminalOutput"`
+	AdvancedTerminalOutput bool   `json:"advancedTerminalOutput"`
+	IntegrationsPublicURL  string `json:"integrationsPublicURL"`
 }
 
 func (c *RootConfiguration) GetManagerConfiguration() ManagerConfiguration {
 	return ManagerConfiguration{
 		AdvancedTerminalOutput: c.Global.FeaturesPreview.AdvancedTerminalOutput,
+		IntegrationsPublicURL:  c.Global.Integrations.Server.PublicURL,
 	}
 }
 
