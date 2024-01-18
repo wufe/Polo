@@ -8,7 +8,6 @@ import { observer } from 'mobx-react-lite';
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { CommitMessage } from '../shared/commit-message';
-import 'xterm/css/xterm.css';
 import '@polo/manager/src/components/session/session.scss';
 import { SessionIntegrationsStatus } from './integrations-status/session-integrations-status';
 

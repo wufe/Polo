@@ -75,7 +75,7 @@ export const useSessionTerminalRetrieval = (
     session: ISession,
     container: React.MutableRefObject<HTMLDivElement>,
     retrieveFailedSession: (uuid: string) => Promise<APIPayload<ISession>>,
-    onSessionFail: () => void,
+    onSessionFail?: () => void,
 ) => {
     const interval = useRef<NodeJS.Timeout | null>(null);
     const history = useHistory();
@@ -105,7 +105,7 @@ export const useSessionTerminalRetrieval = (
                     const failedSessionRequest = await retrieveFailedSession(session.uuid);
                     if (failedSessionRequest.result === APIRequestResult.SUCCEEDED) {
                         redirectToDashboard = false;
-                        onSessionFail();
+                        onSessionFail?.();
                     }
                 } catch (e) {
                     console.error(e);

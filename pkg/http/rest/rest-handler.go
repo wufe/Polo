@@ -202,7 +202,6 @@ func (h *Handler) getSessionPTY(query *services.QueryService, logger logging.Log
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		uuid := p.ByName("uuid")
 		tty, _, err := query.GetSessionTTY(uuid)
-		defer tty.Close()
 
 		if err != nil {
 			logger.Error("Error retrieving session TTY: %s", err)
@@ -212,6 +211,7 @@ func (h *Handler) getSessionPTY(query *services.QueryService, logger logging.Log
 			w.Write(c)
 			return
 		}
+		defer tty.Close()
 
 		if _, err := tty.Seek(0, io.SeekStart); err != nil {
 			logger.Error("Error seeking TTY output: %s\n", err)

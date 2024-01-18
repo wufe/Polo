@@ -1,12 +1,13 @@
-import {useSessionTerminalRetrieval} from '@/components/session/session-retrieval-hook';
-import {IApp, ISession} from '@polo/common/state/models';
-import {observer} from 'mobx-react-lite';
+import { useSessionTerminalRetrieval } from '@/components/session/session-retrieval-hook';
+import { IApp, ISession } from '@polo/common/state/models';
+import { observer } from 'mobx-react-lite';
 import React from 'react';
+import 'xterm/css/xterm.css';
 
 type TProps = {
 	app: IApp;
 	session: ISession;
-	onSessionFail: () => void;
+	onSessionFail?: () => void;
 };
 
 export const SessionTerminalContainer = observer((props: TProps) => {

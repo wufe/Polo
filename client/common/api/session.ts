@@ -3,9 +3,7 @@ import { SessionStatus, SessionKillReason } from '../state/models/session-model-
 import Axios from 'axios';
 import { buildRequest } from './common';
 
-export interface IAPISession extends Omit<ISession, 'logs'> {
-    logs: ISessionLog[];
-}
+export interface IAPISession extends ISession {}
 
 export interface IAPISessionLogsAndStatus {
     logs: ISessionLog[];

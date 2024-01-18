@@ -3,7 +3,7 @@ import { APIPayload, APIRequestResult } from "@polo/common/api/common";
 import { values } from "mobx";
 import { flow, getParent, hasParent, types } from "mobx-state-tree";
 import { IApp, SessionSubscriptionEventType } from ".";
-import { ISession, ISessionLog, SessionModel } from "./session-model";
+import { ISession, ISessionLog, SessionModel, castAPISessionToSessionModel } from "./session-model";
 
 export enum FailureStatus {
     ACK   = 'acknowledged',
@@ -19,6 +19,7 @@ export type TFailuresDictionary = {
 };
 
 export const FailuresModel = types.model({
+    currentSession: types.maybeNull(SessionModel),
     acknowledged  : types.map(SessionModel),
     unacknowledged: types.map(SessionModel),
 })
@@ -49,6 +50,9 @@ export const FailuresModel = types.model({
     const retrieveFailedSession = flow(function* retrieveFailedSession(uuid: string, markAsSeen = true) {
         const request: APIPayload<ISession> = yield retrieveFailedSessionAPI(uuid);
         if (markAsSeen) markFailedSessionAsAcknowledged(uuid);
+        if (request.result === APIRequestResult.SUCCEEDED) {
+            self.currentSession = castAPISessionToSessionModel(request.payload);
+        }
         return request;
     });
 

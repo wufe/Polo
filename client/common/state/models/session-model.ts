@@ -58,7 +58,7 @@ export const castAPISessionToSessionModel = (apiSession: IAPISession): ISession 
     const { logs, ...rest } = apiSession;
     const session = rest as ISession;
     if (logs) {
-        session.logs = logs.reduce<{ [k: string]: ISessionLog }>((acc, log) => {
+        session.logs = Array.from(logs.values()).reduce<{ [k: string]: ISessionLog }>((acc, log) => {
             acc[log.uuid] = log;
             return acc;
         }, {}) as any;

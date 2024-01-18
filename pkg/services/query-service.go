@@ -38,6 +38,17 @@ func (s *QueryService) GetAllAliveSessions() []*models.Session {
 	return s.sessionStorage.GetAllAliveSessions()
 }
 
+// GetSession returns a session by its UUID, undependently from its status
+func (s *QueryService) GetSession(uuid string) *models.Session {
+	var foundSession *models.Session
+	for _, session := range s.sessionStorage.GetAll() {
+		if session.UUID == uuid {
+			foundSession = session
+		}
+	}
+	return foundSession
+}
+
 func (s *QueryService) GetAliveSession(uuid string) *models.Session {
 	var foundSession *models.Session
 	for _, session := range s.sessionStorage.GetAllAliveSessions() {
@@ -98,7 +109,7 @@ func (s *QueryService) GetSessionLogsAndStatus(uuid string, lastLogUUID string) 
 }
 
 func (s *QueryService) GetSessionTTY(uuid string) (utils.TTY, models.SessionStatus, error) {
-	session := s.GetAliveSession(uuid)
+	session := s.GetSession(uuid)
 	if session == nil {
 		return nil, models.SessionStatusStarting, ErrSessionNotFound
 	}

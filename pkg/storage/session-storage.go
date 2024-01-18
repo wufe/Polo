@@ -170,6 +170,17 @@ func (s *Session) GetByUUID(uuid string) *models.Session {
 	return foundSession
 }
 
+// GetAll retrieves all sessions
+func (s *Session) GetAll() []*models.Session {
+	s.log.Trace("Getting all alive sessions")
+	s.RLock()
+	filteredSessions := make([]*models.Session, 0, len(s.sessions))
+	sessions := s.sessions
+	s.RUnlock()
+	filteredSessions = append(filteredSessions, sessions...)
+	return filteredSessions
+}
+
 // GetAllAliveSessions retrieves a slice of sessions whose status is "alive".
 // A session is "alive" if it can or is about to ready for being used
 func (s *Session) GetAllAliveSessions() []*models.Session {
