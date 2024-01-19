@@ -2,6 +2,16 @@ global:
   port: 59876
   sessions_folder: ./.sessions
   max_concurrent_sessions: 10
+  debug: false
+  public_url: https://testserver.polo.bembi.dev
+  features_preview:
+    advanced_terminal_output: true
+  integrations:
+    enabled: true
+    server:
+      public_url: https://integrations.testserver.polo.bembi.dev
+    tilt:
+      enabled: true
 applications:
   - name: hello-world # Mandatory
     is_default: true # Useful for reaching it via /<branch-name>
