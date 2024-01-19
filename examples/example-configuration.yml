@@ -20,6 +20,10 @@ applications:
     clean_on_exit: true
     helper:
       position: bottom-left
+      injection:
+        always: false
+        only:
+          - /fwd\-dest\-test$
     fetch:
       interval: 60
     target: "http://127.0.0.1:{{port}}"
