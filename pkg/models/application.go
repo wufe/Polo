@@ -20,23 +20,24 @@ var (
 )
 
 type Application struct {
-	utils.RWLocker          `json:"-"`
-	Filename                string `json:"filename"`
-	configuration           ApplicationConfiguration
-	Status                  ApplicationStatus         `json:"status"`
-	Folder                  string                    `json:"folder"`
-	BaseFolder              string                    `json:"baseFolder"`
-	ObjectsToHashMap        map[string]string         `json:"-"`
-	HashToObjectsMap        map[string]*RemoteObject  `json:"-"`
-	BranchesMap             map[string]*Branch        `json:"branchesMap"`
-	TagsMap                 map[string]*Tag           `json:"tagsMap"`
-	Commits                 []string                  `json:"-"`
-	CommitMap               map[string]*object.Commit `json:"-"`
-	CompiledForwardPatterns []CompiledForwardPattern  `json:"-"`
-	L4Forwards              []applicationL4Forward    `json:"-"`
-	notifications           []ApplicationNotification
-	bus                     *ApplicationEventBus
-	log                     logging.Logger
+	utils.RWLocker                  `json:"-"`
+	Filename                        string `json:"filename"`
+	configuration                   ApplicationConfiguration
+	Status                          ApplicationStatus         `json:"status"`
+	Folder                          string                    `json:"folder"`
+	BaseFolder                      string                    `json:"baseFolder"`
+	ObjectsToHashMap                map[string]string         `json:"-"`
+	HashToObjectsMap                map[string]*RemoteObject  `json:"-"`
+	BranchesMap                     map[string]*Branch        `json:"branchesMap"`
+	TagsMap                         map[string]*Tag           `json:"tagsMap"`
+	Commits                         []string                  `json:"-"`
+	CommitMap                       map[string]*object.Commit `json:"-"`
+	CompiledForwardPatterns         []CompiledForwardPattern  `json:"-"`
+	CompiledHelperInjectionPatterns []*regexp.Regexp          `json:"-"`
+	L4Forwards                      []applicationL4Forward    `json:"-"`
+	notifications                   []ApplicationNotification
+	bus                             *ApplicationEventBus
+	log                             logging.Logger
 }
 
 type ApplicationStatus string
@@ -112,6 +113,11 @@ func newApplication(
 		return nil, err
 	}
 	application.CompiledForwardPatterns = compiled
+	compiledHelperInjectionPatterns, err := configuration.Helper.Injection.CompileOnlyPatterns()
+	if err != nil {
+		return nil, fmt.Errorf("error compiling \"helper.only\" pattern: %w", err)
+	}
+	application.CompiledHelperInjectionPatterns = compiledHelperInjectionPatterns
 	application.L4Forwards = l4Forwards
 	application.ObjectsToHashMap = make(map[string]string)
 	application.HashToObjectsMap = make(map[string]*RemoteObject)

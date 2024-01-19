@@ -84,7 +84,17 @@ func mapFetch(model Fetch) output.Fetch {
 
 func mapHelper(model Helper) output.Helper {
 	return output.Helper{
-		Position: string(model.Position),
+		Position:  string(model.Position),
+		Injection: mapHelperInjection(model.Injection),
+	}
+}
+
+func mapHelperInjection(model HelperInjection) output.HelperInjection {
+	only := make([]string, 0, len(model.Only))
+	only = append(only, model.Only...)
+	return output.HelperInjection{
+		Always: model.Always,
+		Only:   only,
 	}
 }
 

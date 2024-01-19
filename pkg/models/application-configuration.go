@@ -212,10 +212,15 @@ func (a *ApplicationConfiguration) OverrideWith(override SharedConfiguration) {
 	if override.Target != "" {
 		a.Target = override.Target
 	}
-	if override.Helper != (Helper{}) {
-		if override.Helper.Position != "" {
-			a.Helper.Position = override.Helper.Position
-		}
+	if override.Helper.Position != "" {
+		a.Helper.Position = override.Helper.Position
+	}
+	if override.Helper.Injection.Always {
+		a.Helper.Injection.Always = override.Helper.Injection.Always
+	}
+	// TODO: Not working yet. Requires CompiledHelperInjectionPatterns to be stored by session
+	if len(override.Helper.Injection.Only) > 0 {
+		override.Helper.Injection.Only = a.Helper.Injection.Only
 	}
 	// TODO: Not working yet. Requires compiledForwardPatterns to be stored by session
 	if len(override.Forwards) > 0 {
@@ -296,7 +301,26 @@ type Fetch struct {
 }
 
 type Helper struct {
-	Position HelperPosition `json:"position"`
+	Position  HelperPosition  `json:"position"`
+	Injection HelperInjection `json:"injection"`
+}
+
+type HelperInjection struct {
+	Always bool     `yaml:"always" json:"always"`
+	Only   []string `yaml:"only" json:"only"`
+}
+
+func (i *HelperInjection) CompileOnlyPatterns() ([]*regexp.Regexp, error) {
+	compiled := make([]*regexp.Regexp, 0, len(i.Only))
+
+	for _, pattern := range i.Only {
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			return nil, err
+		}
+		compiled = append(compiled, re)
+	}
+	return compiled, nil
 }
 
 type HelperPosition string

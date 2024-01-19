@@ -29,7 +29,13 @@ type Fetch struct {
 }
 
 type Helper struct {
-	Position string `json:"position"`
+	Position  string          `json:"position"`
+	Injection HelperInjection `json:"injection"`
+}
+
+type HelperInjection struct {
+	Always bool     `json:"always"`
+	Only   []string `json:"only"`
 }
 
 type Forward struct {

@@ -112,7 +112,6 @@ func (h *Handler) RouteReverseProxyRequests() http.Handler {
 						forward := h.findForwardRules(r, session)
 						h.serveRev(forward, builder)(w, r)
 					}
-					break
 				case models.SessionStatusStarting, models.SessionStatusDegraded:
 					// Redirects to the session building page
 					// appending the path given by the "smart url" pattern.
@@ -251,7 +250,24 @@ func (h *Handler) buildSessionEnhancerProxy(session *models.Session) proxy.Build
 				if len(bodyIndex) > 1 {
 					body = body[:bodyIndex[1]] + sessionHelper + body[bodyIndex[1]:]
 				} else {
-					body = "<body>" + sessionHelper + body + "</body>"
+					replace := false
+					if conf.Helper.Injection.Always {
+						replace = true
+					} else {
+						helperInjectionPatterns := session.Application.CompiledHelperInjectionPatterns
+						if len(helperInjectionPatterns) > 0 {
+							for _, compiledPattern := range helperInjectionPatterns {
+								if compiledPattern.MatchString(r.Request.URL.Path) {
+									replace = true
+									break
+								}
+							}
+						}
+					}
+
+					if replace {
+						body = "<body>" + sessionHelper + body + "</body>"
+					}
 				}
 
 				buffer = bytes.NewBufferString(body)
